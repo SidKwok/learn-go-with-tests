@@ -1,20 +1,20 @@
-# Install Go, set up environment for productivity
+# 安装 Go，搭建高效开发环境
 
-The official installation instructions for Go are available [here](https://golang.org/doc/install).
+Go 的官方安装说明可以在[这里](https://golang.org/doc/install)找到。
 
-## Go Environment
+## Go 环境
 
 ### Go Modules
 
-Go 1.11 introduced [Modules](https://go.dev/wiki/Modules). This approach is the default build mode since Go 1.16, therefore the use of `GOPATH` is not recommended.
+Go 1.11 引入了 [Modules](https://go.dev/wiki/Modules)。从 Go 1.16 起这种方式成为默认的构建模式，因此不再推荐使用 `GOPATH`。
 
-Modules aim to solve problems related to dependency management, version selection and reproducible builds; they also enable users to run Go code outside of `GOPATH`.
+Modules 的目标是解决依赖管理、版本选择以及可重现构建相关的问题；它们也允许用户在 `GOPATH` 之外运行 Go 代码。
 
-Using Modules is pretty straightforward. Select any directory outside `GOPATH` as the root of your project, and create a new module with the `go mod init` command.
+使用 Modules 相当直接。在 `GOPATH` 之外选任意目录作为项目根目录，然后用 `go mod init` 命令创建一个新模块。
 
-A `go.mod` file will be generated, containing the module path, a Go version, and its dependency requirements, which are the other modules needed for a successful build.
+会生成一个 `go.mod` 文件，其中包含模块路径、Go 版本以及依赖要求，也就是构建成功所需要的其他模块。
 
-If no `<modulepath>` is specified, `go mod init` will try to guess the module path from the directory structure. It can also be overridden by supplying an argument.
+如果没有指定 `<modulepath>`，`go mod init` 会尝试从目录结构猜测模块路径。也可以通过传参覆盖。
 
 ```sh
 mkdir my-project
@@ -22,7 +22,7 @@ cd my-project
 go mod init <modulepath>
 ```
 
-A `go.mod` file could look like this:
+一个 `go.mod` 文件可能像这样：
 
 ```
 module cmd
@@ -31,45 +31,45 @@ go 1.16
 
 ```
 
-The built-in documentation provides an overview of all available `go mod` commands.
+内置文档提供了所有可用的 `go mod` 命令的概览。
 
 ```sh
 go help mod
 go help mod init
 ```
 
-## Go Linting
+## Go 代码检查（Linting）
 
-An improvement over the default linter can be configured using [GolangCI-Lint](https://golangci-lint.run).
+通过 [GolangCI-Lint](https://golangci-lint.run) 可以配置出比默认 linter 更好的检查工具。
 
-This can be installed as follows:
+可以这样安装：
 
 ```sh
 brew install golangci-lint
 ```
 
-## Refactoring and your tooling
+## 重构与你的工具
 
-A big emphasis of this book is the importance of refactoring.
+这本书很强调重构的重要性。
 
-Your tools can help you do bigger refactoring with confidence.
+你的工具可以帮助你自信地做更大规模的重构。
 
-You should be familiar enough with your editor to perform the following with a simple key combination:
+你应该足够熟悉你的编辑器，能用一个简单的快捷键完成下面这些操作：
 
-- **Extract/Inline variable**. Taking magic values and giving them a name lets you simplify your code quickly.
-- **Extract method/function**. It is vital to be able to take a section of code and extract functions/methods
-- **Rename**. You should be able to rename symbols across files confidently.
-- **go fmt**. Go has an opinioned formatter called `go fmt`. Your editor should run this on every file saved.
-- **Run tests**. You should be able to do any of the above and then quickly re-run your tests to ensure your refactoring hasn't broken anything.
+- **提取/内联变量**。把"魔法"值取一个名字能让你迅速简化代码。
+- **提取方法/函数**。把一段代码抽成函数/方法的能力非常重要。
+- **重命名**。你应该能自信地跨文件重命名符号。
+- **go fmt**。Go 有一个自带强主张的格式化工具叫 `go fmt`。你的编辑器应该在每次保存文件时运行它。
+- **运行测试**。在做完上面任意一个动作后，你应该能快速重新运行测试，确保你的重构没有破坏任何东西。
 
-In addition, to help you work with your code, you should be able to:
+此外，为了帮你更好地处理代码，你应该能够：
 
-- **View function signature**. You should never be unsure how to call a function in Go. Your IDE should describe a function in terms of its documentation, its parameters and what it returns.
-- **View function definition**. If it's still unclear what a function does, you should be able to jump to the source code and try and figure it out yourself.
-- **Find usages of a symbol**. Understanding a function's context can help you make decisions when refactoring.
+- **查看函数签名**。在 Go 里你不应该对如何调用一个函数有疑惑。你的 IDE 应该能根据函数的文档、参数和返回值来描述它。
+- **查看函数定义**。如果还不清楚一个函数做了什么，你应该能跳转到源代码自己研究一下。
+- **查找符号的使用位置**。理解一个函数的上下文能在重构时帮你做决策。
 
-Mastering your tools will help you concentrate on the code and reduce context switching.
+掌握你的工具能帮你专注于代码，减少上下文切换。
 
-## Wrapping up
+## 总结
 
-At this point, you should have Go installed, an editor available, and some basic tooling in place. Go has a very large ecosystem of third-party products. We have identified a few useful components here. For a more complete list, see [https://awesome-go.com](https://awesome-go.com).
+到这里你应该已经装好了 Go，有了可用的编辑器和一些基本的工具。Go 有一个非常庞大的第三方生态。我们这里只列了几个有用的组件。更完整的列表可以看 [https://awesome-go.com](https://awesome-go.com)。

@@ -1,17 +1,17 @@
 # Error types
 
-**[You can find all the code here](https://github.com/quii/learn-go-with-tests/tree/main/q-and-a/error-types)**
+**[本章的所有代码可以在这里找到](https://github.com/quii/learn-go-with-tests/tree/main/q-and-a/error-types)**
 
-**Creating your own types for errors can be an elegant way of tidying up your code, making your code easier to use and test.**
+**为错误自定义类型可以是一种优雅的整理代码的方式，能让你的代码更易使用、也更易测试。**
 
-Pedro on the Gopher Slack asks
+Pedro 在 Gopher Slack 上提问
 
-> If I’m creating an error like `fmt.Errorf("%s must be foo, got %s", bar, baz)`, is there a way to test equality without comparing the string value?
+> 如果我用 `fmt.Errorf("%s must be foo, got %s", bar, baz)` 创建了一个错误，有没有办法不通过比较字符串值来测试相等？
 
-Let's make up a function to help explore this idea.
+我们来虚构一个函数，借此探讨这个想法。
 
 ```go
-// DumbGetter will get the string body of url if it gets a 200
+// DumbGetter 在拿到 200 时返回 url 的字符串响应体
 func DumbGetter(url string) (string, error) {
 	res, err := http.Get(url)
 
@@ -24,15 +24,15 @@ func DumbGetter(url string) (string, error) {
 	}
 
 	defer res.Body.Close()
-	body, _ := io.ReadAll(res.Body) // ignoring err for brevity
+	body, _ := io.ReadAll(res.Body) // 为了简洁忽略 err
 
 	return string(body), nil
 }
 ```
 
-It's not uncommon to write a function that might fail for different reasons and we want to make sure we handle each scenario correctly.
+写一个可能因不同原因失败的函数并不少见，我们也希望能正确处理每种场景。
 
-As Pedro says, we _could_ write a test for the status error like so.
+正如 Pedro 所说，我们 _可以_ 像下面这样为状态错误写一个测试。
 
 ```go
 t.Run("when you don't get a 200 you get a status error", func(t *testing.T) {
@@ -57,29 +57,29 @@ t.Run("when you don't get a 200 you get a status error", func(t *testing.T) {
 })
 ```
 
-This test creates a server which always returns `StatusTeapot` and then we use its URL as the argument to `DumbGetter` so we can see it handles non `200` responses correctly.
+这个测试创建了一个总是返回 `StatusTeapot` 的服务器，然后用它的 URL 作为 `DumbGetter` 的参数，用来验证它能正确处理非 `200` 的响应。
 
-## Problems with this way of testing
+## 这种测试方式的问题
 
-This book tries to emphasise _listen to your tests_ and this test doesn't _feel_ good:
+这本书一直强调 _倾听你的测试_，而这个测试感觉并不好：
 
-- We're constructing the same string as production code does to test it
-- It's annoying to read and write
-- Is the exact error message string what we're _actually concerned with_ ?
+- 我们在用与生产代码完全相同的方式构造同一个字符串来测试它
+- 它读起来、写起来都很烦
+- 这个具体的错误消息字符串真的是我们 _关心的东西_ 吗？
 
-What does this tell us? The ergonomics of our test would be reflected on another bit of code trying to use our code.
+这告诉我们什么？我们测试的"人体工学"会反映到使用我们代码的另一段代码上。
 
-How does a user of our code react to the specific kind of errors we return? The best they can do is look at the error string which is extremely error prone and horrible to write.
+我们代码的使用者会怎么对我们返回的具体错误类型作出反应？他们顶多就是看错误字符串，这极易出错而且写起来也很糟。
 
-## What we should do
+## 我们应该怎么做
 
-With TDD we have the benefit of getting into the mindset of:
+借助 TDD 我们能进入这样的思维模式：
 
-> How would _I_ want to use this code?
+> _我_ 想怎么使用这段代码？
 
-What we could do for `DumbGetter` is provide a way for users to use the type system to understand what kind of error has happened.
+对 `DumbGetter` 来说，我们可以提供一种方式，让用户通过类型系统来理解发生了什么样的错误。
 
-What if `DumbGetter` could return us something like
+如果 `DumbGetter` 能返回类似下面这样的东西呢
 
 ```go
 type BadStatusError struct {
@@ -88,9 +88,9 @@ type BadStatusError struct {
 }
 ```
 
-Rather than a magical string, we have actual _data_ to work with.
+不再是一个魔法字符串，我们有了实际的 _数据_ 可以使用。
 
-Let's change our existing test to reflect this need
+我们改造现有的测试来体现这个需求
 
 ```go
 t.Run("when you don't get a 200 you get a status error", func(t *testing.T) {
@@ -120,7 +120,7 @@ t.Run("when you don't get a 200 you get a status error", func(t *testing.T) {
 })
 ```
 
-We'll have to make `BadStatusError` implement the error interface.
+我们需要让 `BadStatusError` 实现 error 接口。
 
 ```go
 func (b BadStatusError) Error() string {
@@ -128,11 +128,11 @@ func (b BadStatusError) Error() string {
 }
 ```
 
-### What does the test do?
+### 这个测试做了什么？
 
-Instead of checking the exact string of the error, we are doing a [type assertion](https://tour.golang.org/methods/15) on the error to see if it is a `BadStatusError`. This reflects our desire for the _kind_ of error clearer. Assuming the assertion passes we can then check the properties of the error are correct.
+我们没有去检查错误的具体字符串，而是对错误做了一次[类型断言](https://tour.golang.org/methods/15)，看它是不是一个 `BadStatusError`。这更清晰地表达了我们对 _错误类型_ 的关心。如果断言通过，我们再检查错误的属性是否正确。
 
-When we run the test, it tells us we didn't return the right kind of error
+跑一下测试，它告诉我们没返回正确类型的错误
 
 ```
 --- FAIL: TestDumbGetter (0.00s)
@@ -140,7 +140,7 @@ When we run the test, it tells us we didn't return the right kind of error
     	error-types_test.go:56: was not a BadStatusError, got *errors.errorString
 ```
 
-Let's fix `DumbGetter` by updating our error handling code to use our type
+我们更新 `DumbGetter` 的错误处理代码使用我们的类型来修复
 
 ```go
 if res.StatusCode != http.StatusOK {
@@ -148,23 +148,23 @@ if res.StatusCode != http.StatusOK {
 }
 ```
 
-This change has had some _real positive effects_
+这个改动带来了一些 _实在的好处_
 
-- Our `DumbGetter` function has become simpler, it's no longer concerned with the intricacies of an error string, it just creates a `BadStatusError`.
-- Our tests now reflect (and document) what a user of our code _could_ do if they decided they wanted to do some more sophisticated error handling than just logging. Just do a type assertion and then you get easy access to the properties of the error.
-- It is still "just" an `error`, so if they choose to they can pass it up the call stack or log it like any other `error`.
+- 我们的 `DumbGetter` 函数变简单了，它不再关心错误字符串的细节，只是创建一个 `BadStatusError`。
+- 我们的测试现在反映（也记录了）我们代码的用户在希望做更复杂的错误处理（不止是日志记录）时 _可以怎么做_。只要做一次类型断言，就能很方便地访问错误的属性。
+- 它仍然 "只是" 一个 `error`，所以如果他们愿意，也可以像处理任何其他 `error` 一样把它向上抛或者记录日志。
 
-## Wrapping up
+## 总结
 
-If you find yourself testing for multiple error conditions don't fall in to the trap of comparing the error messages.
+如果你发现自己在测试多个错误条件，不要落入比较错误消息的陷阱。
 
-This leads to flaky and difficult to read/write tests and it reflects the difficulties the users of your code will have if they also need to start doing things differently depending on the kind of errors that have occurred.
+这会导致脆弱、难读难写的测试，也反映出当你代码的使用者需要根据不同错误类型做不同处理时会面临的困境。
 
-Always make sure your tests reflect how _you'd_ like to use your code, so in this respect consider creating error types to encapsulate your kinds of errors. This makes handling different kinds of errors easier for users of your code and also makes writing your error handling code simpler and easier to read.
+始终确保你的测试反映 _你_ 想怎么使用你的代码，从这个角度来看，应当考虑创建错误类型来封装不同种类的错误。这能让代码使用者处理不同类型的错误更容易，也让你的错误处理代码更简洁、更易读。
 
-## Addendum
+## 附录
 
-As of Go 1.13 there are new ways to work with errors in the standard library which is covered in the [Go Blog](https://blog.golang.org/go1.13-errors)
+从 Go 1.13 开始，标准库提供了处理错误的新方式，相关内容见 [Go Blog](https://blog.golang.org/go1.13-errors)
 
 ```go
 t.Run("when you don't get a 200 you get a status error", func(t *testing.T) {
@@ -194,4 +194,4 @@ t.Run("when you don't get a 200 you get a status error", func(t *testing.T) {
 })
 ```
 
-In this case we are using [`errors.As`](https://pkg.go.dev/errors#example-As) to try and extract our error into our custom type. It returns a `bool` to denote success and extracts it into `got` for us.
+这里我们用 [`errors.As`](https://pkg.go.dev/errors#example-As) 尝试把错误抽取为我们的自定义类型。它返回一个 `bool` 表示是否成功，并把抽取到的值放到 `got` 里。

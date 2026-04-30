@@ -1,25 +1,25 @@
 # Time
 
-[**You can find all the code for this chapter here**](https://github.com/quii/learn-go-with-tests/tree/main/time)
+[**本章的所有代码可以在这里找到**](https://github.com/quii/learn-go-with-tests/tree/main/time)
 
-The product owner wants us to expand the functionality of our command line application by helping a group of people play Texas-Holdem Poker.
+产品负责人希望我们扩展命令行应用的功能，帮助一群人玩德州扑克（Texas-Holdem Poker）。
 
-## Just enough information on poker
+## 关于扑克的最低限度信息
 
-You won't need to know much about poker, only that at certain time intervals all the players need to be informed of a steadily increasing "blind" value.
+你不需要太了解扑克，只需要知道：在某些时间间隔之后，所有玩家都需要被通知一个不断增加的"盲注"（blind）值。
 
-Our application will help keep track of when the blind should go up, and how much it should be.
+我们的应用会帮助跟踪盲注什么时候应该提高，以及提高到多少。
 
-* When it starts it asks how many players are playing. This determines the amount of time there is before the "blind" bet goes up.
-  * There is a base amount of time of 5 minutes.
-  * For every player, 1 minute is added.
-  * e.g 6 players equals 11 minutes for the blind.
-* After the blind time expires the game should alert the players the new amount the blind bet is.
-* The blind starts at 100 chips, then 200, 400, 600, 1000, 2000 and continue to double until the game ends (our previous functionality of "Ruth wins" should still finish the game)
+* 启动时它会询问有多少玩家在玩。这决定了"盲注"提高之前的时间长度。
+  * 基础时间是 5 分钟。
+  * 每多一名玩家，加 1 分钟。
+  * 例如 6 名玩家，盲注间隔为 11 分钟。
+* 盲注时间到了之后，游戏应当通知玩家新的盲注金额。
+* 盲注从 100 筹码开始，然后是 200、400、600、1000、2000，并持续翻倍直到游戏结束（我们之前的"Ruth wins"功能仍然应当结束游戏）
 
-## Reminder of the code
+## 代码回顾
 
-In the previous chapter we made our start to the command line application which already accepts a command of `{name} wins`. Here is what the current `CLI` code looks like, but be sure to familiarise yourself with the other code too before starting.
+在上一章里，我们开始了命令行应用的开发，它已经可以接受 `{name} wins` 的命令。下面是当前 `CLI` 代码的样子，但开始之前请确保你也熟悉了其他代码。
 
 ```go
 type CLI struct {
@@ -51,11 +51,11 @@ func (cli *CLI) readLine() string {
 
 ### `time.AfterFunc`
 
-We want to be able to schedule our program to print the blind bet values at certain durations dependant on the number of players.
+我们希望能够安排程序在不同的时间间隔（取决于玩家人数）打印盲注金额。
 
-To limit the scope of what we need to do, we'll forget about the number of players part for now and just assume there are 5 players so we'll test that _every 10 minutes the new value of the blind bet is printed_.
+为了限制我们要做的事情的范围，我们暂时忽略玩家数量这一部分，假设有 5 名玩家，并测试 _每 10 分钟打印一次新的盲注金额_。
 
-As usual the standard library has us covered with [`func AfterFunc(d Duration, f func()) *Timer`](https://golang.org/pkg/time/#AfterFunc)
+像往常一样，标准库已经为我们准备好了：[`func AfterFunc(d Duration, f func()) *Timer`](https://golang.org/pkg/time/#AfterFunc)
 
 > `AfterFunc` waits for the duration to elapse and then calls f in its own goroutine. It returns a `Timer` that can be used to cancel the call using its Stop method.
 
@@ -63,19 +63,19 @@ As usual the standard library has us covered with [`func AfterFunc(d Duration, f
 
 > A Duration represents the elapsed time between two instants as an int64 nanosecond count.
 
-The time library has a number of constants to let you multiply those nanoseconds so they're a bit more readable for the kind of scenarios we'll be doing
+time 库提供了一些常量，让你把那些纳秒乘起来，对于我们将要做的场景来说更具可读性
 
 ```
 5 * time.Second
 ```
 
-When we call `PlayPoker` we'll schedule all of our blind alerts.
+当我们调用 `PlayPoker` 时，我们会安排所有的盲注提醒。
 
-Testing this may be a little tricky though. We'll want to verify that each time period is scheduled with the correct blind amount but if you look at the signature of `time.AfterFunc` its second argument is the function it will run. You cannot compare functions in Go so we'd be unable to test what function has been sent in. So we'll need to write some kind of wrapper around `time.AfterFunc` which will take the time to run and the amount to print so we can spy on that.
+但测试这件事可能有点棘手。我们想要验证每个时间段都用正确的盲注金额安排了，但如果你看 `time.AfterFunc` 的签名，它的第二个参数是它要执行的函数。在 Go 中你不能比较函数，所以我们没办法测试传入的是什么函数。所以我们需要写一个 `time.AfterFunc` 的包装器，它会接收要执行的时间和要打印的金额，这样我们就可以监视它（spy on）。
 
-## Write the test first
+## 先写测试
 
-Add a new test to our suite
+向我们的测试套件加一个新测试
 
 ```go
 t.Run("it schedules printing of blind values", func(t *testing.T) {
@@ -92,11 +92,11 @@ t.Run("it schedules printing of blind values", func(t *testing.T) {
 })
 ```
 
-You'll notice we've made a `SpyBlindAlerter` which we are trying to inject into our `CLI` and then checking that after we call `PlayPoker` that an alert is scheduled.
+你会注意到我们做了一个 `SpyBlindAlerter`，我们尝试把它注入到 `CLI` 中，然后检查在调用 `PlayPoker` 之后是否安排了一个提醒。
 
-(Remember we are just going for the simplest scenario first and then we'll iterate.)
+（记住我们先做最简单的场景，然后再迭代。）
 
-Here's the definition of `SpyBlindAlerter`
+下面是 `SpyBlindAlerter` 的定义
 
 ```go
 type SpyBlindAlerter struct {
@@ -114,7 +114,7 @@ func (s *SpyBlindAlerter) ScheduleAlertAt(duration time.Duration, amount int) {
 }
 ```
 
-## Try to run the test
+## 尝试运行测试
 
 ```
 ./CLI_test.go:32:27: too many arguments in call to poker.NewCLI
@@ -122,9 +122,9 @@ func (s *SpyBlindAlerter) ScheduleAlertAt(duration time.Duration, amount int) {
 	want (poker.PlayerStore, io.Reader)
 ```
 
-## Write the minimal amount of code for the test to run and check the failing test output
+## 写最少的代码让测试能跑起来，并检查失败的测试输出
 
-We have added a new argument and the compiler is complaining. _Strictly speaking_ the minimal amount of code is to make `NewCLI` accept a `*SpyBlindAlerter` but let's cheat a little and just define the dependency as an interface.
+我们加了一个新参数，编译器在抱怨。_严格来说_ 最少的代码量是让 `NewCLI` 接受一个 `*SpyBlindAlerter`，但我们稍微"作弊"一下，直接把这个依赖定义为一个接口。
 
 ```go
 type BlindAlerter interface {
@@ -132,25 +132,25 @@ type BlindAlerter interface {
 }
 ```
 
-And then add it to the constructor
+然后把它加到构造函数里
 
 ```go
 func NewCLI(store PlayerStore, in io.Reader, alerter BlindAlerter) *CLI
 ```
 
-Your other tests will now fail as they don't have a `BlindAlerter` passed in to `NewCLI`.
+你的其他测试现在会失败，因为它们没有给 `NewCLI` 传 `BlindAlerter`。
 
-Spying on BlindAlerter is not relevant for the other tests so in the test file add
+监视 BlindAlerter 在其他测试里并不重要，所以在测试文件里加上
 
 ```go
 var dummySpyAlerter = &SpyBlindAlerter{}
 ```
 
-Then use that in the other tests to fix the compilation problems. By labelling it as a "dummy" it is clear to the reader of the test that it is not important.
+然后在其他测试里使用它来修复编译问题。把它命名为 "dummy" 让阅读测试的人很清楚它并不重要。
 
 [> Dummy objects are passed around but never actually used. Usually they are just used to fill parameter lists.](https://martinfowler.com/articles/mocksArentStubs.html)
 
-The tests should now compile and our new test fails.
+测试现在应该能编译，并且我们的新测试会失败。
 
 ```
 === RUN   TestCLI
@@ -160,9 +160,9 @@ The tests should now compile and our new test fails.
     	CLI_test.go:38: expected a blind alert to be scheduled
 ```
 
-## Write enough code to make it pass
+## 写足够的代码让它通过
 
-We'll need to add the `BlindAlerter` as a field on our `CLI` so we can reference it in our `PlayPoker` method.
+我们需要把 `BlindAlerter` 作为字段加到 `CLI` 上，这样我们就可以在 `PlayPoker` 方法中引用它。
 
 ```go
 type CLI struct {
@@ -180,7 +180,7 @@ func NewCLI(store PlayerStore, in io.Reader, alerter BlindAlerter) *CLI {
 }
 ```
 
-To make the test pass, we can call our `BlindAlerter` with anything we like
+为了让测试通过，我们可以用任何参数调用 `BlindAlerter`
 
 ```go
 func (cli *CLI) PlayPoker() {
@@ -190,9 +190,9 @@ func (cli *CLI) PlayPoker() {
 }
 ```
 
-Next we'll want to check it schedules all the alerts we'd hope for, for 5 players
+接下来我们要检查它为 5 名玩家安排了我们期望的所有提醒
 
-## Write the test first
+## 先写测试
 
 ```go
 	t.Run("it schedules printing of blind values", func(t *testing.T) {
@@ -243,11 +243,11 @@ Next we'll want to check it schedules all the alerts we'd hope for, for 5 player
 	})
 ```
 
-Table-based test works nicely here and clearly illustrate what our requirements are. We run through the table and check the `SpyBlindAlerter` to see if the alert has been scheduled with the correct values.
+表驱动测试在这里非常合适，能清晰地说明我们的需求是什么。我们遍历这个表，并通过 `SpyBlindAlerter` 检查提醒是否以正确的值被安排了。
 
-## Try to run the test
+## 尝试运行测试
 
-You should have a lot of failures looking like this
+你应该会看到很多失败，类似下面这样
 
 ```
 === RUN   TestCLI
@@ -262,7 +262,7 @@ You should have a lot of failures looking like this
         	CLI_test.go:59: alert 1 was not scheduled [{5000000000 100}]
 ```
 
-## Write enough code to make it pass
+## 写足够的代码让它通过
 
 ```go
 func (cli *CLI) PlayPoker() {
@@ -279,11 +279,11 @@ func (cli *CLI) PlayPoker() {
 }
 ```
 
-It's not a lot more complicated than what we already had. We're just now iterating over an array of `blinds` and calling the scheduler on an increasing `blindTime`
+这并不比我们之前已有的复杂多少。我们现在只是遍历一个 `blinds` 数组，并以递增的 `blindTime` 调用调度器
 
-## Refactor
+## 重构
 
-We can encapsulate our scheduled alerts into a method just to make `PlayPoker` read a little clearer.
+我们可以把已安排的提醒封装到一个方法里，让 `PlayPoker` 读起来更清晰。
 
 ```go
 func (cli *CLI) PlayPoker() {
@@ -302,7 +302,7 @@ func (cli *CLI) scheduleBlindAlerts() {
 }
 ```
 
-Finally our tests are looking a little clunky. We have two anonymous structs representing the same thing, a `ScheduledAlert`. Let's refactor that into a new type and then make some helpers to compare them.
+最后我们的测试看起来有点笨重。我们有两个匿名结构体表示同一件事：一个 `ScheduledAlert`。让我们把它重构成一个新类型，再做一些辅助函数来比较它们。
 
 ```go
 type scheduledAlert struct {
@@ -323,9 +323,9 @@ func (s *SpyBlindAlerter) ScheduleAlertAt(at time.Duration, amount int) {
 }
 ```
 
-We've added a `String()` method to our type so it prints nicely if the test fails
+我们给类型加了 `String()` 方法，这样在测试失败时它会打印得更漂亮
 
-Update our test to use our new type
+更新我们的测试以使用新类型
 
 ```go
 t.Run("it schedules printing of blind values", func(t *testing.T) {
@@ -364,15 +364,15 @@ t.Run("it schedules printing of blind values", func(t *testing.T) {
 })
 ```
 
-Implement `assertScheduledAlert` yourself.
+`assertScheduledAlert` 你自己来实现。
 
-We've spent a fair amount of time here writing tests and have been somewhat naughty not integrating with our application. Let's address that before we pile on any more requirements.
+我们在这里花了不少时间写测试，并有点"调皮"地没有真正集成进我们的应用。在堆上更多需求之前，让我们先解决这一点。
 
-Try running the app and it won't compile, complaining about not enough args to `NewCLI`.
+试着运行 app，它会编译失败，抱怨 `NewCLI` 参数不够。
 
-Let's create an implementation of `BlindAlerter` that we can use in our application.
+让我们创建一个 `BlindAlerter` 的实现，可以在我们的应用中使用。
 
-Create `blind_alerter.go` and move our `BlindAlerter` interface and add the new things below
+新建 `blind_alerter.go`，把我们的 `BlindAlerter` 接口移过去，并添加下面的新内容
 
 ```go
 package poker
@@ -400,31 +400,31 @@ func StdOutAlerter(duration time.Duration, amount int) {
 }
 ```
 
-Remember that any _type_ can implement an interface, not just `structs`. If you are making a library that exposes an interface with one function defined it is a common idiom to also expose a `MyInterfaceFunc` type.
+记住，任何 _类型_ 都可以实现接口，不仅是 `struct`。如果你做的是一个对外暴露只有一个方法的接口的库，把同时暴露一个 `MyInterfaceFunc` 类型是常见的惯用做法。
 
-This type will be a `func` which will also implement your interface. That way users of your interface have the option to implement your interface with just a function; rather than having to create an empty `struct` type.
+这个类型会是一个 `func`，并且也实现你的接口。这样使用你接口的人就可以选择只用一个函数实现你的接口；而不必创建一个空的 `struct` 类型。
 
-We then create the function `StdOutAlerter` which has the same signature as the function and just use `time.AfterFunc` to schedule it to print to `os.Stdout`.
+然后我们创建函数 `StdOutAlerter`，它的签名和这个函数类型一样，使用 `time.AfterFunc` 来调度它打印到 `os.Stdout`。
 
-Update `main` where we create `NewCLI` to see this in action
+更新创建 `NewCLI` 的 `main`，看到效果
 
 ```go
 poker.NewCLI(store, os.Stdin, poker.BlindAlerterFunc(poker.StdOutAlerter)).PlayPoker()
 ```
 
-Before running you might want to change the `blindTime` increment in `CLI` to be 10 seconds rather than 10 minutes just so you can see it in action.
+运行之前你可能想把 `CLI` 中 `blindTime` 的递增从 10 分钟改为 10 秒，这样你可以实际看到效果。
 
-You should see it print the blind values as we'd expect every 10 seconds. Notice how you can still type `Shaun wins` into the CLI and it will stop the program how we'd expect.
+你应该看到它每 10 秒按预期打印盲注金额。注意你仍然可以在 CLI 中输入 `Shaun wins`，程序会按预期停止。
 
-The game won't always be played with 5 people so we need to prompt the user to enter a number of players before the game starts.
+游戏不一定总是 5 个人玩，所以我们需要在游戏开始前提示用户输入玩家人数。
 
-## Write the test first
+## 先写测试
 
-To check we are prompting for the number of players we'll want to record what is written to StdOut. We've done this a few times now, we know that `os.Stdout` is an `io.Writer` so we can check what is written if we use dependency injection to pass in a `bytes.Buffer` in our test and see what our code will write.
+为了检查我们提示了用户输入玩家数，我们需要记录写入 StdOut 的内容。我们之前做过几次了，我们知道 `os.Stdout` 是一个 `io.Writer`，所以如果我们用依赖注入的方式在测试里传入一个 `bytes.Buffer`，就可以检查我们的代码会写入什么。
 
-We don't care about our other collaborators in this test just yet so we've made some dummies in our test file.
+我们暂时不关心这个测试中其他协作者，所以我们在测试文件里做了一些 dummy。
 
-We should be a little wary that we now have 4 dependencies for `CLI`, that feels like maybe it is starting to have too many responsibilities. Let's live with it for now and see if a refactoring emerges as we add this new functionality.
+我们应该稍微警惕一下：现在 `CLI` 已经有 4 个依赖了，感觉它可能开始承担太多职责了。我们暂时先这样，看看在加这个新功能的过程中是否会冒出某种重构。
 
 ```go
 var dummyBlindAlerter = &SpyBlindAlerter{}
@@ -433,7 +433,7 @@ var dummyStdIn = &bytes.Buffer{}
 var dummyStdOut = &bytes.Buffer{}
 ```
 
-Here is our new test
+下面是我们的新测试
 
 ```go
 t.Run("it prompts the user to enter the number of players", func(t *testing.T) {
@@ -450,9 +450,9 @@ t.Run("it prompts the user to enter the number of players", func(t *testing.T) {
 })
 ```
 
-We pass in what will be `os.Stdout` in `main` and see what is written.
+我们在 `main` 中传入会是 `os.Stdout` 的东西，并查看写入了什么。
 
-## Try to run the test
+## 尝试运行测试
 
 ```
 ./CLI_test.go:38:27: too many arguments in call to poker.NewCLI
@@ -460,19 +460,19 @@ We pass in what will be `os.Stdout` in `main` and see what is written.
 	want (poker.PlayerStore, io.Reader, poker.BlindAlerter)
 ```
 
-## Write the minimal amount of code for the test to run and check the failing test output
+## 写最少的代码让测试能跑起来，并检查失败的测试输出
 
-We have a new dependency so we'll have to update `NewCLI`
+我们有了一个新的依赖，所以要更新 `NewCLI`
 
 ```go
 func NewCLI(store PlayerStore, in io.Reader, out io.Writer, alerter BlindAlerter) *CLI
 ```
 
-Now the _other_ tests will fail to compile because they don't have an `io.Writer` being passed into `NewCLI`.
+现在 _其他_ 测试会编译失败，因为它们没有给 `NewCLI` 传 `io.Writer`。
 
-Add `dummyStdOut` for the other tests.
+为其他测试加上 `dummyStdOut`。
 
-The new test should fail like so
+新测试应该这样失败
 
 ```
 === RUN   TestCLI
@@ -483,9 +483,9 @@ The new test should fail like so
 FAIL
 ```
 
-## Write enough code to make it pass
+## 写足够的代码让它通过
 
-We need to add our new dependency to our `CLI` so we can reference it in `PlayPoker`
+我们需要把新依赖添加到 `CLI` 中，以便在 `PlayPoker` 中引用
 
 ```go
 type CLI struct {
@@ -505,7 +505,7 @@ func NewCLI(store PlayerStore, in io.Reader, out io.Writer, alerter BlindAlerter
 }
 ```
 
-Then finally we can write our prompt at the start of the game
+最后我们可以在游戏开始时写出提示
 
 ```go
 func (cli *CLI) PlayPoker() {
@@ -516,19 +516,19 @@ func (cli *CLI) PlayPoker() {
 }
 ```
 
-## Refactor
+## 重构
 
-We have a duplicate string for the prompt which we should extract into a constant
+我们的提示有重复的字符串，应该把它抽成一个常量
 
 ```go
 const PlayerPrompt = "Please enter the number of players: "
 ```
 
-Use this in both the test code and `CLI`.
+在测试代码和 `CLI` 中都使用它。
 
-Now we need to send in a number and extract it out. The only way we'll know if it has had the desired effect is by seeing what blind alerts were scheduled.
+现在我们需要传入一个数字并提取出来。我们能知道它是否达到了预期效果的唯一方法，是看安排了什么样的盲注提醒。
 
-## Write the test first
+## 先写测试
 
 ```go
 t.Run("it prompts the user to enter the number of players", func(t *testing.T) {
@@ -567,15 +567,15 @@ t.Run("it prompts the user to enter the number of players", func(t *testing.T) {
 })
 ```
 
-Ouch! A lot of changes.
+哎呦！变化好多。
 
-* We remove our dummy for StdIn and instead send in a mocked version representing our user entering 7
-* We also remove our dummy on the blind alerter so we can see that the number of players has had an effect on the scheduling
-* We test what alerts are scheduled
+* 我们移除了 StdIn 的 dummy，改为传入一个 mock 版本，表示用户输入了 7
+* 我们也移除了 blind alerter 上的 dummy，这样就能看到玩家数对调度产生了影响
+* 我们测试了哪些提醒被安排了
 
-## Try to run the test
+## 尝试运行测试
 
-The test should still compile and fail reporting that the scheduled times are wrong because we've hard-coded for the game to be based on having 5 players
+测试应该能编译但失败，报告调度的时间不对，因为我们之前把游戏硬编码为基于 5 名玩家
 
 ```
 === RUN   TestCLI
@@ -587,9 +587,9 @@ The test should still compile and fail reporting that the scheduled times are wr
 === RUN   TestCLI/it_prompts_the_user_to_enter_the_number_of_players/200_chips_at_12m0s
 ```
 
-## Write enough code to make it pass
+## 写足够的代码让它通过
 
-Remember, we are free to commit whatever sins we need to make this work. Once we have working software we can then work on refactoring the mess we're about to make!
+记住，我们可以为了让它工作做任何"出格"的事。一旦有了能工作的软件，我们就可以重构我们即将搞乱的部分！
 
 ```go
 func (cli *CLI) PlayPoker() {
@@ -615,30 +615,30 @@ func (cli *CLI) scheduleBlindAlerts(numberOfPlayers int) {
 }
 ```
 
-* We read in the `numberOfPlayersInput` into a string
-* We use `cli.readLine()` to get the input from the user and then call `Atoi` to convert it into an integer - ignoring any error scenarios. We'll need to write a test for that scenario later.
-* From here we change `scheduleBlindAlerts` to accept a number of players. We then calculate a `blindIncrement` time to use to add to `blindTime` as we iterate over the blind amounts
+* 我们把 `numberOfPlayersInput` 读成一个字符串
+* 我们用 `cli.readLine()` 获取用户输入，然后调用 `Atoi` 把它转成整数——忽略所有错误场景。我们之后需要为这个场景写测试。
+* 这里我们改 `scheduleBlindAlerts`，让它接受玩家数。然后我们计算一个 `blindIncrement` 时间，遍历盲注金额时把它加到 `blindTime` 上
 
-While our new test has been fixed, a lot of others have failed because now our system only works if the game starts with a user entering a number. You'll need to fix the tests by changing the user inputs so that a number followed by a newline is added (this is highlighting yet more flaws in our approach right now).
+虽然新测试通过了，但很多其他测试失败了，因为我们的系统现在只有在用户输入数字开始游戏时才能工作。你需要修复这些测试，把用户输入改成数字加换行（这进一步暴露了我们当前方案的更多问题）。
 
-## Refactor
+## 重构
 
-This all feels a bit horrible right? Let's **listen to our tests**.
+这一切感觉有点糟糕，对吧？让我们 **听听我们的测试**。
 
-* In order to test that we are scheduling some alerts we set up 4 different dependencies. Whenever you have a lot of dependencies for a _thing_ in your system, it implies it's doing too much. Visually we can see it in how cluttered our test is.
-* To me it feels like **we need to make a cleaner abstraction between reading user input and the business logic we want to do**
-* A better test would be _given this user input, do we call a new type `Game` with the correct number of players_.
-* We would then extract the testing of the scheduling into the tests for our new `Game`.
+* 为了测试我们安排了一些提醒，我们设置了 4 个不同的依赖。当一个 _事物_ 在你的系统中需要很多依赖时，意味着它做的事情太多了。从视觉上我们也可以看到，测试看起来很乱。
+* 在我看来，**我们需要在读取用户输入和我们想做的业务逻辑之间做一个更干净的抽象**
+* 一个更好的测试是：_给定这样的用户输入，我们是否用正确的玩家数调用了一个新类型 `Game`_。
+* 然后我们就把调度的测试提取到这个新 `Game` 的测试里。
 
-We can refactor toward our `Game` first and our test should continue to pass. Once we've made the structural changes we want we can think about how we can refactor the tests to reflect our new separation of concerns
+我们可以先朝着 `Game` 重构，并且我们的测试应当继续通过。一旦我们做了想做的结构性变更，我们就可以考虑如何重构测试，让它反映我们新的关注点分离
 
-Remember when making changes in refactoring try to keep them as small as possible and keep re-running the tests.
+记住，进行重构改动时，尽量让它们尽可能小，并不断重新运行测试。
 
-Try it yourself first. Think about the boundaries of what a `Game` would offer and what our `CLI` should be doing.
+先自己尝试一下。想想 `Game` 应该提供什么样的边界，以及 `CLI` 应该做什么。
 
-For now **don't** change the external interface of `NewCLI` as we don't want to change the test code and the client code at the same time as that is too much to juggle and we could end up breaking things.
+现在 **不要** 改变 `NewCLI` 的对外接口，因为我们不希望同时改测试代码和客户端代码，那样要应付的太多了，可能把事情搞坏。
 
-This is what I came up with:
+这是我得出的方案：
 
 ```go
 // game.go
@@ -706,25 +706,25 @@ func (cli *CLI) readLine() string {
 }
 ```
 
-From a "domain" perspective:
+从"领域"角度看：
 
-* We want to `Start` a `Game`, indicating how many people are playing
-* We want to `Finish` a `Game`, declaring the winner
+* 我们想 `Start` 一个 `Game`，指明有多少人在玩
+* 我们想 `Finish` 一个 `Game`，宣布获胜者
 
-The new `Game` type encapsulates this for us.
+新的 `Game` 类型为我们封装了这些。
 
-With this change we've passed `BlindAlerter` and `PlayerStore` to `Game` as it is now responsible for alerting and storing results.
+通过这个改动，我们把 `BlindAlerter` 和 `PlayerStore` 传给了 `Game`，因为它现在负责提醒和存储结果。
 
-Our `CLI` is now just concerned with:
+我们的 `CLI` 现在只关心：
 
-* Constructing `Game` with its existing dependencies (which we'll refactor next)
-* Interpreting user input as method invocations for `Game`
+* 用现有依赖构造 `Game`（接下来我们会重构）
+* 把用户输入解释为对 `Game` 的方法调用
 
-We want to try to avoid doing "big" refactors which leave us in a state of failing tests for extended periods as that increases the chances of mistakes. (If you are working in a large/distributed team this is extra important)
+我们要尽量避免做"大型"的重构，因为那会让我们处于测试失败的状态较长时间，犯错的机会增加。（如果你在大型/分布式团队工作，这格外重要）
 
-The first thing we'll do is refactor `Game` so that we inject it into `CLI`. We'll do the smallest changes in our tests to facilitate that and then we'll see how we can break up the tests into the themes of parsing user input and game management.
+我们要做的第一件事是重构 `Game`，让它注入到 `CLI` 中。我们会在测试中做最小的改动来配合这一点，然后看看怎么把测试拆分到解析用户输入和游戏管理这两个主题里。
 
-All we need to do right now is change `NewCLI`
+我们现在要做的就是改 `NewCLI`
 
 ```go
 func NewCLI(in io.Reader, out io.Writer, game *Game) *CLI {
@@ -736,11 +736,11 @@ func NewCLI(in io.Reader, out io.Writer, game *Game) *CLI {
 }
 ```
 
-This feels like an improvement already. We have less dependencies and _our dependency list is reflecting our overall design goal_ of CLI being concerned with input/output and delegating game specific actions to a `Game`.
+这已经感觉是个改进了。我们的依赖更少了，并且 _依赖列表反映了我们整体的设计目标_：CLI 关心输入/输出，把和游戏相关的动作委托给 `Game`。
 
-If you try and compile there are problems. You should be able to fix these problems yourself. Don't worry about making any mocks for `Game` right now, just initialise _real_ `Game`s just to get everything compiling and tests green.
+如果你尝试编译会有问题，你应该可以自己修这些问题。先不要为 `Game` 做任何 mock，只需初始化 _真实的_ `Game` 来让一切编译并且测试通过。
 
-To do this you'll need to make a constructor
+为此你需要写一个构造函数
 
 ```go
 func NewGame(alerter BlindAlerter, store PlayerStore) *Game {
@@ -751,7 +751,7 @@ func NewGame(alerter BlindAlerter, store PlayerStore) *Game {
 }
 ```
 
-Here's an example of one of the setups for the tests being fixed
+下面是修复某个测试设置的例子
 
 ```go
 stdout := &bytes.Buffer{}
@@ -763,7 +763,7 @@ cli := poker.NewCLI(in, stdout, game)
 cli.PlayPoker()
 ```
 
-It shouldn't take much effort to fix the tests and be back to green again (that's the point!) but make sure you fix `main.go` too before the next stage.
+修复测试并回到绿色应该不会花太多力气（这就是重点！），但确保在下一阶段之前也修好 `main.go`。
 
 ```go
 // main.go
@@ -772,9 +772,9 @@ cli := poker.NewCLI(os.Stdin, os.Stdout, game)
 cli.PlayPoker()
 ```
 
-Now that we have extracted out `Game` we should move our game specific assertions into tests separate from CLI.
+既然已经把 `Game` 提取出来，我们应当把游戏特有的断言移到独立于 CLI 的测试里。
 
-This is just an exercise in copying our `CLI` tests but with less dependencies
+这只是把我们的 `CLI` 测试复制一份，但依赖更少
 
 ```go
 func TestGame_Start(t *testing.T) {
@@ -829,19 +829,19 @@ func TestGame_Finish(t *testing.T) {
 }
 ```
 
-The intent behind what happens when a game of poker starts is now much clearer.
+扑克游戏开始时发生什么的意图现在清晰多了。
 
-Make sure to also move over the test for when the game ends.
+确保也把游戏结束时的测试移过来。
 
-Once we are happy we have moved the tests over for game logic we can simplify our CLI tests so they reflect our intended responsibilities clearer
+一旦我们对游戏逻辑相关的测试已经移过来感到满意，就可以简化 CLI 测试，让它们更清楚地反映我们的预期职责
 
-* Process user input and call `Game`'s methods when appropriate
-* Send output
-* Crucially it doesn't know about the actual workings of how games work
+* 处理用户输入并在合适时调用 `Game` 的方法
+* 发送输出
+* 关键的是它不知道游戏的实际工作机制
 
-To do this we'll have to make it so `CLI` no longer relies on a concrete `Game` type but instead accepts an interface with `Start(numberOfPlayers)` and `Finish(winner)`. We can then create a spy of that type and verify the correct calls are made.
+为此，我们需要让 `CLI` 不再依赖具体的 `Game` 类型，而是接受一个带有 `Start(numberOfPlayers)` 和 `Finish(winner)` 的接口。然后我们就可以创建该类型的 spy，验证调用是否正确。
 
-It's here we realise that naming is awkward sometimes. Rename `Game` to `TexasHoldem` (as that's the _kind_ of game we're playing) and the new interface will be called `Game`. This keeps faithful to the notion that our CLI is oblivious to the actual game we're playing and what happens when you `Start` and `Finish`.
+到这里我们意识到命名有时挺别扭。把 `Game` 重命名为 `TexasHoldem`（因为这是我们玩的游戏 _种类_），新的接口叫做 `Game`。这忠实于这样一种理念：我们的 CLI 并不知道实际玩的是什么游戏，也不知道 `Start` 和 `Finish` 时发生了什么。
 
 ```go
 type Game interface {
@@ -850,11 +850,11 @@ type Game interface {
 }
 ```
 
-Replace all references to `*Game` inside `CLI` and replace them with `Game` (our new interface). As always keep re-running tests to check everything is green while we are refactoring.
+把 `CLI` 内的所有 `*Game` 引用替换成 `Game`（我们的新接口）。一如既往，不断重新运行测试以确保我们重构期间一切都是绿色的。
 
-Now that we have decoupled `CLI` from `TexasHoldem` we can use spies to check that `Start` and `Finish` are called when we expect them to, with the correct arguments.
+现在我们已经把 `CLI` 与 `TexasHoldem` 解耦了，我们可以使用 spy 来检查我们期望调用 `Start` 和 `Finish` 时它们被以正确的参数调用。
 
-Create a spy that implements `Game`
+创建一个实现 `Game` 的 spy
 
 ```go
 type GameSpy struct {
@@ -871,9 +871,9 @@ func (g *GameSpy) Finish(winner string) {
 }
 ```
 
-Replace any `CLI` test which is testing any game specific logic with checks on how our `GameSpy` is called. This will then reflect the responsibilities of CLI in our tests clearly.
+把任何测试游戏特定逻辑的 `CLI` 测试，替换成对 `GameSpy` 调用情况的检查。这样我们的测试就清晰地反映了 CLI 的职责。
 
-Here is an example of one of the tests being fixed; try and do the rest yourself and check the source code if you get stuck.
+下面是修复其中一个测试的例子；剩下的自己试试，卡住了再看源码。
 
 ```go
 	t.Run("it prompts the user to enter the number of players and starts the game", func(t *testing.T) {
@@ -897,15 +897,15 @@ Here is an example of one of the tests being fixed; try and do the rest yourself
 	})
 ```
 
-Now that we have a clean separation of concerns, checking edge cases around IO in our `CLI` should be easier.
+既然有了清晰的关注点分离，检查 `CLI` 中关于 IO 的边界情况就更容易了。
 
-We need to address the scenario where a user puts a non numeric value when prompted for the number of players:
+我们需要处理用户在被提示输入玩家数时输入非数字值的场景：
 
-Our code should not start the game and it should print a handy error to the user and then exit.
+我们的代码不应当开始游戏，应当向用户打印一条有用的错误信息然后退出。
 
-## Write the test first
+## 先写测试
 
-We'll start by making sure the game doesn't start
+我们先确保游戏不会开始
 
 ```go
 t.Run("it prints an error when a non numeric value is entered and does not start the game", func(t *testing.T) {
@@ -922,9 +922,9 @@ t.Run("it prints an error when a non numeric value is entered and does not start
 })
 ```
 
-You'll need to add to our `GameSpy` a field `StartCalled` which only gets set if `Start` is called
+你需要给 `GameSpy` 加一个字段 `StartCalled`，只在 `Start` 被调用时设置它
 
-## Try to run the test
+## 尝试运行测试
 
 ```
 === RUN   TestCLI/it_prints_an_error_when_a_non_numeric_value_is_entered_and_does_not_start_the_game
@@ -932,9 +932,9 @@ You'll need to add to our `GameSpy` a field `StartCalled` which only gets set if
         CLI_test.go:62: game should not have started
 ```
 
-## Write enough code to make it pass
+## 写足够的代码让它通过
 
-Around where we call `Atoi` we just need to check for the error
+在我们调用 `Atoi` 的附近，只需要检查错误
 
 ```go
 numberOfPlayers, err := strconv.Atoi(cli.readLine())
@@ -944,11 +944,11 @@ if err != nil {
 }
 ```
 
-Next we need to inform the user of what they did wrong so we'll assert on what is printed to `stdout`.
+接下来我们需要告诉用户他们做错了什么，所以我们对打印到 `stdout` 的内容做断言。
 
-## Write the test first
+## 先写测试
 
-We've asserted on what was printed to `stdout` before so we can copy that code for now
+我们之前对打印到 `stdout` 的内容做过断言，所以可以暂时复制那段代码
 
 ```go
 gotPrompt := stdout.String()
@@ -960,9 +960,9 @@ if gotPrompt != wantPrompt {
 }
 ```
 
-We are storing _everything_ that gets written to stdout so we still expect the `poker.PlayerPrompt`. We then just check an additional thing gets printed. We're not too bothered about the exact wording for now, we'll address it when we refactor.
+我们存的是写到 stdout 的 _所有_ 内容，所以仍然期望 `poker.PlayerPrompt`。然后我们再检查多打印了一段额外的内容。我们暂时不太在意确切的措辞，等重构时再处理。
 
-## Try to run the test
+## 尝试运行测试
 
 ```
 === RUN   TestCLI/it_prints_an_error_when_a_non_numeric_value_is_entered_and_does_not_start_the_game
@@ -970,9 +970,9 @@ We are storing _everything_ that gets written to stdout so we still expect the `
         CLI_test.go:70: got 'Please enter the number of players: ', want 'Please enter the number of players: you're so silly'
 ```
 
-## Write enough code to make it pass
+## 写足够的代码让它通过
 
-Change the error handling code
+修改错误处理代码
 
 ```go
 if err != nil {
@@ -981,21 +981,21 @@ if err != nil {
 }
 ```
 
-## Refactor
+## 重构
 
-Now refactor the message into a constant like `PlayerPrompt`
+现在把这条信息重构为一个常量，就像 `PlayerPrompt`
 
 ```go
 wantPrompt := poker.PlayerPrompt + poker.BadPlayerInputErrMsg
 ```
 
-and put in a more appropriate message
+并放入更合适的信息
 
 ```go
 const BadPlayerInputErrMsg = "Bad value received for number of players, please try again with a number"
 ```
 
-Finally our testing around what has been sent to `stdout` is quite verbose, let's write an assert function to clean it up.
+最后我们关于发送到 `stdout` 内容的测试有点啰嗦，我们写一个断言函数来清理它。
 
 ```go
 func assertMessagesSentToUser(t testing.TB, stdout *bytes.Buffer, messages ...string) {
@@ -1008,15 +1008,15 @@ func assertMessagesSentToUser(t testing.TB, stdout *bytes.Buffer, messages ...st
 }
 ```
 
-Using the vararg syntax (`...string`) is handy here because we need to assert on varying amounts of messages.
+使用变长参数语法（`...string`）在这里很方便，因为我们需要对不定数量的消息做断言。
 
-Use this helper in both of the tests where we assert on messages sent to the user.
+在两个对发送给用户的消息做断言的测试中都使用这个辅助函数。
 
-There are a number of tests that could be helped with some `assertX` functions so practice your refactoring by cleaning up our tests so they read nicely.
+还有一些测试可以借助一些 `assertX` 函数来改善，所以练习一下你的重构能力，把测试整理得读起来更舒服。
 
-Take some time and think about the value of some of the tests we've driven out. Remember we don't want more tests than necessary, can you refactor/remove some of them _and still be confident it all works_ ?
+花点时间想一下我们驱动出的某些测试的价值。记住我们不想要超出必要的测试，你能 _在仍然对一切正常运行有信心的前提下_ 重构/移除其中一些吗？
 
-Here is what I came up with
+下面是我得出的结果
 
 ```go
 func TestCLI(t *testing.T) {
@@ -1062,77 +1062,77 @@ func TestCLI(t *testing.T) {
 }
 ```
 
-The tests now reflect the main capabilities of CLI, it is able to read user input in terms of how many people are playing and who won and handles when a bad value is entered for number of players. By doing this it is clear to the reader what `CLI` does, but also what it doesn't do.
+测试现在反映了 CLI 的主要能力：能从用户输入里读取多少人在玩、谁赢了，并能处理玩家数被输入了不正常值的情况。这样做对读者来说，`CLI` 做了什么、不做什么都很清晰。
 
-What happens if instead of putting `Ruth wins` the user puts in `Lloyd is a killer` ?
+如果用户没输入 `Ruth wins`，而是输入 `Lloyd is a killer` 会怎样？
 
-Finish this chapter by writing a test for this scenario and making it pass.
+通过为这个场景写测试并让它通过来完成本章。
 
-## Wrapping up
+## 总结
 
-### A quick project recap
+### 项目快速回顾
 
-For the past 5 chapters we have slowly TDD'd a fair amount of code
+在过去的 5 章里，我们慢慢地通过 TDD 写了相当一部分代码
 
-* We have two applications, a command line application and a web server.
-* Both these applications rely on a `PlayerStore` to record winners
-* The web server can also display a league table of who is winning the most games
-* The command line app helps players play a game of poker by tracking what the current blind value is.
+* 我们有两个应用，一个命令行应用和一个 Web 服务器。
+* 这两个应用都依赖 `PlayerStore` 来记录获胜者
+* Web 服务器还可以展示一个谁赢得最多的联赛积分榜
+* 命令行应用通过追踪当前盲注值来帮助玩家玩扑克游戏。
 
 ### time.Afterfunc
 
-A very handy way of scheduling a function call after a specific duration. It is well worth investing time [looking at the documentation for `time`](https://golang.org/pkg/time/) as it has a lot of time saving functions and methods for you to work with.
+一种在指定时长之后调度函数调用的非常方便的方式。非常值得花时间[查看 `time` 的文档](https://golang.org/pkg/time/)，因为它有许多帮你节省时间的函数和方法可用。
 
-Some of my favourites are
+我最喜欢的一些是
 
-* `time.After(duration)` returns a `chan Time` when the duration has expired. So if you wish to do something _after_ a specific time, this can help.
-* `time.NewTicker(duration)` returns a `Ticker` which is similar to the above in that it returns a channel but this one "ticks" every duration, rather than just once. This is very handy if you want to execute some code every `N duration`.
+* `time.After(duration)` 在时长到了之后返回一个 `chan Time`。所以如果你想在某个时间 _之后_ 做点什么，这能帮上忙。
+* `time.NewTicker(duration)` 返回一个 `Ticker`，与上面类似，它返回一个 channel，但这个会每隔一段时间"滴答"一下，而不是只发一次。如果你想每隔 `N duration` 执行一些代码，这非常方便。
 
-### More examples of good separation of concerns
+### 关注点分离的更多好例子
 
-_Generally_ it is good practice to separate the responsibilities of dealing with user input and responses away from domain code. You see that here in our command line application and also our web server.
+_一般来说_，把处理用户输入与响应的职责和领域代码分开是好习惯。在我们的命令行应用和 Web 服务器中你都能看到这一点。
 
-Our tests got messy. We had too many assertions (check this input, schedules these alerts, etc) and too many dependencies. We could visually see it was cluttered; it is **so important to listen to your tests**.
+我们的测试变乱了。我们有太多断言（检查这个输入、安排了这些提醒，等等）和太多依赖。我们直观地能看到它很乱；**听你的测试很重要**。
 
-* If your tests look messy try and refactor them.
-* If you've done this and they're still a mess it is very likely pointing to a flaw in your design
-* This is one of the real strengths of tests.
+* 如果你的测试看起来乱，尝试重构它们。
+* 如果你重构了仍然很乱，那很可能在指向你设计中的缺陷
+* 这是测试真正的强项之一。
 
-Even though the tests and the production code was a bit cluttered we could freely refactor backed by our tests.
+虽然测试和生产代码都有点乱，但有测试做后盾我们可以自由重构。
 
-Remember when you get into these situations to always take small steps and re-run the tests after every change.
+记住在这种情况下要始终走小步，并在每次改动后重新运行测试。
 
-It would've been dangerous to refactor both the test code _and_ the production code at the same time, so we first refactored the production code (in the current state we couldn't improve the tests much) without changing its interface so we could rely on our tests as much as we could while changing things. _Then_ we refactored the tests after the design improved.
+同时重构测试代码 _和_ 生产代码会很危险，所以我们先重构生产代码（在当前状态我们没法把测试改善多少），且不改它的接口，这样就可以在改动期间尽可能依赖我们的测试。_然后_ 在设计改善之后再重构测试。
 
-After refactoring the dependency list reflected our design goal. This is another benefit of DI in that it often documents intent. When you rely on global variables responsibilities become very unclear.
+重构之后，依赖列表反映了我们的设计目标。这是 DI 的另一个好处：它经常能起到记录意图的作用。当你依赖全局变量时，职责会变得非常不清晰。
 
-## An example of a function implementing an interface
+## 一个函数实现接口的例子
 
-When you define an interface with one method in it you might want to consider defining a `MyInterfaceFunc` type to complement it so users can implement your interface with just a function.
+当你定义一个只有一个方法的接口时，你可能想考虑定义一个 `MyInterfaceFunc` 类型作为补充，这样使用者可以仅用一个函数就实现你的接口。
 
 ```go
 type BlindAlerter interface {
 	ScheduleAlertAt(duration time.Duration, amount int)
 }
 
-// BlindAlerterFunc allows you to implement BlindAlerter with a function
+// BlindAlerterFunc 让你可以用一个函数实现 BlindAlerter
 type BlindAlerterFunc func(duration time.Duration, amount int)
 
-// ScheduleAlertAt is BlindAlerterFunc implementation of BlindAlerter
+// ScheduleAlertAt 是 BlindAlerterFunc 对 BlindAlerter 的实现
 func (a BlindAlerterFunc) ScheduleAlertAt(duration time.Duration, amount int) {
 	a(duration, amount)
 }
 ```
 
-By doing this, people using your library can implement your interface with just a function. They can use [Type Conversion](https://go.dev/tour/basics/13) to convert their function into a `BlindAlerterFunc` and then use it as a BlindAlerter (as `BlindAlerterFunc` implements `BlindAlerter`).
+通过这样做，使用你的库的人就可以仅用一个函数实现你的接口。他们可以用[类型转换](https://go.dev/tour/basics/13) 把他们的函数转换成 `BlindAlerterFunc`，然后把它当 BlindAlerter 用（因为 `BlindAlerterFunc` 实现了 `BlindAlerter`）。
 
 ```go
 game := poker.NewTexasHoldem(poker.BlindAlerterFunc(poker.StdOutAlerter), store)
 ```
 
-The broader point here is, in Go you can add methods to _types_, not just structs. This is a very powerful feature, and you can use it to implement interfaces in more convenient ways.
+这里更广泛的要点是：在 Go 中你可以给 _类型_ 添加方法，不仅是结构体。这是一个非常强大的特性，你可以用它以更方便的方式实现接口。
 
-Consider that you can not only define types of functions, but also define types around other types, so that you can add methods to them.
+考虑到你不仅可以定义函数类型，还可以围绕其他类型定义类型，这样你就可以给它们加方法。
 
 ```go
 type Blog map[string]string
@@ -1142,4 +1142,4 @@ func (b Blog) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 }
 ```
 
-Here we've created an HTTP handler that implements a very simple "blog" where it will use URL paths as keys to posts stored in a map.
+这里我们创建了一个 HTTP handler，实现了一个非常简单的"博客"，它会用 URL 路径作为 key，从 map 中读取存储的文章。

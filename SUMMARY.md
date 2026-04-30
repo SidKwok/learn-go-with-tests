@@ -1,58 +1,58 @@
-# Table of contents
+# 目录
 
-* [Learn Go with Tests](gb-readme.md)
+* [通过测试学 Go](gb-readme.md)
 
-## Go fundamentals
+## Go 基础
 
-* [Install Go](install-go.md)
+* [安装 Go](install-go.md)
 * [Hello, World](hello-world.md)
-* [Integers](integers.md)
-* [Iteration](iteration.md)
-* [Arrays and slices](arrays-and-slices.md)
-* [Structs, methods & interfaces](structs-methods-and-interfaces.md)
-* [Pointers & errors](pointers-and-errors.md)
+* [整数](integers.md)
+* [迭代](iteration.md)
+* [数组与切片](arrays-and-slices.md)
+* [结构体、方法与接口](structs-methods-and-interfaces.md)
+* [指针与错误](pointers-and-errors.md)
 * [Maps](maps.md)
-* [Dependency Injection](dependency-injection.md)
+* [依赖注入](dependency-injection.md)
 * [Mocking](mocking.md)
-* [Concurrency](concurrency.md)
+* [并发](concurrency.md)
 * [Select](select.md)
-* [Reflection](reflection.md)
+* [反射](reflection.md)
 * [Sync](sync.md)
 * [Context](context.md)
-* [Intro to property based tests](roman-numerals.md)
-* [Maths](math.md)
-* [Reading files](reading-files.md)
-* [Templating](html-templates.md)
-* [Generics](generics.md)
-* [Revisiting arrays and slices with generics](revisiting-arrays-and-slices-with-generics.md)
+* [基于属性的测试入门](roman-numerals.md)
+* [数学](math.md)
+* [读取文件](reading-files.md)
+* [模板](html-templates.md)
+* [泛型](generics.md)
+* [用泛型重温数组与切片](revisiting-arrays-and-slices-with-generics.md)
 
-## Testing fundamentals
+## 测试基础
 
-* [Introduction to acceptance tests](intro-to-acceptance-tests.md)
-* [Scaling acceptance tests](scaling-acceptance-tests.md)
-* [Working without mocks](working-without-mocks.md)
-* [Refactoring Checklist](refactoring-checklist.md)
+* [验收测试入门](intro-to-acceptance-tests.md)
+* [扩展验收测试](scaling-acceptance-tests.md)
+* [不用 mock 工作](working-without-mocks.md)
+* [重构清单](refactoring-checklist.md)
 
-## Build an application
+## 构建一个应用
 
-* [Intro](app-intro.md)
-* [HTTP server](http-server.md)
-* [JSON, routing and embedding](json.md)
-* [IO and sorting](io.md)
-* [Command line & package structure](command-line.md)
-* [Time](time.md)
+* [简介](app-intro.md)
+* [HTTP 服务器](http-server.md)
+* [JSON、路由与嵌入](json.md)
+* [IO 与排序](io.md)
+* [命令行与包结构](command-line.md)
+* [时间](time.md)
 * [WebSockets](websockets.md)
 
-## Questions and answers
+## 问与答
 
 * [OS Exec](os-exec.md)
-* [Error types](error-types.md)
-* [Context-aware Reader](context-aware-reader.md)
-* [Revisiting HTTP Handlers](http-handlers-revisited.md)
+* [错误类型](error-types.md)
+* [感知 Context 的 Reader](context-aware-reader.md)
+* [重新审视 HTTP Handlers](http-handlers-revisited.md)
 
-## Meta
+## 元话题
 
-* [Why unit tests and how to make them work for you](why.md)
-* [Anti-patterns](anti-patterns.md)
-* [Contributing](contributing.md)
-* [Chapter Template](template.md)
+* [为什么写单元测试，以及如何让它真正帮到你](why.md)
+* [反模式](anti-patterns.md)
+* [贡献](contributing.md)
+* [章节模板](template.md)

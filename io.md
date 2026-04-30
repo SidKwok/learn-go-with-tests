@@ -1,12 +1,12 @@
-# IO and sorting
+# IO 与排序
 
-**[You can find all the code for this chapter here](https://github.com/quii/learn-go-with-tests/tree/main/io)**
+**[本章的所有代码可以在这里找到](https://github.com/quii/learn-go-with-tests/tree/main/io)**
 
-[In the previous chapter](json.md) we continued iterating on our application by adding a new endpoint `/league`. Along the way we learned about how to deal with JSON, embedding types and routing.
+[在上一章](json.md)中，我们继续迭代我们的应用，新增了一个 `/league` 端点。在这个过程中，我们学到了如何处理 JSON、嵌入类型以及路由。
 
-Our product owner is somewhat perturbed by the software losing the scores when the server was restarted. This is because our implementation of our store is in-memory. She is also not pleased that we didn't interpret the `/league` endpoint should return the players ordered by the number of wins!
+我们的产品负责人对于服务器重启后软件丢失分数这件事有些不满。原因是我们的 store 实现是基于内存的。她也不太高兴我们没有把 `/league` 端点理解成应当按胜场数排序返回玩家！
 
-## The code so far
+## 目前的代码
 
 ```go
 // server.go
@@ -131,23 +131,23 @@ func main() {
 }
 ```
 
-You can find the corresponding tests in the link at the top of the chapter.
+你可以在本章顶部的链接中找到对应的测试。
 
-## Store the data
+## 存储数据
 
-There are dozens of databases we could use for this but we're going to go for a very simple approach. We're going to store the data for this application in a file as JSON.
+我们可以选择的数据库有几十种，但我们打算采取一种非常简单的方式。我们会把这个应用的数据以 JSON 的形式存到一个文件里。
 
-This keeps the data very portable and is relatively simple to implement.
+这样做让数据非常便携，并且实现起来相对简单。
 
-It won't scale especially well but given this is a prototype it'll be fine for now. If our circumstances change and it's no longer appropriate it'll be simple to swap it out for something different because of the `PlayerStore` abstraction we have used.
+它的扩展性不会特别好，但鉴于这是一个原型，目前来说足够了。如果情况发生变化、不再合适，由于我们用了 `PlayerStore` 这个抽象，把它换成别的东西也很简单。
 
-We will keep the `InMemoryPlayerStore` for now so that the integration tests keep passing as we develop our new store. Once we are confident our new implementation is sufficient to make the integration test pass we will swap it in and then delete `InMemoryPlayerStore`.
+我们暂时会保留 `InMemoryPlayerStore`，这样在我们开发新 store 时集成测试还能继续通过。等我们确信新的实现足以让集成测试通过，我们再把它换上去，然后删掉 `InMemoryPlayerStore`。
 
-## Write the test first
+## 先写测试
 
-By now you should be familiar with the interfaces around the standard library for reading data (`io.Reader`), writing data (`io.Writer`) and how we can use the standard library to test these functions without having to use real files.
+到现在你应该已经熟悉标准库中用于读取数据（`io.Reader`）、写入数据（`io.Writer`）的接口，以及如何利用标准库在不使用真实文件的情况下测试这些函数。
 
-For this work to be complete we'll need to implement `PlayerStore` so we'll write tests for our store calling the methods we need to implement. We'll start with `GetLeague`.
+为了完成这项工作，我们需要实现 `PlayerStore`，因此我们会针对要实现的方法为我们的 store 编写测试。我们先从 `GetLeague` 开始。
 
 ```go
 //file_system_store_test.go
@@ -172,25 +172,25 @@ func TestFileSystemStore(t *testing.T) {
 }
 ```
 
-We're using `strings.NewReader` which will return us a `Reader`, which is what our `FileSystemPlayerStore` will use to read data. In `main` we will open a file, which is also a `Reader`.
+我们使用 `strings.NewReader`，它会返回一个 `Reader`，这正是我们的 `FileSystemPlayerStore` 用来读取数据的东西。在 `main` 中我们会打开一个文件，文件也是一个 `Reader`。
 
-## Try to run the test
+## 试着运行测试
 
 ```
 # github.com/quii/learn-go-with-tests/io/v1
 ./file_system_store_test.go:15:12: undefined: FileSystemPlayerStore
 ```
 
-## Write the minimal amount of code for the test to run and check the failing test output
+## 写最少量的代码让测试运行起来，并检查失败的测试输出
 
-Let's define `FileSystemPlayerStore` in a new file
+我们在新文件里定义 `FileSystemPlayerStore`
 
 ```go
 //file_system_store.go
 type FileSystemPlayerStore struct{}
 ```
 
-Try again
+再试一次
 
 ```
 # github.com/quii/learn-go-with-tests/io/v1
@@ -198,7 +198,7 @@ Try again
 ./file_system_store_test.go:17:15: store.GetLeague undefined (type FileSystemPlayerStore has no field or method GetLeague)
 ```
 
-It's complaining because we're passing in a `Reader` but not expecting one and it doesn't have `GetLeague` defined yet.
+它在抱怨，因为我们传入了一个 `Reader` 但它没有期待这个参数，而且它还没定义 `GetLeague`。
 
 ```go
 //file_system_store.go
@@ -211,7 +211,7 @@ func (f *FileSystemPlayerStore) GetLeague() []Player {
 }
 ```
 
-One more try...
+再试一次……
 
 ```
 === RUN   TestFileSystemStore//league_from_a_reader
@@ -219,9 +219,9 @@ One more try...
         file_system_store_test.go:24: got [] want [{Cleo 10} {Chris 33}]
 ```
 
-## Write enough code to make it pass
+## 写够让测试通过的代码
 
-We've read JSON from a reader before
+我们之前已经从 reader 解析过 JSON
 
 ```go
 //file_system_store.go
@@ -232,15 +232,15 @@ func (f *FileSystemPlayerStore) GetLeague() []Player {
 }
 ```
 
-The test should pass.
+测试应该通过了。
 
-## Refactor
+## 重构
 
-We _have_ done this before! Our test code for the server had to decode the JSON from the response.
+我们 _之前_ 已经做过这件事了！我们 server 的测试代码也得从响应里解码 JSON。
 
-Let's try DRYing this up into a function.
+我们试着把它 DRY 成一个函数。
 
-Create a new file called `league.go` and put this inside.
+新建一个文件 `league.go`，把下面的代码放进去。
 
 ```go
 //league.go
@@ -255,7 +255,7 @@ func NewLeague(rdr io.Reader) ([]Player, error) {
 }
 ```
 
-Call this in our implementation and in our test helper `getLeagueFromResponse` in `server_test.go`
+在我们的实现里调用它，并在 `server_test.go` 的辅助函数 `getLeagueFromResponse` 里也调用它
 
 ```go
 //file_system_store.go
@@ -265,11 +265,11 @@ func (f *FileSystemPlayerStore) GetLeague() []Player {
 }
 ```
 
-We haven't got a strategy yet for dealing with parsing errors but let's press on.
+我们还没有处理解析错误的策略，但先继续推进。
 
-### Seeking problems
+### Seek 的问题
 
-There is a flaw in our implementation. First of all, let's remind ourselves how `io.Reader` is defined.
+我们的实现存在一个缺陷。首先，我们回想一下 `io.Reader` 是怎么定义的。
 
 ```go
 type Reader interface {
@@ -277,9 +277,9 @@ type Reader interface {
 }
 ```
 
-With our file, you can imagine it reading through byte by byte until the end. What happens if you try to `Read` a second time?
+对于我们的文件，你可以想象它一个字节一个字节地读到末尾。如果你尝试再 `Read` 一次会发生什么？
 
-Add the following to the end of our current test.
+把下面的代码加到我们当前测试的末尾。
 
 ```go
 //file_system_store_test.go
@@ -289,11 +289,11 @@ got = store.GetLeague()
 assertLeague(t, got, want)
 ```
 
-We want this to pass, but if you run the test it doesn't.
+我们希望这个能通过，但你跑测试的话会发现它通不过。
 
-The problem is our `Reader` has reached the end so there is nothing more to read. We need a way to tell it to go back to the start.
+问题在于我们的 `Reader` 已经读到了末尾，所以没有更多内容可读了。我们需要一种方式告诉它回到开头。
 
-[ReadSeeker](https://golang.org/pkg/io/#ReadSeeker) is another interface in the standard library that can help.
+[ReadSeeker](https://golang.org/pkg/io/#ReadSeeker) 是标准库里另一个能帮上忙的接口。
 
 ```go
 type ReadSeeker interface {
@@ -302,7 +302,7 @@ type ReadSeeker interface {
 }
 ```
 
-Remember embedding? This is an interface comprised of `Reader` and [`Seeker`](https://golang.org/pkg/io/#Seeker)
+还记得嵌入吗？这个接口由 `Reader` 和 [`Seeker`](https://golang.org/pkg/io/#Seeker) 组合而成
 
 ```go
 type Seeker interface {
@@ -310,7 +310,7 @@ type Seeker interface {
 }
 ```
 
-This sounds good, can we change `FileSystemPlayerStore` to take this interface instead?
+听起来不错，我们能改 `FileSystemPlayerStore` 让它接受这个接口吗？
 
 ```go
 //file_system_store.go
@@ -325,11 +325,11 @@ func (f *FileSystemPlayerStore) GetLeague() []Player {
 }
 ```
 
-Try running the test, it now passes! Happily for us `strings.NewReader` that we used in our test also implements `ReadSeeker` so we didn't have to make any other changes.
+试着运行测试，现在通过了！幸运的是我们在测试中用的 `strings.NewReader` 也实现了 `ReadSeeker`，所以我们不需要做其他改动。
 
-Next we'll implement `GetPlayerScore`.
+接下来我们将实现 `GetPlayerScore`。
 
-## Write the test first
+## 先写测试
 
 ```go
 //file_system_store_test.go
@@ -350,15 +350,15 @@ t.Run("get player score", func(t *testing.T) {
 })
 ```
 
-## Try to run the test
+## 试着运行测试
 
 ```
 ./file_system_store_test.go:38:15: store.GetPlayerScore undefined (type FileSystemPlayerStore has no field or method GetPlayerScore)
 ```
 
-## Write the minimal amount of code for the test to run and check the failing test output
+## 写最少量的代码让测试运行起来，并检查失败的测试输出
 
-We need to add the method to our new type to get the test to compile.
+我们需要给新类型加上这个方法，让测试能编译。
 
 ```go
 //file_system_store.go
@@ -367,7 +367,7 @@ func (f *FileSystemPlayerStore) GetPlayerScore(name string) int {
 }
 ```
 
-Now it compiles and the test fails
+现在它能编译了，测试失败
 
 ```
 === RUN   TestFileSystemStore/get_player_score
@@ -375,9 +375,9 @@ Now it compiles and the test fails
         file_system_store_test.go:43: got 0 want 33
 ```
 
-## Write enough code to make it pass
+## 写够让测试通过的代码
 
-We can iterate over the league to find the player and return their score
+我们可以遍历 league 找到那位玩家，并返回他的分数
 
 ```go
 //file_system_store.go
@@ -396,9 +396,9 @@ func (f *FileSystemPlayerStore) GetPlayerScore(name string) int {
 }
 ```
 
-## Refactor
+## 重构
 
-You will have seen dozens of test helper refactorings so I'll leave this to you to make it work
+你已经见过几十次测试辅助函数的重构了，所以这次留给你自己来动手
 
 ```go
 //file_system_store_test.go
@@ -415,15 +415,15 @@ t.Run("get player score", func(t *testing.T) {
 })
 ```
 
-Finally, we need to start recording scores with `RecordWin`.
+最后，我们需要开始用 `RecordWin` 来记录分数。
 
-## Write the test first
+## 先写测试
 
-Our approach is fairly short-sighted for writes. We can't (easily) just update one "row" of JSON in a file. We'll need to store the _whole_ new representation of our database on every write.
+我们对写入的处理方式相当短视。我们没法（轻易地）只更新文件中 JSON 的某一"行"。我们每次写入都需要把数据库的 _整个_ 新表示存进去。
 
-How do we write? We'd normally use a `Writer` but we already have our `ReadSeeker`. Potentially we could have two dependencies but the standard library already has an interface for us `ReadWriteSeeker` which lets us do all the things we'll need to do with a file.
+我们怎么写？通常我们会用 `Writer`，但我们已经有了 `ReadSeeker`。我们其实可以有两个依赖，但标准库已经为我们提供了一个接口 `ReadWriteSeeker`，它能让我们做完所有处理文件需要的事。
 
-Let's update our type
+我们更新一下类型
 
 ```go
 //file_system_store.go
@@ -432,7 +432,7 @@ type FileSystemPlayerStore struct {
 }
 ```
 
-See if it compiles
+看看它能不能编译
 
 ```
 ./file_system_store_test.go:15:34: cannot use database (type *strings.Reader) as type io.ReadWriteSeeker in field value:
@@ -441,18 +441,18 @@ See if it compiles
     *strings.Reader does not implement io.ReadWriteSeeker (missing Write method)
 ```
 
-It's not too surprising that `strings.Reader` does not implement `ReadWriteSeeker` so what do we do?
+`strings.Reader` 没有实现 `ReadWriteSeeker`，这并不太意外，那我们怎么办？
 
-We have two choices
+我们有两个选择
 
-- Create a temporary file for each test. `*os.File` implements `ReadWriteSeeker`. The pro of this is it becomes more of an integration test, we're really reading and writing from the file system so it will give us a very high level of confidence. The cons are we prefer unit tests because they are faster and generally simpler. We will also need to do more work around creating temporary files and then making sure they're removed after the test.
-- We could use a third party library. [Mattetti](https://github.com/mattetti) has written a library [filebuffer](https://github.com/mattetti/filebuffer) which implements the interface we need and doesn't touch the file system.
+- 为每个测试创建一个临时文件。`*os.File` 实现了 `ReadWriteSeeker`。它的好处是这更像一种集成测试，我们真的在读写文件系统，所以会带来非常高的信心。坏处是我们更偏好单元测试，因为它们更快、通常也更简单。我们还需要做更多的工作来创建临时文件，并确保测试结束后把它们清掉。
+- 我们可以使用第三方库。[Mattetti](https://github.com/mattetti) 写了一个库 [filebuffer](https://github.com/mattetti/filebuffer)，它实现了我们需要的接口，并且不会触碰文件系统。
 
-I don't think there's an especially wrong answer here, but by choosing to use a third party library I would have to explain dependency management! So we will use files instead.
+我觉得这里没什么特别错的答案，但如果选择用第三方库，我就得去解释依赖管理！所以我们改用文件。
 
-Before adding our test we need to make our other tests compile by replacing the `strings.Reader` with an `os.File`.
+在加我们的测试之前，我们需要把 `strings.Reader` 替换为 `os.File` 让其它测试能编译。
 
-Let's create some helper functions which will create a temporary file with some data inside it, and abstract our score tests
+我们来创建一些辅助函数，它们会创建一个内含一些数据的临时文件，并把分数测试抽象出来
 
 ```go
 //file_system_store_test.go
@@ -483,9 +483,9 @@ func assertScoreEquals(t testing.TB, got, want int) {
 }
 ```
 
-[CreateTemp](https://pkg.go.dev/os#CreateTemp) creates a temporary file for us to use. The `"db"` value we've passed in is a prefix put on a random file name it will create. This is to ensure it won't clash with other files by accident.
+[CreateTemp](https://pkg.go.dev/os#CreateTemp) 为我们创建一个临时文件以供使用。我们传入的 `"db"` 是它创建的随机文件名上的前缀。这是为了确保它不会意外地与其它文件冲突。
 
-You'll notice we're not only returning our `ReadWriteSeeker` (the file) but also a function. We need to make sure that the file is removed once the test is finished. We don't want to leak details of the files into the test as it's prone to error and uninteresting for the reader. By returning a `removeFile` function, we can take care of the details in our helper and all the caller has to do is run `defer cleanDatabase()`.
+你会注意到我们不仅返回了 `ReadWriteSeeker`（也就是文件），还返回了一个函数。我们要确保测试结束后文件被删除。我们不希望把文件的细节泄漏到测试里，因为这容易出错，对读者来说也没意思。通过返回一个 `removeFile` 函数，我们可以在辅助函数里处理这些细节，调用方只需要执行 `defer cleanDatabase()`。
 
 ```go
 //file_system_store_test.go
@@ -528,9 +528,9 @@ func TestFileSystemStore(t *testing.T) {
 }
 ```
 
-Run the tests and they should be passing! There were a fair amount of changes but now it feels like we have our interface definition complete and it should be very easy to add new tests from now.
+运行测试，它们应该都能通过！改动相当多，但现在感觉我们的接口定义已经完整，从此添加新测试应该会很容易。
 
-Let's get the first iteration of recording a win for an existing player
+我们来做记录已存在玩家胜场的第一版迭代
 
 ```go
 //file_system_store_test.go
@@ -550,13 +550,13 @@ t.Run("store wins for existing players", func(t *testing.T) {
 })
 ```
 
-## Try to run the test
+## 试着运行测试
 
 `./file_system_store_test.go:67:8: store.RecordWin undefined (type FileSystemPlayerStore has no field or method RecordWin)`
 
-## Write the minimal amount of code for the test to run and check the failing test output
+## 写最少量的代码让测试运行起来，并检查失败的测试输出
 
-Add the new method
+加上新方法
 
 ```go
 //file_system_store.go
@@ -571,9 +571,9 @@ func (f *FileSystemPlayerStore) RecordWin(name string) {
         file_system_store_test.go:71: got 33 want 34
 ```
 
-Our implementation is empty so the old score is getting returned.
+我们的实现是空的，所以返回的是旧分数。
 
-## Write enough code to make it pass
+## 写够让测试通过的代码
 
 ```go
 //file_system_store.go
@@ -591,19 +591,19 @@ func (f *FileSystemPlayerStore) RecordWin(name string) {
 }
 ```
 
-You may be asking yourself why I am doing `league[i].Wins++` rather than `player.Wins++`.
+你可能会问，为什么我写的是 `league[i].Wins++` 而不是 `player.Wins++`。
 
-When you `range` over a slice you are returned the current index of the loop (in our case `i`) and a _copy_ of the element at that index. Changing the `Wins` value of a copy won't have any effect on the `league` slice that we iterate on. For that reason, we need to get the reference to the actual value by doing `league[i]` and then changing that value instead.
+当你 `range` 遍历一个切片时，会得到当前循环的索引（这里是 `i`）以及该索引上元素的一份 _副本_。修改副本的 `Wins` 值不会对我们正在遍历的 `league` 切片产生任何影响。因此，我们需要通过 `league[i]` 拿到真正值的引用，再去改它。
 
-If you run the tests, they should now be passing.
+如果你运行测试，它们现在应该都能通过了。
 
-## Refactor
+## 重构
 
-In `GetPlayerScore` and `RecordWin`, we are iterating over `[]Player` to find a player by name.
+在 `GetPlayerScore` 和 `RecordWin` 中，我们都遍历 `[]Player` 来按名字查找玩家。
 
-We could refactor this common code in the internals of `FileSystemStore` but to me, it feels like this is maybe useful code we can lift into a new type. Working with a "League" so far has always been with `[]Player` but we can create a new type called `League`. This will be easier for other developers to understand and then we can attach useful methods onto that type for us to use.
+我们可以把这段公共代码重构到 `FileSystemStore` 内部，但在我看来，这段代码也许有用，可以提取成一个新类型。到目前为止，我们处理"League"用的一直是 `[]Player`，但我们可以创建一个新类型叫 `League`。这对其他开发者来说会更容易理解，然后我们可以在那个类型上挂一些有用的方法供我们使用。
 
-Inside `league.go` add the following
+在 `league.go` 里加上下面的代码
 
 ```go
 //league.go
@@ -619,11 +619,11 @@ func (l League) Find(name string) *Player {
 }
 ```
 
-Now if anyone has a `League` they can easily find a given player.
+现在如果谁手上有一个 `League`，他就可以轻松地查找指定玩家了。
 
-Change our `PlayerStore` interface to return `League` rather than `[]Player`. Try to re-run the tests, you'll get a compilation problem because we've changed the interface but it's very easy to fix; just change the return type from `[]Player` to `League`.
+把我们的 `PlayerStore` 接口改成返回 `League` 而不是 `[]Player`。再次运行测试，你会得到一个编译错误，因为我们改动了接口，但很容易修；只要把返回类型从 `[]Player` 改成 `League` 即可。
 
-This lets us simplify our methods in `file_system_store`.
+这让我们能简化 `file_system_store` 中的方法。
 
 ```go
 //file_system_store.go
@@ -651,11 +651,11 @@ func (f *FileSystemPlayerStore) RecordWin(name string) {
 }
 ```
 
-This is looking much better and we can see how we might be able to find other useful functionality around `League` that can be refactored.
+这看上去好多了，而且我们能想到围绕 `League` 还有其它一些有用功能可以重构出来。
 
-We now need to handle the scenario of recording wins of new players.
+我们现在需要处理记录新玩家胜场的场景。
 
-## Write the test first
+## 先写测试
 
 ```go
 //file_system_store_test.go
@@ -675,7 +675,7 @@ t.Run("store wins for new players", func(t *testing.T) {
 })
 ```
 
-## Try to run the test
+## 试着运行测试
 
 ```
 === RUN   TestFileSystemStore/store_wins_for_new_players#01
@@ -683,9 +683,9 @@ t.Run("store wins for new players", func(t *testing.T) {
         file_system_store_test.go:86: got 0 want 1
 ```
 
-## Write enough code to make it pass
+## 写够让测试通过的代码
 
-We just need to handle the scenario where `Find` returns `nil` because it couldn't find the player.
+我们只需要处理 `Find` 因为找不到玩家而返回 `nil` 的场景。
 
 ```go
 //file_system_store.go
@@ -704,9 +704,9 @@ func (f *FileSystemPlayerStore) RecordWin(name string) {
 }
 ```
 
-The happy path is looking ok so we can now try using our new `Store` in the integration test. This will give us more confidence that the software works and then we can delete the redundant `InMemoryPlayerStore`.
+正常路径看起来没问题，所以现在我们可以在集成测试中尝试使用我们的新 `Store`。这能给我们更多信心相信软件是好用的，然后我们就可以删掉多余的 `InMemoryPlayerStore`。
 
-In `TestRecordingWinsAndRetrievingThem` replace the old store.
+在 `TestRecordingWinsAndRetrievingThem` 里替换掉旧的 store。
 
 ```go
 //server_integration_test.go
@@ -715,7 +715,7 @@ defer cleanDatabase()
 store := &FileSystemPlayerStore{database}
 ```
 
-If you run the test it should pass and now we can delete `InMemoryPlayerStore`. `main.go` will now have compilation problems which will motivate us to now use our new store in the "real" code.
+如果你运行测试它应该通过，现在我们可以删掉 `InMemoryPlayerStore` 了。`main.go` 现在会有编译问题，这会促使我们在"真实"代码里使用我们的新 store。
 
 ```go
 // main.go
@@ -745,17 +745,17 @@ func main() {
 }
 ```
 
-- We create a file for our database.
-- The 2nd argument to `os.OpenFile` lets you define the permissions for opening the file, in our case `O_RDWR` means we want to read and write _and_ `os.O_CREATE` means create the file if it doesn't exist.
-- The 3rd argument means sets permissions for the file, in our case, all users can read and write the file. [(See superuser.com for a more detailed explanation)](https://superuser.com/questions/295591/what-is-the-meaning-of-chmod-666).
+- 我们为数据库创建一个文件。
+- `os.OpenFile` 的第 2 个参数让你定义打开文件时的权限，在我们的例子中 `O_RDWR` 表示我们想读写，`os.O_CREATE` 则表示文件不存在时创建。
+- 第 3 个参数表示设置文件的权限，在我们的例子中，所有用户都可以读写该文件。[（详细解释见 superuser.com）](https://superuser.com/questions/295591/what-is-the-meaning-of-chmod-666)。
 
-Running the program now persists the data in a file in between restarts, hooray!
+现在运行程序，数据会在重启之间持久化到文件里，万岁！
 
-## More refactoring and performance concerns
+## 进一步的重构与性能考量
 
-Every time someone calls `GetLeague()` or `GetPlayerScore()` we are reading the entire file and parsing it into JSON. We should not have to do that because `FileSystemStore` is entirely responsible for the state of the league; it should only need to read the file when the program starts up and only need to update the file when data changes.
+每次有人调用 `GetLeague()` 或 `GetPlayerScore()` 时，我们都在读取整个文件并解析成 JSON。我们其实没必要这样做，因为 `FileSystemStore` 完全负责 league 的状态；它只需要在程序启动时读取一次文件，并在数据变化时更新文件。
 
-We can create a constructor which can do some of this initialisation for us and store the league as a value in our `FileSystemStore` to be used on the reads instead.
+我们可以创建一个构造函数为我们做一些初始化工作，并把 league 作为值存在 `FileSystemStore` 上，让读取时使用这个值。
 
 ```go
 //file_system_store.go
@@ -774,7 +774,7 @@ func NewFileSystemPlayerStore(database io.ReadWriteSeeker) *FileSystemPlayerStor
 }
 ```
 
-This way we only have to read from disk once. We can now replace all of our previous calls to getting the league from disk and just use `f.league` instead.
+这样我们只需要从磁盘读一次。我们现在可以把之前所有从磁盘获取 league 的调用都替换为使用 `f.league`。
 
 ```go
 //file_system_store.go
@@ -807,19 +807,19 @@ func (f *FileSystemPlayerStore) RecordWin(name string) {
 }
 ```
 
-If you try to run the tests it will now complain about initialising `FileSystemPlayerStore` so just fix them by calling our new constructor.
+如果你运行测试，它会抱怨 `FileSystemPlayerStore` 的初始化方式有问题，那就把它们改为调用我们的新构造函数即可。
 
-### Another problem
+### 另一个问题
 
-There is some more naivety in the way we are dealing with files which _could_ create a very nasty bug down the line.
+我们处理文件的方式还有些天真，_可能_ 在以后埋下一个非常讨厌的 bug。
 
-When we `RecordWin`, we `Seek` back to the start of the file and then write the new data—but what if the new data was smaller than what was there before?
+当我们 `RecordWin` 时，我们 `Seek` 回文件开头然后写入新数据——但如果新数据比之前的数据小怎么办？
 
-In our current case, this is impossible. We never edit or delete scores so the data can only get bigger. However, it would be irresponsible for us to leave the code like this; it's not unthinkable that a delete scenario could come up.
+在我们目前的场景里这不可能发生。我们永远不会编辑或删除分数，所以数据只会变大。然而把代码这样留下也是不负责任的；删除场景出现并非不可想象。
 
-How will we test for this though? What we need to do is first refactor our code so we separate out the concern of the _kind of data we write, from the writing_. We can then test that separately to check it works how we hope.
+那我们要怎么测试这个呢？我们要做的是先重构代码，把 _我们写什么样的数据_ 与 _写入操作本身_ 这两个关注点分离开。然后我们可以单独测试它，看它能不能按我们希望的方式工作。
 
-We'll create a new type to encapsulate our "when we write we go from the beginning" functionality. I'm going to call it `Tape`. Create a new file with the following:
+我们会创建一个新类型来封装我们这种"写入时从开头开始"的功能。我打算把它叫做 `Tape`。新建一个文件，写入下面的内容：
 
 ```go
 // tape.go
@@ -837,7 +837,7 @@ func (t *tape) Write(p []byte) (n int, err error) {
 }
 ```
 
-Notice that we're only implementing `Write` now, as it encapsulates the `Seek` part. This means our `FileSystemStore` can just have a reference to a `Writer` instead.
+注意我们现在只实现 `Write`，因为它封装了 `Seek` 那部分。这意味着我们的 `FileSystemStore` 只需要持有一个 `Writer` 的引用即可。
 
 ```go
 //file_system_store.go
@@ -847,7 +847,7 @@ type FileSystemPlayerStore struct {
 }
 ```
 
-Update the constructor to use `Tape`
+更新构造函数以使用 `Tape`
 
 ```go
 //file_system_store.go
@@ -862,13 +862,13 @@ func NewFileSystemPlayerStore(database io.ReadWriteSeeker) *FileSystemPlayerStor
 }
 ```
 
-Finally, we can get the amazing payoff we wanted by removing the `Seek` call from `RecordWin`. Yes, it doesn't feel much, but at least it means if we do any other kind of writes we can rely on our `Write` to behave how we need it to. Plus it will now let us test the potentially problematic code separately and fix it.
+最后，我们可以从 `RecordWin` 里移除 `Seek` 调用，得到我们想要的酷炫回报。是的，这看起来不算什么，但至少这意味着如果我们做其它种类的写入，我们可以依赖我们的 `Write` 按需要的方式工作。而且现在我们可以单独测试这段潜在有问题的代码，并修复它。
 
-Let's write the test where we want to update the entire contents of a file with something that is smaller than the original contents.
+我们来写一个测试，希望用比原内容更小的内容更新整个文件。
 
-## Write the test first
+## 先写测试
 
-Our test will create a file with some content, try to write to it using the `tape`, and read it all again to see what's in the file. In `tape_test.go`:
+我们的测试会创建一个含有内容的文件，尝试用 `tape` 写入，然后再读出来看文件里有什么。在 `tape_test.go` 里：
 
 ```go
 //tape_test.go
@@ -892,7 +892,7 @@ func TestTape_Write(t *testing.T) {
 }
 ```
 
-## Try to run the test
+## 试着运行测试
 
 ```
 === RUN   TestTape_Write
@@ -900,13 +900,13 @@ func TestTape_Write(t *testing.T) {
     tape_test.go:23: got 'abc45' want 'abc'
 ```
 
-As we thought! It writes the data we want, but leaves the rest of the original data remaining.
+正如我们所想！它写入了我们想要的数据，但留下了原数据剩下的部分。
 
-## Write enough code to make it pass
+## 写够让测试通过的代码
 
-`os.File` has a truncate function that will let us effectively empty the file. We should be able to just call this to get what we want.
+`os.File` 有一个 truncate 函数可以让我们有效地清空文件。我们应该可以直接调用它来达到我们的目的。
 
-Change `tape` to the following:
+把 `tape` 改成下面这样：
 
 ```go
 //tape.go
@@ -921,17 +921,17 @@ func (t *tape) Write(p []byte) (n int, err error) {
 }
 ```
 
-The compiler will fail in a number of places where we are expecting an `io.ReadWriteSeeker` but we are sending in `*os.File`. You should be able to fix these problems yourself by now but if you get stuck just check the source code.
+编译器会在很多地方失败，因为我们期待的是 `io.ReadWriteSeeker`，但传入的是 `*os.File`。到现在你应该自己就能修这些问题了，如果卡住了就看看源码。
 
-Once you get it refactoring our `TestTape_Write` test should be passing!
+修好后，我们的 `TestTape_Write` 测试就应该能通过了！
 
-### One other small refactor
+### 再做一个小重构
 
-In `RecordWin` we have the line `json.NewEncoder(f.database).Encode(f.league)`.
+在 `RecordWin` 里我们有这一行 `json.NewEncoder(f.database).Encode(f.league)`。
 
-We don't need to create a new encoder every time we write, we can initialise one in our constructor and use that instead.
+我们没必要每次写入时都创建一个新的 encoder，我们可以在构造函数里初始化一个并复用它。
 
-Store a reference to an `Encoder` in our type and initialise it in the constructor:
+在我们的类型里存一个 `Encoder` 的引用，并在构造函数里初始化它：
 
 ```go
 //file_system_store.go
@@ -951,7 +951,7 @@ func NewFileSystemPlayerStore(file *os.File) *FileSystemPlayerStore {
 }
 ```
 
-Use it in `RecordWin`.
+在 `RecordWin` 中使用它。
 
 ```go
 func (f *FileSystemPlayerStore) RecordWin(name string) {
@@ -967,23 +967,23 @@ func (f *FileSystemPlayerStore) RecordWin(name string) {
 }
 ```
 
-## Didn't we just break some rules there? Testing private things? No interfaces?
+## 我们刚才不是违反了一些规则吗？测试私有的东西？没有接口？
 
-### On testing private types
+### 关于测试私有类型
 
-It's true that _in general_ you should favour not testing private things as that can sometimes lead to your tests being too tightly coupled to the implementation, which can hinder refactoring in future.
+确实，_一般来说_ 你应该倾向于不去测试私有的东西，因为这有时会导致测试与实现耦合得太紧，将来阻碍重构。
 
-However, we must not forget that tests should give us _confidence_.
+但是我们不能忘记，测试应当给我们带来 _信心_。
 
-We were not confident that our implementation would work if we added any kind of edit or delete functionality. We did not want to leave the code like that, especially if this was being worked on by more than one person who may not be aware of the shortcomings of our initial approach.
+我们之前不确信加了任何编辑或删除功能后我们的实现还能正常工作。我们不想把代码就这样留着，尤其是当这是由不止一个人维护时，他们可能并不知晓我们最初做法的不足之处。
 
-Finally, it's just one test! If we decide to change the way it works it won't be a disaster to just delete the test but we have at the very least captured the requirement for future maintainers.
+最后，这只是一个测试！如果将来我们决定改变它的工作方式，删掉它也没什么大不了的，但至少我们已经为未来的维护者捕捉到了这个需求。
 
-### Interfaces
+### 接口
 
-We started off the code by using `io.Reader` as that was the easiest path for us to unit test our new `PlayerStore`. As we developed the code we moved on to `io.ReadWriter` and then `io.ReadWriteSeeker`. We then found out there was nothing in the standard library that actually implemented that apart from `*os.File`. We could've taken the decision to write our own or use an open source one but it felt pragmatic just to make temporary files for the tests.
+我们一开始用的是 `io.Reader`，因为这是我们最容易对新 `PlayerStore` 做单元测试的路径。在开发过程中我们换成了 `io.ReadWriter`，再换成 `io.ReadWriteSeeker`。然后我们发现标准库里实际上除了 `*os.File` 没有别的东西实现这个接口。我们本来可以决定自己写一个或用一个开源的，但务实地看用临时文件做测试就好。
 
-Finally, we needed `Truncate` which is also on `*os.File`. It would've been an option to create our own interface capturing these requirements.
+最终，我们还需要 `Truncate`，它也在 `*os.File` 上。我们本来也可以选择创建自己的接口来囊括这些需求。
 
 ```go
 type ReadWriteSeekTruncate interface {
@@ -992,21 +992,21 @@ type ReadWriteSeekTruncate interface {
 }
 ```
 
-But what is this really giving us? Bear in mind we are _not mocking_ and it is unrealistic for a **file system** store to take any type other than an `*os.File` so we don't need the polymorphism that interfaces give us.
+但这真的能给我们带来什么？请记住我们 _并没有 mock_，而对于一个 **文件系统** store 来说，接受除 `*os.File` 之外的任何类型也是不现实的，所以我们不需要接口提供的多态性。
 
-Don't be afraid to chop and change types and experiment like we have here. The great thing about using a statically typed language is the compiler will help you with every change.
+不要害怕像我们这里这样切换、改变类型并做实验。使用静态类型语言的好处就是，每次改动编译器都会帮你。
 
-## Error handling
+## 错误处理
 
-Before we start working on sorting we should make sure we're happy with our current code and remove any technical debt we may have. It's an important principle to get to working software as quickly as possible (stay out of the red state) but that doesn't mean we should ignore error cases!
+在我们开始处理排序之前，应该确认对当前的代码满意，并消除可能存在的技术债。尽快把软件做到能工作（不要陷在红色状态）是一项重要原则，但这并不意味着我们应该忽略错误情况！
 
-If we go back to `FileSystemStore.go` we have `league, _ := NewLeague(f.database)` in our constructor.
+回到 `FileSystemStore.go`，我们的构造函数里有 `league, _ := NewLeague(f.database)`。
 
-`NewLeague` can return an error if it is unable to parse the league from the `io.Reader` that we provide.
+`NewLeague` 在无法从我们提供的 `io.Reader` 解析 league 时会返回一个错误。
 
-It was pragmatic to ignore that at the time as we already had failing tests. If we had tried to tackle it at the same time, we would have been juggling two things at once.
+当时忽略它是务实的，因为我们已经有正在失败的测试。如果当时同时去处理它，我们就要同时兼顾两件事。
 
-Let's make it so our constructor is capable of returning an error.
+我们让构造函数能够返回错误。
 
 ```go
 //file_system_store.go
@@ -1025,7 +1025,7 @@ func NewFileSystemPlayerStore(file *os.File) (*FileSystemPlayerStore, error) {
 }
 ```
 
-Remember it is very important to give helpful error messages (just like your tests). People on the internet jokingly say that most Go code is:
+记住，提供有用的错误信息非常重要（就像你的测试一样）。网上有人开玩笑说大多数 Go 代码就是：
 
 ```go
 if err != nil {
@@ -1033,9 +1033,9 @@ if err != nil {
 }
 ```
 
-**That is 100% not idiomatic.** Adding contextual information (i.e what you were doing to cause the error) to your error messages makes operating your software far easier.
+**这 100% 不是地道的写法。** 给错误信息添加上下文（也就是你做了什么导致了这个错误）能让运维你的软件容易得多。
 
-If you try to compile you'll get some errors.
+如果你尝试编译，会得到一些错误。
 
 ```
 ./main.go:18:35: multiple-value NewFileSystemPlayerStore() in single-value context
@@ -1046,7 +1046,7 @@ If you try to compile you'll get some errors.
 ./server_integration_test.go:12:35: multiple-value NewFileSystemPlayerStore() in single-value context
 ```
 
-In main we'll want to exit the program, printing the error.
+在 main 里我们想让程序退出，并打印错误。
 
 ```go
 //main.go
@@ -1057,7 +1057,7 @@ if err != nil {
 }
 ```
 
-In the tests we should assert there is no error. We can make a helper to help with this.
+在测试里我们应该断言没有错误。我们可以做一个辅助函数来帮忙。
 
 ```go
 //file_system_store_test.go
@@ -1069,7 +1069,7 @@ func assertNoError(t testing.TB, err error) {
 }
 ```
 
-Work through the other compilation problems using this helper. Finally, you should have a failing test:
+利用这个辅助函数解决其它编译问题。最后，你应该会有一个失败的测试：
 
 ```
 === RUN   TestRecordingWinsAndRetrievingThem
@@ -1077,9 +1077,9 @@ Work through the other compilation problems using this helper. Finally, you shou
     server_integration_test.go:14: didn't expect an error but got one, problem loading player store from file /var/folders/nj/r_ccbj5d7flds0sf63yy4vb80000gn/T/db841037437, problem parsing league, EOF
 ```
 
-We cannot parse the league because the file is empty. We weren't getting errors before because we always just ignored them.
+我们没法解析 league，因为文件是空的。之前没报错是因为我们一直忽略了错误。
 
-Let's fix our big integration test by putting some valid JSON in it:
+我们把那个大的集成测试修一下，往里面放一些有效的 JSON：
 
 ```go
 //server_integration_test.go
@@ -1089,9 +1089,9 @@ func TestRecordingWinsAndRetrievingThem(t *testing.T) {
 }
 ```
 
-Now that all the tests are passing, we need to handle the scenario where the file is empty.
+现在所有测试都通过了，我们需要处理文件为空的场景。
 
-## Write the test first
+## 先写测试
 
 ```go
 //file_system_store_test.go
@@ -1105,7 +1105,7 @@ t.Run("works with an empty file", func(t *testing.T) {
 })
 ```
 
-## Try to run the test
+## 试着运行测试
 
 ```
 === RUN   TestFileSystemStore/works_with_an_empty_file
@@ -1113,9 +1113,9 @@ t.Run("works with an empty file", func(t *testing.T) {
         file_system_store_test.go:108: didn't expect an error but got one, problem loading player store from file /var/folders/nj/r_ccbj5d7flds0sf63yy4vb80000gn/T/db019548018, problem parsing league, EOF
 ```
 
-## Write enough code to make it pass
+## 写够让测试通过的代码
 
-Change our constructor to the following
+把构造函数改成下面这样
 
 ```go
 //file_system_store.go
@@ -1147,11 +1147,11 @@ func NewFileSystemPlayerStore(file *os.File) (*FileSystemPlayerStore, error) {
 }
 ```
 
-`file.Stat` returns stats on our file, which lets us check the size of the file. If it's empty, we `Write` an empty JSON array and `Seek` back to the start, ready for the rest of the code.
+`file.Stat` 返回我们文件的统计信息，让我们能检查文件大小。如果是空的，我们就 `Write` 一个空的 JSON 数组并 `Seek` 回开头，为后续代码做好准备。
 
-## Refactor
+## 重构
 
-Our constructor is a bit messy now, so let's extract the initialise code into a function:
+我们的构造函数现在有点乱，所以我们把初始化代码抽到一个函数里：
 
 ```go
 //file_system_store.go
@@ -1196,15 +1196,15 @@ func NewFileSystemPlayerStore(file *os.File) (*FileSystemPlayerStore, error) {
 }
 ```
 
-## Sorting
+## 排序
 
-Our product owner wants `/league` to return the players sorted by their scores, from highest to lowest.
+我们的产品负责人希望 `/league` 按分数从高到低排序返回玩家。
 
-The main decision to make here is where in the software should this happen. If we were using a "real" database we would use things like `ORDER BY` so the sorting is super fast. For that reason, it feels like implementations of `PlayerStore` should be responsible.
+这里要做的主要决定是这件事应该在软件的哪个层面发生。如果我们用的是"真正的"数据库，我们会使用类似 `ORDER BY` 这样的东西，排序会非常快。出于这个原因，感觉应该由 `PlayerStore` 的实现来负责。
 
-## Write the test first
+## 先写测试
 
-We can update the assertion on our first test in `TestFileSystemStore`:
+我们可以更新 `TestFileSystemStore` 中第一个测试的断言：
 
 ```go
 //file_system_store_test.go
@@ -1233,9 +1233,9 @@ t.Run("league sorted", func(t *testing.T) {
 })
 ```
 
-The order of the JSON coming in is in the wrong order and our `want` will check that it is returned to the caller in the correct order.
+进入的 JSON 顺序是错的，而我们的 `want` 会检查它以正确的顺序返回给调用方。
 
-## Try to run the test
+## 试着运行测试
 
 ```
 === RUN   TestFileSystemStore/league_from_a_reader,_sorted
@@ -1244,7 +1244,7 @@ The order of the JSON coming in is in the wrong order and our `want` will check 
         file_system_store_test.go:51: got [{Cleo 10} {Chris 33}] want [{Chris 33} {Cleo 10}]
 ```
 
-## Write enough code to make it pass
+## 写够让测试通过的代码
 
 ```go
 func (f *FileSystemPlayerStore) GetLeague() League {
@@ -1259,27 +1259,27 @@ func (f *FileSystemPlayerStore) GetLeague() League {
 
 > Slice sorts the provided slice given the provided less function.
 
-Easy!
+简单！
 
-## Wrapping up
+## 总结
 
-### What we've covered
+### 我们涵盖了什么
 
-- The `Seeker` interface and its relation to `Reader` and `Writer`.
-- Working with files.
-- Creating an easy to use helper for testing with files that hides all the messy stuff.
-- `sort.Slice` for sorting slices.
-- Using the compiler to help us safely make structural changes to the application.
+- `Seeker` 接口，以及它和 `Reader`、`Writer` 的关系。
+- 处理文件。
+- 创建一个易用的辅助函数来用文件做测试，把那些杂乱的部分都隐藏起来。
+- 用 `sort.Slice` 来对切片排序。
+- 利用编译器帮助我们安全地对应用做结构性改动。
 
-### Breaking rules
+### 打破规则
 
-- Most rules in software engineering aren't really rules, just best practices that work 80% of the time.
-- We discovered a scenario where one of our previous "rules" of not testing internal functions was not helpful for us so we broke the rule.
-- It's important when breaking rules to understand the trade-off you are making. In our case, we were ok with it because it was just one test and would've been very difficult to exercise the scenario otherwise.
-- In order to be able to break the rules **you must understand them first**. An analogy is with learning guitar. It doesn't matter how creative you think you are, you must understand and practice the fundamentals.
+- 软件工程里的大多数规则其实并不是规则，只是 80% 时间适用的最佳实践。
+- 我们发现一个场景，其中之前的"规则"——不测试内部函数——并不适合我们，所以我们打破了它。
+- 在打破规则时，理解你做出的取舍很重要。在我们的场景里，我们是 OK 的，因为这只是一个测试，而且不这样做就很难触发那个场景。
+- 想要打破规则，**你必须先理解规则**。一个类比是学吉他。无论你觉得自己多么有创意，你必须理解并练习基本功。
 
-### Where our software is at
+### 我们的软件目前到了哪里
 
-- We have an HTTP API where you can create players and increment their score.
-- We can return a league of everyone's scores as JSON.
-- The data is persisted as a JSON file.
+- 我们有了一个 HTTP API，你可以通过它创建玩家并增加他们的分数。
+- 我们能以 JSON 形式返回所有人的分数 league。
+- 数据以 JSON 文件持久化。

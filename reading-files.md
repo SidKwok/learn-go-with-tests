@@ -1,15 +1,15 @@
-# Reading files
+# 读取文件
 
-* [**You can find all the code for this chapter here**](https://github.com/quii/learn-go-with-tests/tree/main/reading-files)
-* [Here is a video of me working through the problem and taking questions from the Twitch stream](https://www.youtube.com/watch?v=nXts4dEJnkU)
+* [**本章的所有代码可以在这里找到**](https://github.com/quii/learn-go-with-tests/tree/main/reading-files)
+* [这是我处理这个问题并在 Twitch 直播中回答提问的视频](https://www.youtube.com/watch?v=nXts4dEJnkU)
 
-In this chapter we're going to learn how to read some files, get some data out of them, and do something useful.
+在本章中，我们将学习如何读取一些文件、从中提取数据，并做一些有用的事情。
 
-Pretend you're working with your friend to create some blog software. The idea is an author will write their posts in markdown, with some metadata at the top of the file. On startup, the web server will read a folder to create some `Post`s, and then a separate `NewHandler` function will use those `Post`s as a datasource for the blog's webserver.
+设想你在和朋友一起开发一个博客软件。我们的想法是：作者用 markdown 写他们的文章，文件顶部有一些元数据。在启动时，Web 服务器会读取一个文件夹来创建一些 `Post`，然后由一个独立的 `NewHandler` 函数把这些 `Post` 当作博客 Web 服务的数据源使用。
 
-We've been asked to create the package that converts a given folder of blog post files into a collection of `Post`s.
+我们被要求开发一个包，把给定的博客文章文件夹转换成 `Post` 的集合。
 
-### Example data
+### 示例数据
 
 hello world.md
 
@@ -23,7 +23,7 @@ Hello world!
 The body of posts starts after the `---`
 ```
 
-### Expected data
+### 期望的数据
 
 ```go
 type Post struct {
@@ -32,72 +32,72 @@ type Post struct {
 }
 ```
 
-## Iterative, test-driven development
+## 迭代式的、测试驱动的开发
 
-We'll take an iterative approach where we're always taking simple, safe steps toward our goal.
+我们会采用一种迭代的方式，始终朝着目标走简单、安全的小步。
 
-This requires us to break up our work, but we should be careful not to fall into the trap of taking a ["bottom up"](https://en.wikipedia.org/wiki/Top-down_and_bottom-up_design) approach.
+这要求我们把工作拆分开来，但我们应当小心，不要落入["自下而上"](https://en.wikipedia.org/wiki/Top-down_and_bottom-up_design)方式的陷阱。
 
-We should not trust our over-active imaginations when we start work. We could be tempted into making some kind of abstraction that is only validated once we stick everything together, such as some kind of `BlogPostFileParser`.
+我们在开始工作时不应当过于相信自己活跃的想象力。我们可能会忍不住做一些抽象，比如某种 `BlogPostFileParser`，但这种抽象的合理性只有在所有东西拼到一起后才能验证。
 
-This is _not_ iterative and is missing out on the tight feedback loops that TDD is supposed to bring us.
+这 _不是_ 迭代，而且错过了 TDD 本应给我们带来的紧密反馈循环。
 
-Kent Beck says:
+Kent Beck 说：
 
-> Optimism is an occupational hazard of programming. Feedback is the treatment.
+> 乐观是编程的一种职业病。反馈是它的解药。
 
-Instead, our approach should strive to be as close to delivering _real_ consumer value as quickly as possible (often called a "happy path"). Once we have delivered a small amount of consumer value end-to-end, further iteration of the rest of the requirements is usually straightforward.
+相反，我们的方法应该尽快交付 _真实的_ 用户价值（通常被称为"happy path"）。一旦我们端到端地交付了一小块用户价值，剩余需求的迭代往往就会简单直接。
 
-## Thinking about the kind of test we want to see
+## 思考我们想看到的测试是什么样
 
-Let's remind ourselves of our mindset and goals when starting:
+让我们提醒自己开始时的心态和目标：
 
-* **Write the test we want to see**. Think about how we'd like to use the code we're going to write from a consumer's point of view.
-* Focus on _what_ and _why_, but don't get distracted by _how_.
+* **写出我们想看到的测试**。从使用者的角度思考我们将要写的代码该如何被使用。
+* 关注 _做什么_ 和 _为什么_，但不要被 _怎么做_ 分心。
 
-Our package needs to offer a function that can be pointed at a folder, and return us some posts.
+我们的包需要提供一个函数，可以指向一个文件夹，并返回一些文章。
 
 ```go
 var posts []blogposts.Post
 posts = blogposts.NewPostsFromFS("some-folder")
 ```
 
-To write a test around this, we'd need some kind of test folder with some example posts in it. _There's nothing terribly wrong with this_, but you are making some trade-offs:
+为了围绕它写测试，我们需要某种带有示例文章的测试文件夹。_这样做并没有什么大问题_，但你做了一些权衡：
 
-* for each test you may need to create new files to test a particular behaviour
-* some behaviour will be challenging to test, such as failing to load files
-* the tests will run a little slower because they will need to access the file system
+* 对于每个测试，你可能需要新建文件来测试某种特定行为
+* 一些行为会很难测试，例如加载文件失败
+* 测试运行得会稍慢一些，因为它们需要访问文件系统
 
-We're also unnecessarily coupling ourselves to a specific implementation of the file system.
+我们也在不必要地把自己耦合到了文件系统的某个具体实现上。
 
-### File system abstractions introduced in Go 1.16
+### Go 1.16 引入的文件系统抽象
 
-Go 1.16 introduced an abstraction for file systems; the [io/fs](https://golang.org/pkg/io/fs/) package.
+Go 1.16 为文件系统引入了一个抽象：[io/fs](https://golang.org/pkg/io/fs/) 包。
 
 > Package fs defines basic interfaces to a file system. A file system can be provided by the host operating system but also by other packages.
 
-This lets us loosen our coupling to a specific file system, which will then let us inject different implementations according to our needs.
+这让我们可以放松对具体文件系统的耦合，让我们可以根据需要注入不同的实现。
 
 > [On the producer side of the interface, the new embed.FS type implements fs.FS, as does zip.Reader. The new os.DirFS function provides an implementation of fs.FS backed by a tree of operating system files.](https://golang.org/doc/go1.16#fs)
 
-If we use this interface, users of our package have a number of options baked-in to the standard library to use. Learning to leverage interfaces defined in Go's standard library (e.g. `io.fs`, [`io.Reader`](https://golang.org/pkg/io/#Reader), [`io.Writer`](https://golang.org/pkg/io/#Writer)), is vital to writing loosely coupled packages. These packages can then be re-used in contexts different to those you imagined, with minimal fuss from your consumers.
+如果我们使用这个接口，我们包的使用者就有一些标准库内置的选项可以选用。学会利用 Go 标准库中定义的接口（例如 `io.fs`、[`io.Reader`](https://golang.org/pkg/io/#Reader)、[`io.Writer`](https://golang.org/pkg/io/#Writer)），对编写松耦合的包至关重要。这些包能在你最初想象之外的不同上下文中被复用，使用者也几乎不需要任何额外操作。
 
-In our case, maybe our consumer wants the posts to be embedded into the Go binary rather than files in a "real" filesystem? Either way, _our code doesn't need to care_.
+在我们的案例里，也许使用者希望把博客文章嵌入到 Go 二进制文件中，而不是放在"真实"文件系统的文件里？无论如何，_我们的代码不需要关心这一点_。
 
-For our tests, the package [testing/fstest](https://golang.org/pkg/testing/fstest/) offers us an implementation of [io/FS](https://golang.org/pkg/io/fs/#FS) to use, similar to the tools we're familiar with in [net/http/httptest](https://golang.org/pkg/net/http/httptest/).
+对于我们的测试，[testing/fstest](https://golang.org/pkg/testing/fstest/) 包给我们提供了一个 [io/FS](https://golang.org/pkg/io/fs/#FS) 的实现可以使用，类似我们熟悉的 [net/http/httptest](https://golang.org/pkg/net/http/httptest/) 中的工具。
 
-Given this information, the following feels like a better approach,
+基于这些信息，下面这种方式感觉更好：
 
 ```go
 var posts []blogposts.Post
 posts = blogposts.NewPostsFromFS(someFS)
 ```
 
-## Write the test first
+## 先写测试
 
-We should keep scope as small and useful as possible. If we prove that we can read all the files in a directory, that will be a good start. This will give us confidence in the software we're writing. We can check that the count of `[]Post` returned is the same as the number of files in our fake file system.
+我们应该让范围尽可能小且有用。如果我们能证明可以读取一个目录里的所有文件，那是一个好的开始。这会让我们对正在编写的软件有信心。我们可以检查返回的 `[]Post` 数量是否与我们假文件系统中的文件数相同。
 
-Create a new project to work through this chapter.
+新建一个项目来跟随本章操作。
 
 * `mkdir blogposts`
 * `cd blogposts`
@@ -126,25 +126,25 @@ func TestNewBlogPosts(t *testing.T) {
 }
 ```
 
-Notice that the package of our test is `blogposts_test`. Remember, when TDD is practiced well we take a _consumer-driven_ approach: we don't want to test internal details because _consumers_ don't care about them. By appending `_test` to our intended package name, we only access exported members from our package - just like a real user of our package.
+注意我们测试的包是 `blogposts_test`。记住，TDD 实践得当时我们采取一种 _以使用者为驱动_ 的方法：我们不想测试内部细节，因为 _使用者_ 并不关心它们。通过在我们打算用的包名后面加上 `_test`，我们只能访问该包导出的成员——就像该包真正的使用者那样。
 
-We've imported [`testing/fstest`](https://golang.org/pkg/testing/fstest/) which gives us access to the [`fstest.MapFS`](https://golang.org/pkg/testing/fstest/#MapFS) type. Our fake file system will pass `fstest.MapFS` to our package.
+我们引入了 [`testing/fstest`](https://golang.org/pkg/testing/fstest/)，它让我们可以使用 [`fstest.MapFS`](https://golang.org/pkg/testing/fstest/#MapFS) 类型。我们的假文件系统会把 `fstest.MapFS` 传递给我们的包。
 
 > A MapFS is a simple in-memory file system for use in tests, represented as a map from path names (arguments to Open) to information about the files or directories they represent.
 
-This feels simpler than maintaining a folder of test files, and it will execute quicker.
+这感觉比维护一个测试文件夹简单，也会执行得更快。
 
-Finally, we codified the usage of our API from a consumer's point of view, then checked if it creates the correct number of posts.
+最后，我们从使用者的角度把 API 的用法固定了下来，然后检查它是否创建了正确数量的文章。
 
-## Try to run the test
+## 尝试运行测试
 
 ```
 ./blogpost_test.go:15:12: undefined: blogposts
 ```
 
-## Write the minimal amount of code for the test to run and _check the failing test output_
+## 写最少的代码让测试能跑起来，并 _检查失败的测试输出_
 
-The package doesn't exist. Create a new file `blogposts.go` and put `package blogposts` inside it. You'll need to then import that package into your tests. For me, the imports now look like:
+这个包还不存在。新建一个文件 `blogposts.go`，并把 `package blogposts` 放进去。然后你需要在测试中导入这个包。对我来说，导入现在是这样的：
 
 ```go
 import (
@@ -154,13 +154,13 @@ import (
 )
 ```
 
-Now the tests won't compile because our new package does not have a `NewPostsFromFS` function, that returns some kind of collection.
+现在测试会编译失败，因为我们的新包还没有 `NewPostsFromFS` 函数返回某种集合。
 
 ```
 ./blogpost_test.go:16:12: undefined: blogposts.NewPostsFromFS
 ```
 
-This forces us to make the skeleton of our function to make the test run. Remember not to overthink the code at this point; we're only trying to get a running test, and to make sure it fails as we'd expect. If we skip this step we may skip over assumptions and, write a test which is not useful.
+这迫使我们做出函数的骨架来让测试运行。记住此时不要过度设计代码；我们只是想让测试能跑起来，并确保它如我们预期那样失败。如果跳过这一步，可能会跳过一些假设，写出一个没用的测试。
 
 ```go
 package blogposts
@@ -175,16 +175,16 @@ func NewPostsFromFS(fileSystem fstest.MapFS) []Post {
 }
 ```
 
-The test should now correctly fail
+测试现在应该能正确地失败：
 
 ```
 === RUN   TestNewBlogPosts
     blogposts_test.go:48: got 0 posts, wanted 2 posts
 ```
 
-## Write enough code to make it pass
+## 写足够的代码让它通过
 
-We _could_ ["slime"](https://deniseyu.github.io/leveling-up-tdd/) this to make it pass:
+我们 _可以_ ["糊弄"](https://deniseyu.github.io/leveling-up-tdd/)（slime）地让它通过：
 
 ```go
 func NewPostsFromFS(fileSystem fstest.MapFS) []Post {
@@ -192,13 +192,13 @@ func NewPostsFromFS(fileSystem fstest.MapFS) []Post {
 }
 ```
 
-But, as Denise Yu wrote:
+但正如 Denise Yu 所写：
 
-> Sliming is useful for giving a “skeleton” to your object. Designing an interface and executing logic are two concerns, and sliming tests strategically lets you focus on one at a time.
+> Sliming is useful for giving a "skeleton" to your object. Designing an interface and executing logic are two concerns, and sliming tests strategically lets you focus on one at a time.
 
-We already have our structure. So, what do we do instead?
+我们已经有了结构。那么我们应该怎么做呢？
 
-As we've cut scope, all we need to do is read the directory and create a post for each file we encounter. We don't have to worry about opening files and parsing them just yet.
+由于我们已经收窄了范围，我们要做的就只是读取目录，并为遇到的每个文件创建一个 post。我们暂时不需要担心打开文件和解析它们。
 
 ```go
 func NewPostsFromFS(fileSystem fstest.MapFS) []Post {
@@ -211,15 +211,15 @@ func NewPostsFromFS(fileSystem fstest.MapFS) []Post {
 }
 ```
 
-[`fs.ReadDir`](https://golang.org/pkg/io/fs/#ReadDir) reads a directory inside a given `fs.FS` returning [`[]DirEntry`](https://golang.org/pkg/io/fs/#DirEntry).
+[`fs.ReadDir`](https://golang.org/pkg/io/fs/#ReadDir) 读取给定 `fs.FS` 中的一个目录，返回 [`[]DirEntry`](https://golang.org/pkg/io/fs/#DirEntry)。
 
-Already our idealised view of the world has been foiled because errors can happen, but remember now our focus is _making the test pass_, not changing design, so we'll ignore the error for now.
+我们对世界的理想化看法已经被打破，因为错误是会发生的。但请记住，我们现在的关注点是 _让测试通过_，而不是改变设计，所以暂时忽略这个错误。
 
-The rest of the code is straightforward: iterate over the entries, create a `Post` for each one and, return the slice.
+剩下的代码很直接：遍历每一项，为每一项创建一个 `Post`，然后返回切片。
 
-## Refactor
+## 重构
 
-Even though our tests are passing, we can't use our new package outside of this context, because it is coupled to a concrete implementation `fstest.MapFS`. But, it doesn't have to be. Change the argument to our `NewPostsFromFS` function to accept the interface from the standard library.
+虽然测试通过了，但我们这个新包在这个上下文之外还用不上，因为它和具体实现 `fstest.MapFS` 耦合了。但其实没必要这样。把 `NewPostsFromFS` 函数的参数改成接受标准库中的接口。
 
 ```go
 func NewPostsFromFS(fileSystem fs.FS) []Post {
@@ -232,11 +232,11 @@ func NewPostsFromFS(fileSystem fs.FS) []Post {
 }
 ```
 
-Re-run the tests: everything should be working.
+重新运行测试：一切都应该正常工作。
 
-### Error handling
+### 错误处理
 
-We parked error handling earlier when we focused on making the happy-path work. Before continuing to iterate on the functionality, we should acknowledge that errors can happen when working with files. Beyond reading the directory, we can run into problems when we open individual files. Let's change our API (via our tests first, naturally) so that it can return an `error`.
+我们之前在专注让正常路径工作的时候把错误处理搁置了。在继续迭代功能之前，我们应该承认操作文件时错误是会发生的。除了读取目录之外，在打开单个文件时也可能遇到问题。我们来修改 API（自然是先改测试），让它能返回一个 `error`。
 
 ```go
 func TestNewBlogPosts(t *testing.T) {
@@ -257,7 +257,7 @@ func TestNewBlogPosts(t *testing.T) {
 }
 ```
 
-Run the test: it should complain about the wrong number of return values. Fixing the code is straightforward.
+运行测试：它应该会抱怨返回值数量不对。修复代码很简单。
 
 ```go
 func NewPostsFromFS(fileSystem fs.FS) ([]Post, error) {
@@ -273,7 +273,7 @@ func NewPostsFromFS(fileSystem fs.FS) ([]Post, error) {
 }
 ```
 
-This will make the test pass. The TDD practitioner in you might be annoyed we didn't see a failing test before writing the code to propagate the error from `fs.ReadDir`. To do this "properly", we'd need a new test where we inject a failing `fs.FS` test-double to make `fs.ReadDir` return an `error`.
+这会让测试通过。你内心的 TDD 实践者可能会被这点惹恼：在写传播 `fs.ReadDir` 错误的代码之前，我们没有看到一个失败的测试。要"正确地"做这件事，我们需要写一个新的测试，注入一个会失败的 `fs.FS` 测试替身（test-double），让 `fs.ReadDir` 返回 `error`。
 
 ```go
 type StubFailingFS struct {
@@ -285,21 +285,21 @@ func (s StubFailingFS) Open(name string) (fs.File, error) {
 ```
 
 ```go
-// later
+// 后面
 _, err := blogposts.NewPostsFromFS(StubFailingFS{})
 ```
 
-This should give you confidence in our approach. The interface we're using has one method, which makes creating test-doubles to test different scenarios trivial.
+这应该让你对我们的方法有信心。我们使用的接口只有一个方法，使得为不同场景创建测试替身变得轻而易举。
 
-In some cases, testing error handling is the pragmatic thing to do but, in our case, we're not doing anything _interesting_ with the error, we're just propagating it, so it's not worth the hassle of writing a new test.
+在某些情况下，测试错误处理是务实的做法，但在我们的情况里，我们对错误并没有做什么 _有意思的事_，只是在传播它，所以不值得花精力再写一个新的测试。
 
-Logically, our next iterations will be around expanding our `Post` type so that it has some useful data.
+逻辑上，我们接下来的迭代会围绕扩展 `Post` 类型，让它包含一些有用的数据。
 
-## Write the test first
+## 先写测试
 
-We'll start with the first line in the proposed blog post schema, the title field.
+我们从博客文章规范的第一行——title 字段——开始。
 
-We need to change the contents of the test files so they match what was specified, and then we can make an assertion that it is parsed correctly.
+我们需要修改测试文件的内容，让它符合规范，然后我们就可以断言它被正确解析。
 
 ```go
 func TestNewBlogPosts(t *testing.T) {
@@ -308,7 +308,7 @@ func TestNewBlogPosts(t *testing.T) {
 		"hello-world2.md": {Data: []byte("Title: Post 2")},
 	}
 
-	// rest of test code cut for brevity
+	// 为简洁起见省略其余测试代码
 	got := posts[0]
 	want := blogposts.Post{Title: "Post 1"}
 
@@ -318,15 +318,15 @@ func TestNewBlogPosts(t *testing.T) {
 }
 ```
 
-## Try to run the test
+## 尝试运行测试
 
 ```
 ./blogpost_test.go:58:26: unknown field 'Title' in struct literal of type blogposts.Post
 ```
 
-## Write the minimal amount of code for the test to run and check the failing test output
+## 写最少的代码让测试能跑起来，并检查失败的测试输出
 
-Add the new field to our `Post` type so that the test will run
+把新字段加到我们的 `Post` 类型里，让测试能跑起来
 
 ```go
 type Post struct {
@@ -334,7 +334,7 @@ type Post struct {
 }
 ```
 
-Re-run the test, and you should get a clear, failing test
+重新运行测试，你应该会看到一个清晰的失败测试
 
 ```
 === RUN   TestNewBlogPosts
@@ -342,9 +342,9 @@ Re-run the test, and you should get a clear, failing test
     blogpost_test.go:61: got {Title:}, want {Title:Post 1}
 ```
 
-## Write enough code to make it pass
+## 写足够的代码让它通过
 
-We'll need to open each file and then extract the title
+我们需要打开每个文件然后提取 title
 
 ```go
 func NewPostsFromFS(fileSystem fs.FS) ([]Post, error) {
@@ -380,17 +380,17 @@ func getPost(fileSystem fs.FS, f fs.DirEntry) (Post, error) {
 }
 ```
 
-Remember our focus at this point is not to write elegant code, it's just to get to a point where we have working software.
+记住，我们现在的关注点不是写优雅的代码，而是要先达到可以工作的软件这一步。
 
-Even though this feels like a small increment forward it still required us to write a fair amount of code and make some assumptions in respect to error handling. This would be a point where you should talk to your colleagues and decide the best approach.
+虽然这感觉像是向前迈了一小步，但仍然让我们写了不少代码，并对错误处理做了一些假设。这是你应该和同事讨论、决定最佳方案的时间点。
 
-The iterative approach has given us fast feedback that our understanding of the requirements is incomplete.
+迭代式的方法给了我们快速的反馈，让我们意识到自己对需求的理解还不完整。
 
-`fs.FS` gives us a way of opening a file within it by name with its `Open` method. From there we read the data from the file and, for now, we do not need any sophisticated parsing, just cutting out the `Title:` text by slicing the string.
+`fs.FS` 通过 `Open` 方法让我们可以按名字打开它内部的一个文件。从那里我们读取文件中的数据，目前我们不需要复杂的解析，只是通过切片字符串把 `Title:` 前缀去掉。
 
-## Refactor
+## 重构
 
-Separating the 'opening file code' from the 'parsing file contents code' will make the code simpler to understand and work with.
+把"打开文件的代码"和"解析文件内容的代码"分离开来，会让代码更易理解和工作。
 
 ```go
 func getPost(fileSystem fs.FS, f fs.DirEntry) (Post, error) {
@@ -413,11 +413,11 @@ func newPost(postFile fs.File) (Post, error) {
 }
 ```
 
-When you refactor out new functions or methods, take care and think about the arguments. You're designing here, and are free to think deeply about what is appropriate because you have passing tests. Think about coupling and cohesion. In this case you should ask yourself:
+当你重构出新的函数或方法时，要小心并思考参数。你在做设计，可以自由地深入思考什么是合适的，因为你有通过的测试做支撑。要思考耦合和内聚。在这个例子里你应该问自己：
 
-> Does `newPost` have to be coupled to an `fs.File` ? Do we use all the methods and data from this type? What do we _really_ need?
+> `newPost` 必须和 `fs.File` 耦合吗？我们用到这个类型的所有方法和数据吗？我们 _真正_ 需要的是什么？
 
-In our case we only use it as an argument to `io.ReadAll` which needs an `io.Reader`. So we should loosen the coupling in our function and ask for an `io.Reader`.
+在我们的情况里，我们只把它作为参数传给 `io.ReadAll`，而它需要的是 `io.Reader`。所以我们应该松开函数中的耦合，要求一个 `io.Reader`。
 
 ```go
 func newPost(postFile io.Reader) (Post, error) {
@@ -431,7 +431,7 @@ func newPost(postFile io.Reader) (Post, error) {
 }
 ```
 
-You can make a similar argument for our `getPost` function, which takes an `fs.DirEntry` argument but simply calls `Name()` to get the file name. We don't need all that; let's decouple from that type and pass the file name through as a string. Here's the fully refactored code:
+对于 `getPost` 函数你也可以提出类似的论点，它接受一个 `fs.DirEntry` 参数，但只是调用 `Name()` 来获取文件名。我们不需要那么多东西；让我们解耦这个类型，把文件名作为字符串传过去。下面是完全重构后的代码：
 
 ```go
 func NewPostsFromFS(fileSystem fs.FS) ([]Post, error) {
@@ -470,11 +470,11 @@ func newPost(postFile io.Reader) (Post, error) {
 }
 ```
 
-From now on, most of our efforts can be neatly contained within `newPost`. The concerns of opening and iterating over files are done, and now we can focus on extracting the data for our `Post` type. Whilst not technically necessary, files are a nice way to logically group related things together, so I moved the `Post` type and `newPost` into a new `post.go` file.
+从现在起，我们大部分的工作可以整齐地放在 `newPost` 里。打开和遍历文件的事已经做完了，现在我们可以专注于为 `Post` 类型提取数据。虽然技术上没有必要，但文件是把相关事物在逻辑上归到一起的好方式，所以我把 `Post` 类型和 `newPost` 移到了一个新的 `post.go` 文件里。
 
-### Test helper
+### 测试辅助函数
 
-We should take care of our tests too. We're going to be making assertions on `Posts` a lot, so we should write some code to help with that
+我们也应该照顾一下测试。我们会经常对 `Posts` 做断言，所以应该写些代码来辅助这件事
 
 ```go
 func assertPost(t *testing.T, got blogposts.Post, want blogposts.Post) {
@@ -489,9 +489,9 @@ func assertPost(t *testing.T, got blogposts.Post, want blogposts.Post) {
 assertPost(t, posts[0], blogposts.Post{Title: "Post 1"})
 ```
 
-## Write the test first
+## 先写测试
 
-Let's extend our test further to extract the next line from the file, the description. Up until making it pass should now feel comfortable and familiar.
+让我们扩展测试，从文件中提取下一行——description。直到让它通过这一过程现在应该感觉熟悉而舒适了。
 
 ```go
 func TestNewBlogPosts(t *testing.T) {
@@ -507,7 +507,7 @@ Description: Description 2`
 		"hello-world2.md": {Data: []byte(secondBody)},
 	}
 
-	// rest of test code cut for brevity
+	// 为简洁起见省略其余测试代码
 	assertPost(t, posts[0], blogposts.Post{
 		Title:       "Post 1",
 		Description: "Description 1",
@@ -516,15 +516,15 @@ Description: Description 2`
 }
 ```
 
-## Try to run the test
+## 尝试运行测试
 
 ```
 ./blogpost_test.go:47:58: unknown field 'Description' in struct literal of type blogposts.Post
 ```
 
-## Write the minimal amount of code for the test to run and check the failing test output
+## 写最少的代码让测试能跑起来，并检查失败的测试输出
 
-Add the new field to `Post`.
+把新字段加到 `Post` 中。
 
 ```go
 type Post struct {
@@ -533,7 +533,7 @@ type Post struct {
 }
 ```
 
-The tests should now compile, and fail.
+测试现在应该能编译，并失败。
 
 ```
 === RUN   TestNewBlogPosts
@@ -541,9 +541,9 @@ The tests should now compile, and fail.
         Description: Description 1 Description:}, want {Title:Post 1 Description:Description 1}
 ```
 
-## Write enough code to make it pass
+## 写足够的代码让它通过
 
-The standard library has a handy library for helping you scan through data, line by line; [`bufio.Scanner`](https://golang.org/pkg/bufio/#Scanner)
+标准库有一个很方便的库，可以帮你按行扫描数据：[`bufio.Scanner`](https://golang.org/pkg/bufio/#Scanner)
 
 > Scanner provides a convenient interface for reading data such as a file of newline-delimited lines of text.
 
@@ -561,15 +561,15 @@ func newPost(postFile io.Reader) (Post, error) {
 }
 ```
 
-Handily, it also takes an `io.Reader` to read through (thank you again, loose-coupling), we don't need to change our function arguments.
+很方便的是它也接受一个 `io.Reader`（再次感谢松耦合），我们不需要修改函数参数。
 
-Call `Scan` to read a line, and then extract the data using `Text`.
+调用 `Scan` 读一行，然后用 `Text` 提取数据。
 
-This function could never return an `error`. It would be tempting at this point to remove it from the return type, but we know we'll have to handle invalid file structures later so, we may as well leave it.
+这个函数其实永远不会返回 `error`。此时你可能会想把它从返回类型中去掉，但我们知道之后还要处理无效的文件结构，所以不如先留着。
 
-## Refactor
+## 重构
 
-We have repetition around scanning a line and then reading the text. We know we're going to do this operation at least one more time, it's a simple refactor to DRY up so let's start with that.
+我们围绕"扫描一行然后读取文本"有重复。我们知道这个操作至少还会再用一次，DRY 起来是个简单的重构，让我们从这里开始。
 
 ```go
 func newPost(postFile io.Reader) (Post, error) {
@@ -587,9 +587,9 @@ func newPost(postFile io.Reader) (Post, error) {
 }
 ```
 
-This has barely saved any lines of code, but that's rarely the point of refactoring. What I'm trying to do here is just separating the _what_ from the _how_ of reading lines to make the code a little more declarative to the reader.
+这几乎没省下几行代码，但这通常不是重构的重点。我在这里想做的是：把读取行的 _做什么_ 与 _怎么做_ 分开，让代码对读者来说更具声明性。
 
-Whilst the magic numbers of 7 and 13 get the job done, they're not awfully descriptive.
+虽然神奇数字 7 和 13 能完成工作，但它们的描述性不强。
 
 ```go
 const (
@@ -612,7 +612,7 @@ func newPost(postFile io.Reader) (Post, error) {
 }
 ```
 
-Now that I'm staring at the code with my creative refactoring mind, I'd like to try making our readLine function take care of removing the tag. There's also a more readable way of trimming a prefix from a string with the function `strings.TrimPrefix`.
+现在我以创造性的重构思维盯着代码看，我想试试让 readLine 函数自己去掉 tag。还有一种更易读的方式可以把字符串前缀去掉，那就是 `strings.TrimPrefix`。
 
 ```go
 func newPost(postBody io.Reader) (Post, error) {
@@ -630,11 +630,11 @@ func newPost(postBody io.Reader) (Post, error) {
 }
 ```
 
-You may or may not like this idea, but I do. The point is in the refactoring state we are free to play with the internal details, and you can keep running your tests to check things still behave correctly. We can always go back to previous states if we're not happy. The TDD approach gives us this license to frequently experiment with ideas, so we have more shots at writing great code.
+你可能喜欢也可能不喜欢这个想法，但我喜欢。重点是处于重构状态时，我们可以自由地玩弄内部细节，并可以一直跑测试来检查行为是否仍然正确。如果不满意，我们总可以回到之前的状态。TDD 方法给了我们这个频繁尝试想法的"许可证"，我们就有更多机会写出优秀的代码。
 
-The next requirement is extracting the post's tags. If you're following along, I'd recommend trying to implement it yourself before reading on. You should now have a good, iterative rhythm and feel confident to extract the next line and parse out the data.
+下一个需求是提取文章的 tags。如果你跟着我做的话，我建议你在继续阅读之前先自己尝试实现一下。你现在应该有了良好的、迭代式的节奏，对提取下一行并解析数据有信心。
 
-For brevity, I will not go through the TDD steps, but here's the test with tags added.
+为了简洁起见，我不再走 TDD 的步骤，下面是加上 tags 之后的测试。
 
 ```go
 func TestNewBlogPosts(t *testing.T) {
@@ -647,7 +647,7 @@ Description: Description 2
 Tags: rust, borrow-checker`
 	)
 
-	// rest of test code cut for brevity
+	// 为简洁起见省略其余测试代码
 	assertPost(t, posts[0], blogposts.Post{
 		Title:       "Post 1",
 		Description: "Description 1",
@@ -656,7 +656,7 @@ Tags: rust, borrow-checker`
 }
 ```
 
-You're only cheating yourself if you just copy and paste what I write. To make sure we're all on the same page, here's my code which includes extracting the tags.
+如果你只是复制粘贴我写的内容，那是在欺骗自己。为了确保我们处于同一节奏，下面是我的代码，包括了提取 tags。
 
 ```go
 const (
@@ -681,11 +681,11 @@ func newPost(postBody io.Reader) (Post, error) {
 }
 ```
 
-Hopefully no surprises here. We were able to re-use `readMetaLine` to get the next line for the tags and then split them up using `strings.Split`.
+希望这里没有什么意外。我们能够复用 `readMetaLine` 来获取 tags 的下一行，然后用 `strings.Split` 把它们拆开。
 
-The last iteration on our happy path is to extract the body.
+正常路径的最后一次迭代是提取 body。
 
-Here's a reminder of the proposed file format.
+下面提醒一下我们提议的文件格式。
 
 ```markdown
 Title: Hello, TDD world!
@@ -697,11 +697,11 @@ Hello world!
 The body of posts starts after the `---`
 ```
 
-We've read the first 3 lines already. We then need to read one more line, discard it and then the remainder of the file contains the post's body.
+我们已经读了前 3 行。然后我们要再读一行，把它丢弃，文件剩下的部分就是文章的 body。
 
-## Write the test first
+## 先写测试
 
-Change the test data to have the separator, and a body with a few newlines to check we grab all the content.
+修改测试数据加入分隔符，并加入一个含有几个换行的 body，以检查我们能抓到所有内容。
 
 ```go
 	const (
@@ -721,7 +721,7 @@ M`
 	)
 ```
 
-Add to our assertion like the others
+像之前一样在断言里加上
 
 ```go
 	assertPost(t, posts[0], blogposts.Post{
@@ -733,17 +733,17 @@ World`,
 	})
 ```
 
-## Try to run the test
+## 尝试运行测试
 
 ```
 ./blogpost_test.go:60:3: unknown field 'Body' in struct literal of type blogposts.Post
 ```
 
-As we'd expect.
+正如我们所料。
 
-## Write the minimal amount of code for the test to run and check the failing test output
+## 写最少的代码让测试能跑起来，并检查失败的测试输出
 
-Add `Body` to `Post` and the test should fail.
+把 `Body` 加到 `Post` 上，测试应该会失败。
 
 ```
 === RUN   TestNewBlogPosts
@@ -751,10 +751,10 @@ Add `Body` to `Post` and the test should fail.
         World}
 ```
 
-## Write enough code to make it pass
+## 写足够的代码让它通过
 
-1. Scan the next line to ignore the `---` separator.
-2. Keep scanning until there's nothing left to scan.
+1. 扫描下一行，忽略 `---` 分隔符。
+2. 持续扫描直到没有数据可扫。
 
 ```go
 func newPost(postBody io.Reader) (Post, error) {
@@ -769,7 +769,7 @@ func newPost(postBody io.Reader) (Post, error) {
 	description := readMetaLine(descriptionSeparator)
 	tags := strings.Split(readMetaLine(tagsSeparator), ", ")
 
-	scanner.Scan() // ignore a line
+	scanner.Scan() // 忽略一行
 
 	buf := bytes.Buffer{}
 	for scanner.Scan() {
@@ -786,13 +786,13 @@ func newPost(postBody io.Reader) (Post, error) {
 }
 ```
 
-* `scanner.Scan()` returns a `bool` which indicates whether there's more data to scan, so we can use that with a `for` loop to keep reading through the data until the end.
-* After every `Scan()` we write the data into the buffer using `fmt.Fprintln`. We use the version that adds a newline because the scanner removes the newlines from each line, but we need to maintain them.
-* Because of the above, we need to trim the final newline, so we don't have a trailing one.
+* `scanner.Scan()` 返回一个 `bool`，表示是否还有更多数据可以扫描，所以我们可以用它配合 `for` 循环一直读到末尾。
+* 每次 `Scan()` 之后，我们用 `fmt.Fprintln` 把数据写入缓冲区。我们使用会加换行的版本，因为 scanner 会把每一行的换行去掉，但我们需要保留它们。
+* 由于上面的原因，我们需要把最后那个换行去掉，避免末尾有多余的换行。
 
-## Refactor
+## 重构
 
-Encapsulating the idea of getting the rest of the data into a function will help future readers quickly understand _what_ is happening in `newPost`, without having to concern themselves with implementation specifics.
+把"获取剩余数据"的概念封装到一个函数中，能帮助未来的读者快速理解 `newPost` 在 _做什么_，而不必关心实现细节。
 
 ```go
 func newPost(postBody io.Reader) (Post, error) {
@@ -812,7 +812,7 @@ func newPost(postBody io.Reader) (Post, error) {
 }
 
 func readBody(scanner *bufio.Scanner) string {
-	scanner.Scan() // ignore a line
+	scanner.Scan() // 忽略一行
 	buf := bytes.Buffer{}
 	for scanner.Scan() {
 		fmt.Fprintln(&buf, scanner.Text())
@@ -821,28 +821,28 @@ func readBody(scanner *bufio.Scanner) string {
 }
 ```
 
-## Iterating further
+## 进一步迭代
 
-We've made our "steel thread" of functionality, taking the shortest route to get to our happy path, but clearly there's some distance to go before it is production ready.
+我们已经做出了功能的"钢线"（steel thread），用最短路径达成了正常路径，但显然距离生产可用还有一段距离。
 
-We haven't handled:
+我们还没处理：
 
-* when the file's format is not correct
-* the file is not a `.md`
-* what if the order of the metadata fields is different? Should that be allowed? Should we be able to handle it?
+* 当文件格式不正确时
+* 文件不是 `.md`
+* 如果元数据字段的顺序不一样怎么办？应当允许吗？我们应该能处理吗？
 
-Crucially though, we have working software, and we have defined our interface. The above are just further iterations, more tests to write and drive our behaviour. To support any of the above we shouldn't have to change our _design_, just implementation details.
+但关键的是，我们已经有可以工作的软件了，并且定义了我们的接口。上面这些只是进一步的迭代，需要写更多的测试来驱动行为。要支持上述任何一项，我们都不需要改变 _设计_，只需改变实现细节。
 
-Keeping focused on the goal means we made the important decisions, and validated them against the desired behaviour, rather than getting bogged down on matters that won't affect the overall design.
+专注于目标意味着我们做出了重要的决策，并依据期望行为验证了它们，而不是在不影响整体设计的事情上陷入泥潭。
 
-## Wrapping up
+## 总结
 
-`fs.FS`, and the other changes in Go 1.16 give us some elegant ways of reading data from file systems and testing them simply.
+`fs.FS` 以及 Go 1.16 中的其他变化，给了我们从文件系统读取数据并简单测试的优雅方式。
 
-If you wish to try out the code "for real":
+如果你想"真正"试试这段代码：
 
-* Create a `cmd` folder within the project, add a `main.go` file
-* Add the following code
+* 在项目里创建一个 `cmd` 文件夹，新建一个 `main.go` 文件
+* 加入下面的代码
 
 ```go
 import (
@@ -860,35 +860,37 @@ func main() {
 }
 ```
 
-* Add some markdown files into a `posts` folder and run the program!
+* 在 `posts` 文件夹里加入一些 markdown 文件，运行程序！
 
-Notice the symmetry between the production code
+注意生产代码
 
 ```go
 posts, err := blogposts.NewPostsFromFS(os.DirFS("posts"))
 ```
 
-And the tests
+和测试
 
 ```go
 posts, err := blogposts.NewPostsFromFS(fs)
 ```
 
-This is when consumer-driven, top-down TDD _feels correct_.
+之间的对称性。
 
-A user of our package can look at our tests and quickly get up to speed with what it's supposed to do and how to use it. As maintainers, we can be _confident our tests are useful because they're from a consumer's point of view_. We're not testing implementation details or other incidental details, so we can be reasonably confident that our tests will help us, rather than hinder us when refactoring.
+这就是以使用者为驱动、自顶向下的 TDD _感觉对了_ 的时候。
 
-By relying on good software engineering practices like [**dependency injection**](dependency-injection.md) our code is simple to test and re-use.
+我们包的使用者可以查看我们的测试，迅速搞明白它应该做什么以及怎么用。作为维护者，我们可以 _对我们的测试有信心，因为它们是从使用者的视角写出来的_。我们不是在测试实现细节或其他无关细节，所以可以合理地相信我们的测试在重构时会帮我们而不是阻碍我们。
 
-When you're creating packages, even if they're only internal to your project, prefer a top-down consumer driven approach. This will stop you over-imagining designs and making abstractions you may not even need and will help ensure the tests you write are useful.
+通过依赖良好的软件工程实践，比如[**依赖注入**](dependency-injection.md)，我们的代码很容易测试和复用。
 
-The iterative approach kept every step small, and the continuous feedback helped us uncover unclear requirements possibly sooner than with other, more ad-hoc approaches.
+当你创建包的时候，即使它们只是项目内部使用，也优先采用自顶向下、以使用者为驱动的方法。这能阻止你过度想象设计、做出可能根本用不上的抽象，并能确保你写的测试是有用的。
 
-### Writing?
+迭代式的方法让每一步都很小，持续的反馈帮助我们比那些更随意的方式更早地揭示出不清晰的需求。
 
-It's important to note that these new features only have operations for _reading_ files. If your work needs to do writing, you'll need to look elsewhere. Remember to keep thinking about what the standard library offers currently, if you're writing data you should probably look into leveraging existing interfaces such as `io.Writer` to keep your code loosely-coupled and re-usable.
+### 写入呢？
 
-### Further reading
+需要注意的是，这些新特性只有 _读取_ 文件的操作。如果你的工作需要写入，你得另寻他法。记得继续思考标准库目前提供了什么——如果你在写入数据，你应该研究利用现有的接口，例如 `io.Writer`，让你的代码保持松耦合和可复用。
 
-* This was a light intro to `io/fs`. [Ben Congdon has done an excellent write-up](https://benjamincongdon.me/blog/2021/01/21/A-Tour-of-Go-116s-iofs-package/) which was a lot of help for writing this chapter.
-* [Discussion on the file system interfaces](https://github.com/golang/go/issues/41190)
+### 进一步阅读
+
+* 这只是对 `io/fs` 的一个简单介绍。[Ben Congdon 写了一篇出色的文章](https://benjamincongdon.me/blog/2021/01/21/A-Tour-of-Go-116s-iofs-package/)，对本章的写作帮助很大。
+* [关于文件系统接口的讨论](https://github.com/golang/go/issues/41190)

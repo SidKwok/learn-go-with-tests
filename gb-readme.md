@@ -1,25 +1,25 @@
-# Learn Go with Tests
+# 通过测试学 Go
 
 ![](.gitbook/assets/red-green-blue-gophers-smaller.png)
 
 [Art by Denise](https://twitter.com/deniseyu21)
 
-## Support me
+## 支持作者
 
-I am proud to offer this resource for free, but if you wish to give some appreciation
+我很高兴免费提供这份资源，如果你想表达一点感谢
 
 * [Tweet me @quii](https://twitter.com/quii)
 * [Mastodon](https://mastodon.cloud/@quii)
 * [Buy me a coffee](https://www.buymeacoffee.com/quii)
 * [Sponsor me on GitHub](https://github.com/sponsors/quii)
 
-## Learn test-driven development with Go
+## 用 Go 学习测试驱动开发
 
-* Explore the Go language by writing tests
-* **Get a grounding with TDD**. Go is a good language for learning TDD because it is a simple language to learn and testing is built-in
-* Be confident that you'll be able to start writing robust, well-tested systems in Go
+* 通过编写测试来探索 Go 语言
+* **打好 TDD 的基础**。Go 是学习 TDD 的一门好语言，因为它本身简单易学，并且测试是内置功能
+* 让你有信心开始用 Go 编写健壮的、有充分测试的系统
 
-Translations:
+其他语言版本：
 
 * [中文](https://studygolang.gitbook.io/learn-go-with-tests)
 * [Português](https://larien.gitbook.io/aprenda-go-com-testes/)
@@ -29,61 +29,61 @@ Translations:
 * [Türkçe](https://halilkocaoz.gitbook.io/go-programlama-dilini-ogren/)
 * [Nederlands](https://bobkosse.gitbook.io/leer-go-met-tests)
 
-## Background
+## 背景
 
-I have some experience introducing Go to development teams and have tried different approaches as to how to grow a team from some people curious about Go into highly effective writers of Go systems.
+我有一些向开发团队引入 Go 的经验，并尝试过不同的方式，把一群对 Go 感到好奇的人逐步培养成能高效编写 Go 系统的开发者。
 
-### What didn't work
+### 行不通的做法
 
-#### Read _the_ book
+#### 读 _那本_ 书
 
-An approach we tried was to take [the blue book](https://www.amazon.co.uk/Programming-Language-Addison-Wesley-Professional-Computing/dp/0134190440) and every week discuss the next chapter along with the exercises.
+我们尝试过的一种方式是拿起 [蓝皮书](https://www.amazon.co.uk/Programming-Language-Addison-Wesley-Professional-Computing/dp/0134190440)，每周讨论下一章和对应的练习。
 
-I love this book but it requires a high level of commitment. The book is very detailed in explaining concepts, which is obviously great but it means that the progress is slow and steady - this is not for everyone.
+我喜欢这本书，但它需要很高的投入度。这本书在概念解释上非常详尽，这显然很棒，但也意味着进度缓慢而稳定——并不是每个人都适合。
 
-I found that whilst a small number of people would read chapter X and do the exercises, many people didn't.
+我发现虽然有少数人会读完第 X 章并完成练习，但很多人不会。
 
-#### Solve some problems
+#### 解决一些问题
 
-Katas are fun but they are usually limited in their scope for learning a language; you're unlikely to use goroutines to solve a kata.
+代码 kata 很有趣，但它们的学习范围通常有限；你不太可能用 goroutine 去解一个 kata。
 
-Another problem is when you have varying levels of enthusiasm. Some people just learn way more of the language than others and when demonstrating what they have done end up confusing people with features the others are not familiar with.
+另一个问题是当大家热情程度参差不齐的时候。有些人就是会比其他人学得多得多，演示成果时反而会用到别人不熟悉的特性，把其他人弄糊涂。
 
-This ends up making the learning feel quite _unstructured_ and _ad hoc_.
+这最终会让学习体验显得相当 _无章可循_、_随心所欲_。
 
-### What did work
+### 行得通的做法
 
-By far the most effective way was by slowly introducing the fundamentals of the language by reading through [go by example](https://gobyexample.com/), exploring them with examples and discussing them as a group. This was a more interactive approach than "read chapter x for homework".
+到目前为止，最有效的方式是通过阅读 [go by example](https://gobyexample.com/) 慢慢介绍语言的基础知识，结合示例去探索，并以小组形式讨论。这是比"回家读第 X 章"更具互动性的方法。
 
-Over time the team gained a solid foundation of the _grammar_ of the language so we could then start to build systems.
+随着时间推移，团队对语言的 _语法_ 打下了扎实的基础，于是我们可以开始构建系统了。
 
-This to me seems analogous to practicing scales when trying to learn guitar.
+在我看来这就像学吉他时练音阶。
 
-It doesn't matter how artistic you think you are, you are unlikely to write good music without understanding the fundamentals and practicing the mechanics.
+不管你觉得自己有多艺术家气质，如果不理解基础并练习基本功，就很难写出好的音乐。
 
-### What works for me
+### 适合我的方式
 
-When _I_ learn a new programming language I usually start by messing around in a REPL but eventually, I need more structure.
+当 _我_ 学习一门新的编程语言时，我通常会先在 REPL 里随便折腾，但最终我需要更多的结构。
 
-What I like to do is explore concepts and then solidify the ideas with tests. Tests verify the code I write is correct and documents the feature I have learned.
+我喜欢做的事情是先探索概念，然后用测试去固化这些想法。测试可以验证我写的代码是正确的，并把我学到的功能记录下来。
 
-Taking my experience of learning with a group and my own personal way I am going to try and create something that hopefully proves useful to other teams. Learning the fundamentals by writing small tests so that you can then take your existing software design skills and ship some great systems.
+结合我和小组一起学习的经验、以及我个人的方式，我打算尝试创造一些希望对其他团队也有用的东西。通过编写小型测试来学习基础，然后你就能运用已有的软件设计技能交付出色的系统。
 
-## Who this is for
+## 适合谁
 
-* People who are interested in picking up Go
-* People who already know some Go, but want to explore testing more
+* 想入门 Go 的人
+* 已经懂一点 Go，但想更深入探索测试的人
 
-## What you'll need
+## 你需要什么
 
-* A computer!
-* [Installed Go](https://golang.org/)
-* A text editor
-* Some experience with programming. Understanding of concepts like `if`, variables, functions etc.
-* Comfortable using the terminal
+* 一台电脑！
+* [已安装的 Go](https://golang.org/)
+* 一个文本编辑器
+* 一些编程经验，理解 `if`、变量、函数等概念
+* 能熟练使用终端
 
-## Feedback
+## 反馈
 
-* Add issues/submit PRs [here](https://github.com/quii/learn-go-with-tests) or [tweet me @quii](https://twitter.com/quii)
+* 在 [这里](https://github.com/quii/learn-go-with-tests) 提 issue/PR 或者 [tweet me @quii](https://twitter.com/quii)
 
-[MIT license](LICENSE.md)
+[MIT 许可证](LICENSE.md)

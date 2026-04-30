@@ -1,19 +1,19 @@
 # Dependency Injection
 
-**[You can find all the code for this chapter here](https://github.com/quii/learn-go-with-tests/tree/main/di)**
+**[本章的所有代码可以在这里找到](https://github.com/quii/learn-go-with-tests/tree/main/di)**
 
-It is assumed that you have read the [structs section](./structs-methods-and-interfaces.md) before as some understanding of interfaces will be needed for this.
+我们假定你已经阅读过[结构体那一节](./structs-methods-and-interfaces.md)，因为本章会需要一些关于接口的理解。
 
-There are _a lot_ of misunderstandings around dependency injection around the programming community. Hopefully, this guide will show you how
+编程社区里关于依赖注入有 _很多_ 误解。希望本指南能向你展示
 
-* You don't need a framework
-* It does not overcomplicate your design
-* It facilitates testing
-* It allows you to write great, general-purpose functions.
+* 你不需要框架
+* 它不会让你的设计过度复杂化
+* 它有助于测试
+* 它能帮你写出优秀的、通用目的的函数。
 
-We want to write a function that greets someone, just like we did in the hello-world chapter but this time we are going to be testing the _actual printing_.
+我们想写一个跟某人打招呼的函数，就像我们在 hello-world 那一章做的一样，但这次我们要测试 _实际的打印_ 行为。
 
-Just to recap, here is what that function could look like
+简单回顾一下，那个函数大概长这样
 
 ```go
 func Greet(name string) {
@@ -21,15 +21,15 @@ func Greet(name string) {
 }
 ```
 
-But how can we test this? Calling `fmt.Printf` prints to stdout, which is pretty hard for us to capture using the testing framework.
+但我们要怎么测试呢？调用 `fmt.Printf` 会打印到 stdout，用测试框架很难捕获。
 
-What we need to do is to be able to **inject** \(which is just a fancy word for pass in\) the dependency of printing.
+我们要做的就是能 **注入**（不过是个时髦词，意思就是"传入"）打印这个依赖。
 
-**Our function doesn't need to care _where_ or _how_ the printing happens, so we should accept an _interface_ rather than a concrete type.**
+**我们的函数不需要关心打印 _发生在哪里_ 或 _怎么发生_，所以应该接受一个 _接口_ 而不是具体的类型。**
 
-If we do that, we can then change the implementation to print to something we control so that we can test it. In "real life" you would inject in something that writes to stdout.
+这样做之后，我们可以把实现换成打印到我们能控制的地方，进而测试它。"现实生活"里你会注入一个写到 stdout 的实现。
 
-If you look at the source code of [`fmt.Printf`](https://pkg.go.dev/fmt#Printf) you can see a way for us to hook in
+如果你看 [`fmt.Printf`](https://pkg.go.dev/fmt#Printf) 的源代码，就能找到我们的切入点
 
 ```go
 // It returns the number of bytes written and any write error encountered.
@@ -38,9 +38,9 @@ func Printf(format string, a ...interface{}) (n int, err error) {
 }
 ```
 
-Interesting! Under the hood `Printf` just calls `Fprintf` passing in `os.Stdout`.
+有意思！在内部，`Printf` 只是调用了 `Fprintf` 并传入 `os.Stdout`。
 
-What exactly _is_ an `os.Stdout`? What does `Fprintf` expect to get passed to it for the 1st argument?
+`os.Stdout` _到底_ 是什么？`Fprintf` 期望第 1 个参数传入什么？
 
 ```go
 func Fprintf(w io.Writer, format string, a ...interface{}) (n int, err error) {
@@ -52,7 +52,7 @@ func Fprintf(w io.Writer, format string, a ...interface{}) (n int, err error) {
 }
 ```
 
-An `io.Writer`
+一个 `io.Writer`
 
 ```go
 type Writer interface {
@@ -60,13 +60,13 @@ type Writer interface {
 }
 ```
 
-From this we can infer that `os.Stdout` implements `io.Writer`; `Printf` passes `os.Stdout` to `Fprintf` which expects an `io.Writer`.
+由此我们可以推断 `os.Stdout` 实现了 `io.Writer`；`Printf` 把 `os.Stdout` 传给 `Fprintf`，而 `Fprintf` 期望一个 `io.Writer`。
 
-As you write more Go code you will find this interface popping up a lot because it's a great general purpose interface for "put this data somewhere".
+随着你写更多 Go 代码，你会发现这个接口经常出现，因为它是表达"把这些数据放到某处"非常通用的接口。
 
-So we know under the covers we're ultimately using `Writer` to send our greeting somewhere. Let's use this existing abstraction to make our code testable and more reusable.
+所以我们知道在底层我们最终是用 `Writer` 把问候发送到某处的。让我们利用这个已有的抽象，让代码可测试且更具复用性。
 
-## Write the test first
+## 先写测试
 
 ```go
 func TestGreet(t *testing.T) {
@@ -82,21 +82,21 @@ func TestGreet(t *testing.T) {
 }
 ```
 
-The `Buffer` type from the `bytes` package implements the `Writer` interface, because it has the method `Write(p []byte) (n int, err error)`.
+`bytes` 包里的 `Buffer` 类型实现了 `Writer` 接口，因为它有 `Write(p []byte) (n int, err error)` 方法。
 
-So we'll use it in our test to send in as our `Writer` and then we can check what was written to it after we invoke `Greet`
+所以我们在测试里用它作为 `Writer` 传入，调用 `Greet` 之后再检查写进去的内容
 
-## Try and run the test
+## 试着运行测试
 
-The test will not compile
+测试无法编译
 
 ```text
 ./di_test.go:10:2: undefined: Greet
 ```
 
-## Write the minimal amount of code for the test to run and check the failing test output
+## 写最少量的代码让测试运行起来，并检查失败的输出
 
-_Listen to the compiler_ and fix the problem.
+_听编译器的话_，把问题修了。
 
 ```go
 func Greet(writer *bytes.Buffer, name string) {
@@ -106,11 +106,11 @@ func Greet(writer *bytes.Buffer, name string) {
 
 `Hello, Chris di_test.go:16: got '' want 'Hello, Chris'`
 
-The test fails. Notice that the name is getting printed out, but it's going to stdout.
+测试失败了。注意名字被打印出来了，但去到了 stdout。
 
-## Write enough code to make it pass
+## 写足够的代码让测试通过
 
-Use the writer to send the greeting to the buffer in our test. Remember `fmt.Fprintf` is like `fmt.Printf` but instead takes a `Writer` to send the string to, whereas `fmt.Printf` defaults to stdout.
+用 writer 把问候发送到测试里的 buffer。记住 `fmt.Fprintf` 跟 `fmt.Printf` 类似，但它接受一个 `Writer` 来发送字符串，而 `fmt.Printf` 默认发送到 stdout。
 
 ```go
 func Greet(writer *bytes.Buffer, name string) {
@@ -118,13 +118,13 @@ func Greet(writer *bytes.Buffer, name string) {
 }
 ```
 
-The test now passes.
+测试现在通过了。
 
-## Refactor
+## 重构
 
-Earlier the compiler told us to pass in a pointer to a `bytes.Buffer`. This is technically correct but not very useful.
+之前编译器告诉我们要传入一个指向 `bytes.Buffer` 的指针。这在技术上是对的，但不是很有用。
 
-To demonstrate this, try wiring up the `Greet` function into a Go application where we want it to print to stdout.
+为了证明这一点，试着把 `Greet` 函数接到一个 Go 应用里，让它打印到 stdout。
 
 ```go
 func main() {
@@ -134,9 +134,9 @@ func main() {
 
 `./di.go:14:7: cannot use os.Stdout (type *os.File) as type *bytes.Buffer in argument to Greet`
 
-As discussed earlier `fmt.Fprintf` allows you to pass in an `io.Writer` which we know both `os.Stdout` and `bytes.Buffer` implement.
+正如前面讨论过的，`fmt.Fprintf` 允许你传入一个 `io.Writer`，我们知道 `os.Stdout` 和 `bytes.Buffer` 都实现了它。
 
-If we change our code to use the more general purpose interface we can now use it in both tests and in our application.
+如果我们把代码改成使用更通用的接口，那它在测试和应用程序里就都能用了。
 
 ```go
 package main
@@ -156,13 +156,13 @@ func main() {
 }
 ```
 
-## More on io.Writer
+## 关于 io.Writer 的更多内容
 
-What other places can we write data to using `io.Writer`? Just how general purpose is our `Greet` function?
+我们还能用 `io.Writer` 把数据写到哪些地方？我们的 `Greet` 函数到底有多通用？
 
-### The Internet
+### 互联网
 
-Run the following
+运行下面的代码
 
 ```go
 package main
@@ -187,32 +187,32 @@ func main() {
 }
 ```
 
-Run the program and go to [http://localhost:5001](http://localhost:5001). You'll see your greeting function being used.
+运行程序并访问 [http://localhost:5001](http://localhost:5001)。你会看到我们的 greeting 函数被使用了。
 
-HTTP servers will be covered in a later chapter so don't worry too much about the details.
+后面的章节会讲 HTTP 服务器，所以这里的细节不必太担心。
 
-When you write an HTTP handler, you are given an `http.ResponseWriter` and the `http.Request` that was used to make the request. When you implement your server you _write_ your response using the writer.
+当你写一个 HTTP handler 时，你会拿到一个 `http.ResponseWriter` 和发起请求的 `http.Request`。当你实现服务器时，你用 writer 来 _写_ 响应。
 
-You can probably guess that `http.ResponseWriter` also implements `io.Writer` so this is why we could re-use our `Greet` function inside our handler.
+你大概能猜到，`http.ResponseWriter` 也实现了 `io.Writer`，所以我们能在 handler 里复用我们的 `Greet` 函数。
 
-## Wrapping up
+## 总结
 
-Our first round of code was not easy to test because it wrote data to somewhere we couldn't control.
+我们第一版代码不易测试，因为它把数据写到了我们无法控制的地方。
 
-_Motivated by our tests_ we refactored the code so we could control _where_ the data was written by **injecting a dependency** which allowed us to:
+_在测试驱动下_ 我们重构了代码，通过 **注入依赖** 控制了数据 _写到哪里_，这让我们能够：
 
-* **Test our code** If you can't test a function _easily_, it's usually because of dependencies hard-wired into a function _or_ global state. If you have a global database connection pool for instance that is used by some kind of service layer, it is likely going to be difficult to test and they will be slow to run. DI will motivate you to inject in a database dependency \(via an interface\) which you can then mock out with something you can control in your tests.
-* **Separate our concerns**, decoupling _where the data goes_ from _how to generate it_. If you ever feel like a method/function has too many responsibilities \(generating data _and_ writing to a db? handling HTTP requests _and_ doing domain level logic?\) DI is probably going to be the tool you need.
-* **Allow our code to be re-used in different contexts** The first "new" context our code can be used in is inside tests. But further on if someone wants to try something new with your function they can inject their own dependencies.
+* **测试我们的代码** 如果一个函数难以 _轻松_ 测试，通常是因为依赖被硬连接进了函数 _或者_ 全局状态。比如，如果你有一个全局的数据库连接池被某种 service 层使用，多半很难测试，跑起来也慢。DI 会促使你（通过接口）注入一个数据库依赖，这样你就能在测试里用一个你能控制的东西把它 mock 掉。
+* **分离关注点**，把 _数据去往何处_ 与 _怎么生成数据_ 解耦。如果你觉得某个方法/函数职责太多（既生成数据 _又_ 写数据库？又处理 HTTP 请求 _又_ 做领域级逻辑？），DI 多半就是你需要的工具。
+* **让代码可在不同上下文中复用** 我们代码可以使用的第一个"新"上下文就是测试。再进一步，如果有人想用你的函数尝试别的，他们可以注入自己的依赖。
 
-### What about mocking? I hear you need that for DI and also it's evil
+### mock 怎么办？听说 DI 需要它，而且它是邪恶的
 
-Mocking will be covered in detail later \(and it's not evil\). You use mocking to replace real things you inject with a pretend version that you can control and inspect in your tests. In our case though, the standard library had something ready for us to use.
+mock 后面会详细介绍（它并不邪恶）。你用 mock 把注入的真实东西换成一个假的版本，便于在测试中控制和检查。不过在我们这个例子里，标准库已经有现成的东西可用。
 
-### The Go standard library is really good, take time to study it
+### Go 标准库非常好，值得花时间研究
 
-By having some familiarity with the `io.Writer` interface we are able to use `bytes.Buffer` in our test as our `Writer` and then we can use other `Writer`s from the standard library to use our function in a command line app or in web server.
+正因为对 `io.Writer` 接口有些熟悉，我们才能在测试中把 `bytes.Buffer` 用作我们的 `Writer`，而且我们还可以使用标准库里其他的 `Writer` 来在命令行应用或 web 服务器里使用我们的函数。
 
-The more familiar you are with the standard library the more you'll see these general purpose interfaces which you can then re-use in your own code to make your software reusable in a number of contexts.
+你越熟悉标准库，就越能看到这些通用接口，并能在自己的代码里复用它们，让你的软件能在多种场景下被复用。
 
-This example is heavily influenced by a chapter in [The Go Programming language](https://www.amazon.co.uk/Programming-Language-Addison-Wesley-Professional-Computing/dp/0134190440), so if you enjoyed this, go buy it!
+这个例子深受 [The Go Programming language](https://www.amazon.co.uk/Programming-Language-Addison-Wesley-Professional-Computing/dp/0134190440) 一书中某一章的影响，如果你喜欢这一章，去把书买了吧！

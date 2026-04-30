@@ -1,16 +1,16 @@
-# Command line and project structure
+# 命令行与项目结构
 
-**[You can find all the code for this chapter here](https://github.com/quii/learn-go-with-tests/tree/main/command-line)**
+**[本章的所有代码可以在这里找到](https://github.com/quii/learn-go-with-tests/tree/main/command-line)**
 
-Our product owner now wants to _pivot_ by introducing a second application - a command line application.
+我们的产品负责人现在想要 _转向_，引入第二个应用 —— 一个命令行应用。
 
-For now, it will just need to be able to record a player's win when the user types `Ruth wins`. The intention is to eventually be a tool for helping users play poker.
+目前，它只需要在用户输入 `Ruth wins` 时记录一名玩家的胜利。最终的目的是成为一个帮助用户玩扑克的工具。
 
-The product owner wants the database to be shared amongst the two applications so that the league updates according to wins recorded in the new application.
+产品负责人希望两个应用共享数据库，这样根据新应用记录的胜利情况，联赛榜也会更新。
 
-## A reminder of the code
+## 代码回顾
 
-We have an application with a `main.go` file that launches an HTTP server. The HTTP server won't be interesting to us for this exercise but the abstraction it uses will. It depends on a `PlayerStore`.
+我们有一个带 `main.go` 文件的应用，它启动了一个 HTTP 服务器。HTTP 服务器对这次练习来说不太重要，但它使用的抽象很重要。它依赖一个 `PlayerStore`。
 
 ```go
 type PlayerStore interface {
@@ -20,29 +20,29 @@ type PlayerStore interface {
 }
 ```
 
-In the previous chapter, we made a `FileSystemPlayerStore` which implements that interface. We should be able to re-use some of this for our new application.
+在上一章中，我们做了一个 `FileSystemPlayerStore` 实现了那个接口。我们应该可以在新应用中复用其中一些。
 
-## Some project refactoring first
+## 先做一些项目重构
 
-Our project now needs to create two binaries, our existing web server and the command line app.
+我们的项目现在需要创建两个二进制文件，我们已有的 web 服务器和命令行应用。
 
-Before we get stuck into our new work we should structure our project to accommodate this.
+在我们正式开始新工作之前，我们应该调整项目结构以适应这一点。
 
-So far all the code has lived in one folder, in a path looking like this
+到目前为止所有代码都活在一个文件夹中，路径看起来像这样
 
 `$GOPATH/src/github.com/your-name/my-app`
 
-In order for you to make an application in Go, you need a `main` function inside a `package main`. So far all of our "domain" code has lived inside `package main` and our `func main` can reference everything.
+为了在 Go 中创建一个应用，你需要在 `package main` 包内有一个 `main` 函数。到目前为止我们所有的"领域"代码都活在 `package main` 中，我们的 `func main` 可以引用所有东西。
 
-This was fine so far and it is good practice not to go over-the-top with package structure. If you take the time to look through the standard library you will see very little in the way of lots of folders and structure.
+到目前为止这没问题，并且 _不要_ 在包结构上过度设计是个好习惯。如果你花时间浏览标准库，你会发现极少有大量文件夹和复杂结构的情况。
 
-Thankfully it's pretty straightforward to add structure _when you need it_.
+值得欣慰的是，_当你需要时_ 添加结构是相当直接的。
 
-Inside the existing project create a `cmd` directory with a `webserver` directory inside that (e.g `mkdir -p cmd/webserver`).
+在已有项目内创建一个 `cmd` 目录，里面再创建一个 `webserver` 目录（例如 `mkdir -p cmd/webserver`）。
 
-Move the `main.go` inside there.
+把 `main.go` 移到那里面。
 
-If you have `tree` installed you should run it and your structure should look like this
+如果你装了 `tree`，运行它，你的结构应该看起来像这样
 
 ```
 .
@@ -59,13 +59,13 @@ If you have `tree` installed you should run it and your structure should look li
 |-- tape_test.go
 ```
 
-We now effectively have a separation between our application and the library code but we now need to change some package names. Remember when you build a Go application its package _must_ be `main`.
+我们现在实际上把应用代码和库代码分开了，但我们需要更改一些包名。记住，当你构建一个 Go 应用时，它的包 _必须_ 是 `main`。
 
-Change all the other code to have a package called `poker`.
+把所有其他代码改为名为 `poker` 的包。
 
-Finally, we need to import this package into `main.go` so we can use it to create our web server. Then we can use our library code by using `poker.FunctionName`.
+最后，我们需要把这个包导入到 `main.go`，这样我们就可以用它来创建 web 服务器。然后我们可以通过使用 `poker.FunctionName` 来使用我们的库代码。
 
-The paths will be different on your computer, but it should be similar to this:
+路径在你的电脑上会不同，但应该类似这样：
 
 ```go
 // cmd/webserver/main.go
@@ -99,21 +99,21 @@ func main() {
 }
 ```
 
-The full path may seem a bit jarring, but this is how you can import _any_ publicly available library into your code.
+完整的路径可能看起来有些刺眼，但这就是你如何把 _任何_ 公开可用的库导入到你的代码中。
 
-By separating our domain code into a separate package and committing it to a public repo like GitHub any Go developer can write their own code which imports that package the features we've written available. The first time you try and run it will complain it is not existing but all you need to do is run `go get`.
+通过把我们的领域代码分离到一个独立的包，并提交到像 GitHub 这样的公共仓库，任何 Go 开发者都可以写他们自己的代码，导入那个包，使用我们已经写好的特性。第一次运行时它会抱怨它不存在，但你只需运行 `go get`。
 
-In addition, users can view [the documentation at pkg.go.dev](https://pkg.go.dev/github.com/quii/learn-go-with-tests/command-line/v1).
+此外，用户可以查看 [pkg.go.dev 上的文档](https://pkg.go.dev/github.com/quii/learn-go-with-tests/command-line/v1)。
 
-### Final checks
+### 最后的检查
 
-- Inside the root run `go test` and check they're still passing
-- Go inside our `cmd/webserver` and do `go run main.go`
-  - Visit `http://localhost:5000/league` and you should see it's still working
+- 在根目录运行 `go test`，检查测试还能通过
+- 进入我们的 `cmd/webserver` 目录运行 `go run main.go`
+  - 访问 `http://localhost:5000/league`，你应该看到它仍在工作
 
 ### Walking skeleton
 
-Before we get stuck into writing tests, let's add a new application that our project will build. Create another directory inside `cmd` called `cli` (command line interface) and add a `main.go` with the following
+在我们正式开始写测试之前，我们先添加一个新应用让我们的项目可以构建。在 `cmd` 内再创建一个目录，叫 `cli`（command line interface），添加一个 `main.go`，内容如下
 
 ```go
 // cmd/cli/main.go
@@ -126,15 +126,15 @@ func main() {
 }
 ```
 
-The first requirement we'll tackle is recording a win when the user types `{PlayerName} wins`.
+我们要解决的第一个需求是当用户输入 `{PlayerName} wins` 时记录一次胜利。
 
-## Write the test first
+## 先写测试
 
-We know we need to make something called `CLI` which will allow us to `Play` poker. It'll need to read user input and then record wins to a `PlayerStore`.
+我们知道我们需要做一个叫 `CLI` 的东西，让我们能够 `Play` 扑克。它需要读取用户输入，然后把胜利记录到一个 `PlayerStore`。
 
-Before we jump too far ahead though, let's just write a test to check it integrates with the `PlayerStore` how we'd like.
+不过在我们想得太远之前，我们先写一个测试，检查它按我们想要的方式与 `PlayerStore` 集成。
 
-Inside `CLI_test.go` (in the root of the project, not inside `cmd`)
+在 `CLI_test.go` 中（在项目的根目录，不是在 `cmd` 内）
 
 ```go
 // CLI_test.go
@@ -153,23 +153,23 @@ func TestCLI(t *testing.T) {
 }
 ```
 
-- We can use our `StubPlayerStore` from other tests
-- We pass in our dependency into our not yet existing `CLI` type
-- Trigger the game by an unwritten `PlayPoker` method
-- Check that a win is recorded
+- 我们可以用其他测试中的 `StubPlayerStore`
+- 我们把依赖传入到尚不存在的 `CLI` 类型
+- 通过未写出的 `PlayPoker` 方法触发游戏
+- 检查是否记录了一次胜利
 
-## Try to run the test
+## 尝试运行测试
 
 ```
 # github.com/quii/learn-go-with-tests/command-line/v2
 ./cli_test.go:25:10: undefined: CLI
 ```
 
-## Write the minimal amount of code for the test to run and check the failing test output
+## 写最少的代码让测试能运行，并检查失败的测试输出
 
-At this point, you should be comfortable enough to create our new `CLI` struct with the respective field for our dependency and add a method.
+到这里，你应该足够熟练，能创建我们的新 `CLI` 结构体（带有依赖对应的字段）并添加一个方法。
 
-You should end up with code like this
+你最终的代码应该是这样
 
 ```go
 // CLI.go
@@ -182,7 +182,7 @@ type CLI struct {
 func (cli *CLI) PlayPoker() {}
 ```
 
-Remember we're just trying to get the test running so we can check the test fails how we'd hope
+记住，我们只是想让测试运行起来，这样可以检查测试按我们希望的方式失败
 
 ```
 --- FAIL: TestCLI (0.00s)
@@ -190,7 +190,7 @@ Remember we're just trying to get the test running so we can check the test fail
 FAIL
 ```
 
-## Write enough code to make it pass
+## 写足够的代码让测试通过
 
 ```go
 //CLI.go
@@ -199,13 +199,13 @@ func (cli *CLI) PlayPoker() {
 }
 ```
 
-That should make it pass.
+这样应该让测试通过了。
 
-Next, we need to simulate reading from `Stdin` (the input from the user) so that we can record wins for specific players.
+接下来，我们需要模拟从 `Stdin`（用户的输入）读取数据，这样我们可以为特定玩家记录胜利。
 
-Let's extend our test to exercise this.
+我们扩展测试来运行这个。
 
-## Write the test first
+## 先写测试
 
 ```go
 //CLI_test.go
@@ -229,17 +229,17 @@ func TestCLI(t *testing.T) {
 }
 ```
 
-`os.Stdin` is what we'll use in `main` to capture the user's input. It is a `*File` under the hood which means it implements `io.Reader` which as we know by now is a handy way of capturing text.
+`os.Stdin` 是我们将在 `main` 中用来捕获用户输入的东西。它底层是一个 `*File`，这意味着它实现了 `io.Reader`，到现在我们都知道这是捕获文本的便捷方式。
 
-We create an `io.Reader` in our test using the handy `strings.NewReader`, filling it with what we expect the user to type.
+我们在测试中使用便利的 `strings.NewReader` 创建一个 `io.Reader`，把我们期望用户输入的内容填进去。
 
-## Try to run the test
+## 尝试运行测试
 
 `./CLI_test.go:12:32: too many values in struct initializer`
 
-## Write the minimal amount of code for the test to run and check the failing test output
+## 写最少的代码让测试能运行，并检查失败的测试输出
 
-We need to add our new dependency into `CLI`.
+我们需要把新的依赖加到 `CLI` 中。
 
 ```go
 //CLI.go
@@ -255,9 +255,9 @@ type CLI struct {
 FAIL
 ```
 
-## Write enough code to make it pass
+## 写足够的代码让测试通过
 
-Remember to do the strictly easiest thing first
+记得先做最简单的事情
 
 ```go
 func (cli *CLI) PlayPoker() {
@@ -265,11 +265,11 @@ func (cli *CLI) PlayPoker() {
 }
 ```
 
-The test passes. We'll add another test to force us to write some real code next, but first, let's refactor.
+测试通过了。我们接下来再加一个测试，迫使我们写一些真实的代码，但首先，让我们重构。
 
-## Refactor
+## 重构
 
-In `server_test` we earlier did checks to see if wins are recorded as we have here. Let's DRY that assertion up into a helper
+在 `server_test` 中我们之前做过类似这里的检查，看胜利是否被记录。把那个断言 DRY 成一个辅助函数
 
 ```go
 //server_test.go
@@ -286,9 +286,9 @@ func assertPlayerWin(t testing.TB, store *StubPlayerStore, winner string) {
 }
 ```
 
-Now replace the assertions in both `server_test.go` and `CLI_test.go`.
+现在替换 `server_test.go` 和 `CLI_test.go` 中的断言。
 
-The test should now read like so
+测试现在应该读起来像这样
 
 ```go
 //CLI_test.go
@@ -303,9 +303,9 @@ func TestCLI(t *testing.T) {
 }
 ```
 
-Now let's write _another_ test with different user input to force us into actually reading it.
+现在我们 _再_ 写一个测试，使用不同的用户输入来迫使我们真的去读它。
 
-## Write the test first
+## 先写测试
 
 ```go
 //CLI_test.go
@@ -334,7 +334,7 @@ func TestCLI(t *testing.T) {
 }
 ```
 
-## Try to run the test
+## 尝试运行测试
 
 ```
 === RUN   TestCLI
@@ -347,13 +347,13 @@ func TestCLI(t *testing.T) {
 FAIL
 ```
 
-## Write enough code to make it pass
+## 写足够的代码让测试通过
 
-We'll use a [`bufio.Scanner`](https://golang.org/pkg/bufio/) to read the input from the `io.Reader`.
+我们将使用 [`bufio.Scanner`](https://golang.org/pkg/bufio/) 从 `io.Reader` 读取输入。
 
-> Package bufio implements buffered I/O. It wraps an io.Reader or io.Writer object, creating another object (Reader or Writer) that also implements the interface but provides buffering and some help for textual I/O.
+> bufio 包实现了带缓冲的 I/O。它包装了一个 io.Reader 或 io.Writer 对象，创建另一个对象（Reader 或 Writer），这个对象同样实现了对应接口，但提供了缓冲以及对文本 I/O 的一些帮助。
 
-Update the code to the following
+把代码更新为下面这样
 
 ```go
 //CLI.go
@@ -373,14 +373,14 @@ func extractWinner(userInput string) string {
 }
 ```
 
-The tests will now pass.
+测试现在应该可以通过了。
 
-- `Scanner.Scan()` will read up to a newline.
-- We then use `Scanner.Text()` to return the `string` the scanner read to.
+- `Scanner.Scan()` 会读取直到换行符。
+- 然后我们用 `Scanner.Text()` 返回 scanner 读到的 `string`。
 
-Now that we have some passing tests, we should wire this up into `main`. Remember we should always strive to have fully-integrated working software as quickly as we can.
+既然我们有了一些通过的测试，我们应该把这接到 `main` 里。记住我们应该总是尽快做到拥有完全集成、可工作的软件。
 
-In `main.go` add the following and run it. (you may have to adjust the path of the second dependency to match what's on your computer)
+在 `main.go` 中添加下面的内容并运行（你可能需要调整第二个依赖的路径以匹配你电脑上的）
 
 ```go
 package main
@@ -415,34 +415,34 @@ func main() {
 }
 ```
 
-You should get an error
+你应该会得到一个错误
 
 ```
 command-line/v3/cmd/cli/main.go:32:25: implicit assignment of unexported field 'playerStore' in poker.CLI literal
 command-line/v3/cmd/cli/main.go:32:34: implicit assignment of unexported field 'in' in poker.CLI literal
 ```
 
-What's happening here is because we are trying to assign to the fields `playerStore` and `in` in `CLI`. These are unexported (private) fields. We _could_ do this in our test code because our test is in the same package as `CLI` (`poker`). But our `main` is in package `main` so it does not have access.
+这里发生的事情是因为我们在试图给 `CLI` 中的 `playerStore` 和 `in` 字段赋值。这些是未导出（私有）的字段。我们 _可以_ 在测试代码中这样做，因为我们的测试和 `CLI` 在同一个包中（`poker`）。但我们的 `main` 在 `main` 包中，所以它没有访问权限。
 
-This highlights the importance of _integrating your work_. We rightfully made the dependencies of our `CLI` private (because we don't want them exposed to users of `CLI`s) but haven't made a way for users to construct it.
+这突显了 _集成你的工作_ 的重要性。我们正确地把 `CLI` 的依赖设为私有（因为我们不希望它们暴露给 `CLI` 的用户），但还没有为用户提供一种构造它的方法。
 
-Is there a way to have caught this problem earlier?
+有没有办法更早地发现这个问题？
 
 ### `package mypackage_test`
 
-In all other examples so far, when we make a test file we declare it as being in the same package that we are testing.
+到目前为止的所有其他例子里，当我们做一个测试文件时，我们都把它声明为与正在测试的包相同的包。
 
-This is fine and it means on the odd occasion where we want to test something internal to the package we have access to the unexported types.
+这没问题，并且意味着在偶尔我们想测试包内部的某些东西时，我们有访问未导出类型的权限。
 
-But given we have advocated for _not_ testing internal things _generally_, can Go help enforce that? What if we could test our code where we only have access to the exported types (like our `main` does)?
+但是鉴于我们 _一般_ 倡导 _不_ 测试内部的东西，Go 能帮助强制执行这一点吗？如果我们能像我们的 `main` 那样只能访问导出类型来测试我们的代码，会怎样？
 
-When you're writing a project with multiple packages I would strongly recommend that your test package name has `_test` at the end. When you do this you will only be able to have access to the public types in your package. This would help with this specific case but also helps enforce the discipline of only testing public APIs. If you still wish to test internals you can make a separate test with the package you want to test.
+当你写一个有多个包的项目时，我强烈建议你的测试包名以 `_test` 结尾。这样做之后你将只能访问你包内的公共类型。这对这个具体情况有帮助，但也有助于强制执行只测试公共 API 的纪律。如果你仍希望测试内部，可以单独做一个使用你想要测试的包的测试。
 
-An adage with TDD is that if you cannot test your code then it is probably hard for users of your code to integrate with it. Using `package foo_test` will help with this by forcing you to test your code as if you are importing it like users of your package will.
+TDD 中有一句格言是，如果你不能测试你的代码，那对代码的用户来说集成它可能也很难。使用 `package foo_test` 会迫使你像导入它的用户那样测试你的代码，从而帮助解决这个问题。
 
-Before fixing `main` let's change the package of our test inside `CLI_test.go` to `poker_test`.
+在修复 `main` 之前，让我们把 `CLI_test.go` 内的测试包改为 `poker_test`。
 
-If you have a well-configured IDE you will suddenly see a lot of red! If you run the compiler you'll get the following errors
+如果你的 IDE 配置得不错，你会突然看到一大片红色！如果你运行编译器，你会得到下面的错误
 
 ```
 ./CLI_test.go:12:19: undefined: StubPlayerStore
@@ -451,17 +451,17 @@ If you have a well-configured IDE you will suddenly see a lot of red! If you run
 ./CLI_test.go:27:3: undefined: assertPlayerWin
 ```
 
-We have now stumbled into more questions on package design. In order to test our software we made unexported stubs and helper functions which are no longer available for us to use in our `CLI_test` because the helpers are defined in the `_test.go` files in the `poker` package.
+我们现在又碰到了关于包设计的更多问题。为了测试我们的软件，我们做了未导出的 stub 和辅助函数，它们现在不再可供我们在 `CLI_test` 中使用，因为这些辅助函数定义在 `poker` 包的 `_test.go` 文件中。
 
-#### Do we want to have our stubs and helpers 'public'?
+#### 我们想让 stub 和辅助函数"公开"吗？
 
-This is a subjective discussion. One could argue that you do not want to pollute your package's API with code to facilitate tests.
+这是一个主观的讨论。有人可能会争辩说，你不希望用方便测试的代码污染你包的 API。
 
-In the presentation ["Advanced Testing with Go"](https://speakerdeck.com/mitchellh/advanced-testing-with-go?slide=53) by Mitchell Hashimoto, it is described how at HashiCorp they advocate doing this so that users of the package can write tests without having to re-invent the wheel writing stubs. In our case, this would mean anyone using our `poker` package won't have to create their own stub `PlayerStore` if they wish to work with our code.
+在 Mitchell Hashimoto 的演讲 ["Advanced Testing with Go"](https://speakerdeck.com/mitchellh/advanced-testing-with-go?slide=53) 中，描述了在 HashiCorp 他们如何倡导这样做，使得包的用户可以在写测试时不必重新发明轮子去写 stub。在我们的例子里，这意味着任何使用我们 `poker` 包的人，如果想跟我们的代码工作，都不必创建他们自己的 stub `PlayerStore`。
 
-Anecdotally I have used this technique in other shared packages and it has proved extremely useful in terms of users saving time when integrating with our packages.
+从轶事上讲，我在其他共享包中使用过这种技术，事实证明它在用户与我们的包集成时为他们节省了大量时间，非常有用。
 
-So let's create a file called `testing.go` and add our stub and our helpers.
+所以我们创建一个名为 `testing.go` 的文件，把我们的 stub 和辅助函数加进去。
 
 ```go
 // testing.go
@@ -503,9 +503,9 @@ func AssertPlayerWin(t testing.TB, store *StubPlayerStore, winner string) {
 // todo for you - the rest of the helpers
 ```
 
-You'll need to make the helpers public (remember exporting is done with a capital letter at the start) if you want them to be exposed to importers of our package.
+如果你希望这些辅助函数对你包的导入者开放，需要让它们公开（记住导出是通过开头大写字母完成的）。
 
-In our `CLI` test you'll need to call the code as if you were using it within a different package.
+在我们的 `CLI` 测试中，你需要像在不同的包中使用代码那样调用代码。
 
 ```go
 //CLI_test.go
@@ -534,7 +534,7 @@ func TestCLI(t *testing.T) {
 }
 ```
 
-You'll now see we have the same problems as we had in `main`
+你现在会看到我们遇到了和在 `main` 中相同的问题
 
 ```
 ./CLI_test.go:15:26: implicit assignment of unexported field 'playerStore' in poker.CLI literal
@@ -543,7 +543,7 @@ You'll now see we have the same problems as we had in `main`
 ./CLI_test.go:25:39: implicit assignment of unexported field 'in' in poker.CLI literal
 ```
 
-The easiest way to get around this is to make a constructor as we have for other types. We'll also change `CLI` so it stores a `bufio.Scanner` instead of the reader as it's now automatically wrapped at construction time.
+绕过这个问题的最简单方法是像我们对其他类型那样做一个构造函数。我们也将更改 `CLI`，让它存储一个 `bufio.Scanner` 而不是 reader，因为它现在会在构造时自动包装。
 
 ```go
 //CLI.go
@@ -560,7 +560,7 @@ func NewCLI(store PlayerStore, in io.Reader) *CLI {
 }
 ```
 
-By doing this, we can then simplify and refactor our reading code
+通过这样做，我们可以简化和重构我们的读取代码
 
 ```go
 //CLI.go
@@ -579,20 +579,20 @@ func (cli *CLI) readLine() string {
 }
 ```
 
-Change the test to use the constructor instead and we should be back to the tests passing.
+把测试改为使用构造函数，我们就应该回到测试通过的状态。
 
-Finally, we can go back to our new `main.go` and use the constructor we just made
+最后，我们可以回到新的 `main.go`，使用刚做好的构造函数
 
 ```go
 //cmd/cli/main.go
 game := poker.NewCLI(store, os.Stdin)
 ```
 
-Try and run it, type "Bob wins".
+试着运行它，输入 "Bob wins"。
 
-### Refactor
+### 重构
 
-We have some repetition in our respective applications where we are opening a file and creating a `file_system_store` from its contents. This feels like a slight weakness in our package's design so we should make a function in it to encapsulate opening a file from a path and returning you the `PlayerStore`.
+在我们的两个应用中存在一些重复，都是打开一个文件并从其内容创建一个 `file_system_store`。这感觉像是我们包设计的一个小弱点，所以我们应该在包中做一个函数来封装从路径打开文件并返回 `PlayerStore` 的过程。
 
 ```go
 //file_system_store.go
@@ -617,9 +617,9 @@ func FileSystemPlayerStoreFromFile(path string) (*FileSystemPlayerStore, func(),
 }
 ```
 
-Now refactor both of our applications to use this function to create the store.
+现在重构两个应用，使用这个函数来创建 store。
 
-#### CLI application code
+#### CLI 应用代码
 
 ```go
 // cmd/cli/main.go
@@ -648,7 +648,7 @@ func main() {
 }
 ```
 
-#### Web server application code
+#### Web 服务器应用代码
 
 ```go
 // cmd/webserver/main.go
@@ -678,23 +678,23 @@ func main() {
 }
 ```
 
-Notice the symmetry: despite being different user interfaces the setup is almost identical. This feels like good validation of our design so far.
-And notice also that `FileSystemPlayerStoreFromFile` returns a closing function, so we can close the underlying file once we are done using the Store.
+注意这种对称性：尽管是不同的用户接口，搭建几乎是一致的。这感觉像是对我们目前设计的良好验证。
+还要注意 `FileSystemPlayerStoreFromFile` 返回了一个关闭函数，所以一旦我们用完 Store，可以关闭底层文件。
 
-## Wrapping up
+## 总结
 
-### Package structure
+### 包结构
 
-This chapter meant we wanted to create two applications, re-using the domain code we've written so far. In order to do this, we needed to update our package structure so that we had separate folders for our respective `main`s.
+这一章意味着我们想创建两个应用，复用我们目前为止写的领域代码。为了做到这一点，我们需要更新我们的包结构，让我们的各个 `main` 在分开的文件夹里。
 
-By doing this we ran into integration problems due to unexported values so this further demonstrates the value of working in small "slices" and integrating often.
+通过这样做，我们因未导出的值遇到了集成问题，这进一步证明了以小"切片"工作并经常集成的价值。
 
-We learned how `mypackage_test` helps us create a testing environment which is the same experience for other packages integrating with your code, to help you catch integration problems and see how easy (or not!) your code is to work with.
+我们学到了 `mypackage_test` 怎样帮我们创建一个与其他包集成你代码时相同的测试环境，帮你捕获集成问题，并看到你的代码是否（或不！）易于使用。
 
-### Reading user input
+### 读取用户输入
 
-We saw how reading from `os.Stdin` is very easy for us to work with as it implements `io.Reader`. We used `bufio.Scanner` to easily read line by line user input.
+我们看到从 `os.Stdin` 读取对我们来说非常容易，因为它实现了 `io.Reader`。我们用 `bufio.Scanner` 轻松地按行读取用户输入。
 
-### Simple abstractions leads to simpler code re-use
+### 简单的抽象带来更简单的代码复用
 
-It was almost no effort to integrate `PlayerStore` into our new application (once we had made the package adjustments) and subsequently testing was very easy too because we decided to expose our stub version too.
+把 `PlayerStore` 集成到我们的新应用中几乎不费力气（一旦我们做好了包的调整），随后测试也非常容易，因为我们决定也暴露我们的 stub 版本。

@@ -1,40 +1,14 @@
-# Context-aware readers
+# 感知 context 的 reader
 
-**[You can find all the code here](https://github.com/quii/learn-go-with-tests/tree/main/q-and-a/context-aware-reader)**
+**[本章的所有代码可以在这里找到](https://github.com/quii/learn-go-with-tests/tree/main/q-and-a/context-aware-reader)**
 
-This chapter demonstrates how to test-drive a context aware `io.Reader` as written by Mat Ryer and David Hernandez in [The Pace Dev Blog](https://pace.dev/blog/2020/02/03/context-aware-ioreader-for-golang-by-mat-ryer).
+本章演示了如何用测试驱动开发的方式实现一个感知 context 的 `io.Reader`，它由 Mat Ryer 和 David Hernandez 在[The Pace Dev Blog](https://pace.dev/blog/2020/02/03/context-aware-ioreader-for-golang-by-mat-ryer)上写过。
 
-## Context aware reader?
+## 感知 context 的 reader？
 
-First of all, a quick primer on `io.Reader`.
+首先，简单介绍一下 `io.Reader`。
 
-If you've read other chapters in this book you will have ran into `io.Reader` when we've opened files, encoded JSON and various other common tasks. It's a simple abstraction over reading data from _something_
-
-```go
-type Reader interface {
-	Read(p []byte) (n int, err error)
-}
-```
-
-By using `io.Reader` you can gain a lot of re-use from the standard library, it's a very commonly used abstraction (along with its counterpart `io.Writer`)
-
-### Context aware?
-
-[In a previous chapter](context.md) we discussed how we can use `context` to provide cancellation. This is especially useful if you're performing tasks which may be computationally expensive and you want to be able to stop them.
-
-When you're using an `io.Reader` you have no guarantees over speed, it could take 1 nanosecond or hundreds of hours. You might find it useful to be able to cancel these kind of tasks in your own application and that's what Mat and David wrote about.
-
-They combined two simple abstractions (`context.Context` and `io.Reader`) to solve this problem.
-
-Let's try and TDD some functionality so that we can wrap an `io.Reader` so it can be cancelled.
-
-Testing this poses an interesting challenge. Normally when using an `io.Reader` you're usually supplying it to some other function and you don't really concern yourself with the details; such as `json.NewDecoder` or `io.ReadAll`.
-
-What we want to demonstrate is something like
-
-> Given an `io.Reader` with "ABCDEF", when I send a cancel signal half-way through I when I try to continue to read I get nothing else so all I get is "ABC"
-
-Let's look at the interface again.
+如果你读过本书的其他章节，会在我们打开文件、编码 JSON 以及做各种其他常见任务时遇到过 `io.Reader`。它是一个对从 _某个东西_ 读取数据的简单抽象
 
 ```go
 type Reader interface {
@@ -42,15 +16,41 @@ type Reader interface {
 }
 ```
 
-The `Reader`'s `Read` method will read the contents it has into a `[]byte` that we supply.
+通过使用 `io.Reader`，你可以从标准库中获得大量复用，它是一个非常常用的抽象（连同它的对应物 `io.Writer`）
 
-So rather than reading everything, we could:
+### 感知 context？
 
- - Supply a fixed-size byte array that doesn't fit all the contents
- - Send a cancel signal
- - Try and read again and this should return an error with 0 bytes read
+[在前面的章节](context.md)中，我们讨论了如何用 `context` 来提供取消。如果你正在执行可能耗费大量计算资源的任务，并且希望能停下它们，这特别有用。
 
-For now, let's just write a "happy path" test where there is no cancellation, just so we can get familiar with the problem without having to write any production code yet.
+当你使用 `io.Reader` 时，你对速度没有保证，可能 1 纳秒，也可能上百小时。在你自己的应用中能取消这种任务可能很有用，这正是 Mat 和 David 写的内容。
+
+他们结合了两个简单的抽象（`context.Context` 和 `io.Reader`）来解决这个问题。
+
+让我们试着用 TDD 来开发一些功能，让我们能包装一个 `io.Reader`，使其可以被取消。
+
+测试这个有一个有趣的挑战。通常使用 `io.Reader` 时，你是把它提供给某个其他函数，并不真的关心细节；比如 `json.NewDecoder` 或 `io.ReadAll`。
+
+我们想演示的是这样的场景
+
+> 给一个内容为 "ABCDEF" 的 `io.Reader`，当我在中途发送取消信号，然后再尝试继续读时，我什么都得不到，所以我得到的只有 "ABC"
+
+我们再看一眼这个接口。
+
+```go
+type Reader interface {
+	Read(p []byte) (n int, err error)
+}
+```
+
+`Reader` 的 `Read` 方法会把它拥有的内容读到我们提供的 `[]byte` 中。
+
+所以，与其一次读完所有内容，我们可以：
+
+ - 提供一个固定大小的、装不下所有内容的字节数组
+ - 发送一个取消信号
+ - 再尝试读，这次应该返回一个错误且读到 0 字节
+
+现在，先写一个"happy path"测试，里面没有取消，这样我们可以在还不需要写生产代码之前先熟悉问题。
 
 ```go
 func TestContextAwareReader(t *testing.T) {
@@ -84,21 +84,21 @@ func assertBufferHas(t testing.TB, buf []byte, want string) {
 }
 ```
 
-- Make an `io.Reader` from a string with some data
-- A byte array to read into which is smaller than the contents of the reader
-- Call read, check the contents, repeat.
+- 用一个有数据的字符串创建一个 `io.Reader`
+- 一个比 reader 内容还小的字节数组用来读入
+- 调用 read，检查内容，重复。
 
-From this we can imagine sending some kind of cancel signal before the second read to change behaviour.
+由此我们可以想象在第二次读之前发送某种取消信号来改变行为。
 
-Now we've seen how it works we'll TDD the rest of the functionality.
+现在我们看了它怎么工作，接下来用 TDD 实现剩下的功能。
 
-## Write the test first
+## 先写测试
 
-We want to be able to compose an `io.Reader` with a `context.Context`.
+我们想能把一个 `io.Reader` 和一个 `context.Context` 组合起来。
 
-With TDD it's best to start with imagining your desired API and write a test for it.
+用 TDD 时，最好从想象你期望的 API 开始，并为它写一个测试。
 
-From there let the compiler and failing test output can guide us to a solution
+由此让编译器和失败的测试输出引导我们走向解决方案
 
 ```go
 t.Run("behaves like a normal reader", func(t *testing.T) {
@@ -122,14 +122,14 @@ t.Run("behaves like a normal reader", func(t *testing.T) {
 })
 ```
 
-## Try to run the test
+## 试着运行测试
 
 ```
 ./cancel_readers_test.go:12:10: undefined: NewCancellableReader
 ```
-## Write the minimal amount of code for the test to run and check the failing test output
+## 写最少的代码让测试能运行，并检查失败的测试输出
 
-We'll need to define this function and it should return an `io.Reader`
+我们需要定义这个函数，它应该返回一个 `io.Reader`
 
 ```go
 func NewCancellableReader(rdr io.Reader) io.Reader {
@@ -137,7 +137,7 @@ func NewCancellableReader(rdr io.Reader) io.Reader {
 }
 ```
 
-If you try and run it
+如果你尝试运行它
 
 ```
 === RUN   TestCancelReaders
@@ -147,11 +147,11 @@ panic: runtime error: invalid memory address or nil pointer dereference [recover
 [signal SIGSEGV: segmentation violation code=0x1 addr=0x0 pc=0x10f8fb5]
 ```
 
-As expected
+如预期。
 
-## Write enough code to make it pass
+## 写足够的代码让它通过
 
-For now, we'll just return the `io.Reader` we pass in
+目前，我们就直接返回传入的 `io.Reader`
 
 ```go
 func NewCancellableReader(rdr io.Reader) io.Reader {
@@ -159,13 +159,13 @@ func NewCancellableReader(rdr io.Reader) io.Reader {
 }
 ```
 
-The test should now pass.
+测试现在应该通过了。
 
-I know, I know, this seems silly and pedantic but before charging in to the fancy work it is important that we have _some_ verification that we haven't broken the "normal" behaviour of an `io.Reader` and this test will give us confidence as we move forward.
+我知道，我知道，这看起来傻又拘泥形式，但在冲进花哨工作之前，重要的是我们对自己没有破坏 `io.Reader` 的"正常"行为有 _某种_ 验证，这个测试会在我们前进时给我们信心。
 
-## Write the test first
+## 先写测试
 
-Next we need to try and cancel.
+接下来我们需要尝试取消。
 
 ```go
 t.Run("stops reading when cancelled", func(t *testing.T) {
@@ -194,12 +194,12 @@ t.Run("stops reading when cancelled", func(t *testing.T) {
 })
 ```
 
-We can more or less copy the first test but now we're:
-- Creating a `context.Context` with cancellation so we can `cancel` after the first read
-- For our code to work we'll need to pass `ctx` to our function
-- We then assert that post-`cancel` nothing was read
+我们或多或少可以复制第一个测试，但现在我们：
+- 创建一个带取消的 `context.Context`，这样可以在第一次读后 `cancel`
+- 为了让我们的代码工作，我们需要把 `ctx` 传给我们的函数
+- 然后我们断言在 `cancel` 之后什么都没读到
 
-## Try to run the test
+## 试着运行测试
 
 ```
 ./cancel_readers_test.go:33:30: too many arguments in call to NewCancellableReader
@@ -207,9 +207,9 @@ We can more or less copy the first test but now we're:
 	want (io.Reader)
 ```
 
-## Write the minimal amount of code for the test to run and check the failing test output
+## 写最少的代码让测试能运行，并检查失败的测试输出
 
-The compiler is telling us what to do; update our signature to accept a context
+编译器告诉我们要做什么；更新签名以接受一个 context
 
 ```go
 func NewCancellableReader(ctx context.Context, rdr io.Reader) io.Reader {
@@ -217,9 +217,9 @@ func NewCancellableReader(ctx context.Context, rdr io.Reader) io.Reader {
 }
 ```
 
-(You'll need to update the first test to pass in `context.Background` too)
+（你也需要更新第一个测试，让它传入 `context.Background`）
 
-You should now see a very clear failing test output
+你现在应该看到非常清晰的失败测试输出
 
 ```
 === RUN   TestCancelReaders
@@ -230,11 +230,11 @@ You should now see a very clear failing test output
         cancel_readers_test.go:52: expected 0 bytes to be read after cancellation but 3 were read
 ```
 
-## Write enough code to make it pass
+## 写足够的代码让它通过
 
-At this point, it's copy and paste from the original post by Mat and David but we'll still take it slowly and iteratively.
+到这里，从 Mat 和 David 的原帖里就是复制粘贴的过程，但我们仍然慢慢地、迭代地来。
 
-We know we need to have a type that encapsulates the `io.Reader` that we read from and the `context.Context` so let's create that and try and return it from our function instead of the original `io.Reader`
+我们知道我们需要一个类型，把我们要读取的 `io.Reader` 和 `context.Context` 封装起来，所以我们来创建它，并尝试从我们的函数中返回它，而不是返回原来的 `io.Reader`
 
 ```go
 func NewCancellableReader(ctx context.Context, rdr io.Reader) io.Reader {
@@ -250,14 +250,14 @@ type readerCtx struct {
 }
 ```
 
-As I have stressed many times in this book, go slowly and let the compiler help you
+正如我在本书中多次强调的，慢慢来，让编译器帮你
 
 ```
 ./cancel_readers_test.go:60:3: cannot use &readerCtx literal (type *readerCtx) as type io.Reader in return argument:
 	*readerCtx does not implement io.Reader (missing Read method)
 ```
 
-The abstraction feels right, but it doesn't implement the interface we need (`io.Reader`) so let's add the method.
+抽象感觉对，但它没实现我们需要的接口（`io.Reader`），那我们加上方法。
 
 ```go
 func (r *readerCtx) Read(p []byte) (n int, err error) {
@@ -265,9 +265,9 @@ func (r *readerCtx) Read(p []byte) (n int, err error) {
 }
 ```
 
-Run the tests and they should _compile_ but panic. This is still progress.
+运行测试，它们应该可以 _编译_ 但会 panic。这仍是进展。
 
-Let's make the first test pass by just _delegating_ the call to our underlying `io.Reader`
+让我们通过 _委托_ 调用底层 `io.Reader` 来让第一个测试通过
 
 ```go
 func (r readerCtx) Read(p []byte) (n int, err error) {
@@ -275,9 +275,9 @@ func (r readerCtx) Read(p []byte) (n int, err error) {
 }
 ```
 
-At this point we have our happy path test passing again and it feels like we have our stuff abstracted nicely
+到这里我们的 happy path 测试又通过了，并且感觉我们的东西被很好地抽象了
 
-To make our second test pass we need to check the `context.Context` to see if it has been cancelled.
+为了让第二个测试通过，我们需要检查 `context.Context` 看它是否被取消了。
 
 ```go
 func (r readerCtx) Read(p []byte) (n int, err error) {
@@ -288,13 +288,13 @@ func (r readerCtx) Read(p []byte) (n int, err error) {
 }
 ```
 
-All tests should now pass. You'll notice how we return the error from the `context.Context`. This allows callers of the code to inspect the various reasons cancellation has occurred and this is covered more in the original post.
+所有测试现在应该都通过了。你会注意到我们如何返回来自 `context.Context` 的错误。这允许代码的调用方查看取消发生的各种原因，原文中对此有更多介绍。
 
-## Wrapping up
+## 总结
 
-- Small interfaces are good and are easily composed
-- When you're trying to augment one thing (e.g `io.Reader`) with another you usually want to reach for the [delegation pattern](https://en.wikipedia.org/wiki/Delegation_pattern)
+- 小接口很好，并且很容易组合
+- 当你试图用一个东西增强另一个东西时（比如 `io.Reader`），你通常会想到[委托模式](https://en.wikipedia.org/wiki/Delegation_pattern)
 
-> In software engineering, the delegation pattern is an object-oriented design pattern that allows object composition to achieve the same code reuse as inheritance.
+> 在软件工程中，委托模式是一种面向对象的设计模式，它允许通过对象组合来达到与继承相同的代码复用。
 
-- An easy way to start this kind of work is to wrap your delegate and write a test that asserts it behaves how the delegate normally does before you start composing other parts to change behaviour. This will help you to keep things working correctly as you code toward your goal
+- 开始这种工作的简单方法是包装你的委托对象，并写一个测试断言它行为与委托对象通常的行为一致，然后再开始组合其他部件以改变行为。这有助于你在朝目标编码时让事情保持正确工作

@@ -1,136 +1,54 @@
-# Introduction to acceptance testing
+# 验收测试入门
 
-At `$WORK`, we've been running into the need to have "graceful shutdown" for our services. Graceful shutdown makes sure your system finishes its work properly before it is terminated. A real-world analogy would be someone trying to wrap up a phone call properly before moving on to the next meeting, rather than just hanging up mid-sentence.
+在 `$WORK`，我们一直在遇到需要为服务实现 "graceful shutdown"（优雅关闭）的需求。优雅关闭确保你的系统在被终止前能恰当地完成自己的工作。一个现实世界的类比是：有人尝试妥善结束一通电话再去开下一个会，而不是说到一半就直接挂断。
 
-This chapter will give an intro to graceful shutdown in the context of an HTTP server, and how to write "acceptance tests" to give yourself confidence in the behaviour of your code.
+本章会在 HTTP 服务器的语境下介绍优雅关闭，以及如何编写"验收测试"来增强你对代码行为的信心。
 
-After reading this you'll know how to share packages with excellent tests, reduce maintenance efforts, and increase confidence in the quality of your work.
+读完之后，你会知道如何分享带有出色测试的包、降低维护成本、提升你工作质量的可信度。
 
-## Just enough info about Kubernetes
+## 关于 Kubernetes 的最少必要信息
 
-We run our software on [Kubernetes](https://kubernetes.io/) (K8s). K8s will terminate "pods" (in practice, our software) for various reasons, and a common one is when we push new code that we want to deploy.
+我们的软件运行在 [Kubernetes](https://kubernetes.io/)（K8s）上。K8s 会因为各种原因终止 "pod"（实际上就是我们的软件），其中一个常见的原因是当我们推送了想要部署的新代码时。
 
-We are setting ourselves high standards regarding [DORA metrics](https://cloud.google.com/blog/products/devops-sre/using-the-four-keys-to-measure-your-devops-performance), so we work in a way where we deploy small, incremental improvements and features to production multiple times per day.
+我们对 [DORA 指标](https://cloud.google.com/blog/products/devops-sre/using-the-four-keys-to-measure-your-devops-performance) 设定了高标准，所以我们采用每天多次将小而渐进的改进和新功能部署到生产环境的方式工作。
 
-When k8s wishes to terminate a pod, it initiates a ["termination lifecycle"](https://cloud.google.com/blog/products/containers-kubernetes/kubernetes-best-practices-terminating-with-grace), and a part of that is sending a SIGTERM signal to our software. This is k8s telling our code:
+当 K8s 想要终止一个 pod 时，它会启动一个["终止生命周期"](https://cloud.google.com/blog/products/containers-kubernetes/kubernetes-best-practices-terminating-with-grace)，其中一部分就是给我们的软件发送一个 SIGTERM 信号。这是 K8s 在告诉我们的代码：
 
-> You need to shut yourself down, finish whatever work you're doing because after a certain "grace period", I will send `SIGKILL`, and it's lights out for you.
+> 你需要把自己关掉，完成手头任何正在做的工作，因为在某个"宽限期"之后，我会发送 `SIGKILL`，到那时一切就结束了。
 
-On `SIGKILL` any work your program might've been doing will be immediately stopped.
+收到 `SIGKILL` 时，你的程序可能正在做的任何工作都会立即停止。
 
-## If you do not have grace
+## 如果你没有"优雅"
 
-Depending on the nature of your software, if you ignore `SIGTERM`, you can run into problems.
+视你软件的性质而定，如果你忽略 `SIGTERM`，可能会遇到问题。
 
-Our specific problem was with in-flight HTTP requests. When an automated test was exercising our API, if k8s decided to stop the pod, the server would die, the test would not get a response from the server, and the test will fail.
+我们具体的问题出现在传输中的 HTTP 请求上。当一个自动化测试在调用我们的 API 时，如果 K8s 决定停掉 pod，服务器就会死掉，测试拿不到服务器的响应，测试就会失败。
 
-This would trigger an alert in our incidents channel which requires a dev to stop what they're doing and address the problem. These intermittent failures are an annoying distraction for our team.
+这会触发我们事故频道里的告警，需要某个开发者停下手中的事去处理这个问题。这种间歇性失败对我们团队来说是一种烦人的干扰。
 
-These problems are not unique to our tests. If a user sends a request to your system and the process gets terminated mid-flight, they'll likely be greeted with a 5xx HTTP error, not the kind of user experience you want to deliver.
+这些问题并不是我们测试独有的。如果一个用户向你的系统发了请求，而进程在中途被终止，他们大概率会看到一个 5xx 的 HTTP 错误，这可不是你想给用户带来的体验。
 
-## When you have grace
+## 当你拥有"优雅"
 
-What we want to do is listen for `SIGTERM`, and rather than instantly killing the server, we want to:
+我们想做的是监听 `SIGTERM`，并且不要立刻杀掉服务器，而是：
 
-- Stop listening to any more requests
-- Allow any in-flight requests to finish
-- *Then* terminate the process
+- 停止接收任何新请求
+- 让任何传输中的请求完成
+- *然后*终止进程
 
-## How to have grace
+## 怎么实现"优雅"
 
-Thankfully, Go already has a mechanism for gracefully shutting down a server with [net/http/Server.Shutdown](https://pkg.go.dev/net/http#Server.Shutdown).
+幸运的是，Go 已经有一个让服务器优雅关闭的机制：[net/http/Server.Shutdown](https://pkg.go.dev/net/http#Server.Shutdown)。
 
 > Shutdown gracefully shuts down the server without interrupting any active connections. Shutdown works by first closing all open listeners, then closing all idle connections, and then waiting indefinitely for connections to return to idle and then shut down. If the provided context expires before the shutdown is complete, Shutdown returns the context's error, otherwise it returns any error returned from closing the Server's underlying Listener(s).
 
-To handle `SIGTERM` we can use [os/signal.Notify](https://pkg.go.dev/os/signal#Notify), which will send any incoming signals to a channel we provide.
+要处理 `SIGTERM`，我们可以使用 [os/signal.Notify](https://pkg.go.dev/os/signal#Notify)，它会把任何到来的信号发送到我们提供的 channel。
 
-By using these two features from the standard library, you can listen for `SIGTERM` and shutdown gracefully.
+通过组合标准库这两个特性，你就可以监听 `SIGTERM` 并优雅关闭。
 
-## Graceful shutdown package
+## 优雅关闭的包
 
-To that end, I wrote [https://pkg.go.dev/github.com/quii/go-graceful-shutdown](https://pkg.go.dev/github.com/quii/go-graceful-shutdown). It provides a decorator function for a `*http.Server` to call its `Shutdown` method when a `SIGTERM` signal is detected
-
-```go
-func main() {
-	var (
-		ctx        = context.Background()
-		httpServer = &http.Server{Addr: ":8080", Handler: http.HandlerFunc(acceptancetests.SlowHandler)}
-		server     = gracefulshutdown.NewServer(httpServer)
-	)
-
-	if err := server.ListenAndServe(ctx); err != nil {
-		// this will typically happen if our responses aren't written before the ctx deadline, not much can be done
-		log.Fatalf("uh oh, didn't shutdown gracefully, some responses may have been lost %v", err)
-	}
-
-	// hopefully, you'll always see this instead
-	log.Println("shutdown gracefully! all responses were sent")
-}
-```
-
-The specifics around the code are not too important for this read, but it is worth having a quick look over the code before carrying on.
-
-## Tests and feedback loops
-
-When we wrote the `gracefulshutdown` package, we had unit tests to prove it behaves correctly which gave us the confidence to aggressively refactor. However, we still didn't feel "confident" that it **really** worked.
-
-We added a `cmd` package and made a real program to use the package we were writing. We'd manually fire it up, fire off an HTTP request to it, and then send a `SIGTERM` to see what would happen.
-
-**The engineer in you should be feeling uncomfortable with manual testing**.
-It's boring, it doesn't scale, it's inaccurate, and it's wasteful. If you're writing a package you intend to share, but also want to keep it simple and cheap to change, manual testing is not going to cut it.
-
-## Acceptance tests
-
-If you’ve read the rest of this book, you will have mostly written "unit tests". Unit tests are a fantastic tool for enabling fearless refactoring, driving good modular design, preventing regressions, and facilitating fast feedback.
-
-By their nature, they only test small parts of your system. Usually, unit
-tests alone are *not enough* for an effective testing strategy. Remember, we want our systems to **always be shippable**. We can't rely on manual testing, so we need another kind of testing: **acceptance tests**.
-
-### What are they?
-
-Acceptance tests are a kind of "black-box test". They are sometimes referred
-to as "functional tests". They should exercise the system as a user of the system would.
-
-The term "black-box" refers to the idea that the test code has no access to the internals of the system, it can only use its public interface and make assertions on the behaviours it observes. This means they can only test the system as a whole.
-
-This is an advantageous trait because it means the tests exercise the system the same as a user would, it can't use any special workarounds that could make a test pass, but not actually prove what you need to prove. This is similar to the principle of preferring your unit test files to live inside a separate test package, for example, `package mypkg_test` rather than `package mypkg`.
-
-### Benefits of acceptance tests
-
-- When they pass, you know your entire system behaves how you want it to.
-- They are more accurate, quicker, and require less effort than manual testing.
-- When written well, they act as accurate, verified documentation of your
-  system. It doesn't fall into the trap of documentation that diverges from the real behaviour of the system.
-- No mocking! It's all real.
-
-### Potential drawbacks vs unit tests
-
-- They are expensive to write.
-- They take longer to run.
-- They are dependent on the design of the system.
-- When they fail, they typically don't give you a root cause, and can be
-  difficult to debug.
-- They don't give you feedback on the internal quality of your system. You
-  could write total garbage and still make an acceptance test pass.
-- Not all scenarios are practical to exercise due to the black-box nature.
-
-For this reason, it is foolish to only rely on acceptance tests. They do not have many of the qualities unit tests have, and a system with a large number of acceptance tests will tend to suffer in terms of maintenance costs and poor lead time.
-
-#### Lead time?
-
-Lead time refers to how long it takes from a commit being merged into your
-main branch to it being deployed in production. This number can vary from weeks and even months for some teams to a matter of minutes. Again, at `$WORK`, we value DORA's findings and want to keep our lead time to under 10 minutes.
-
-A balanced testing approach is required for a reliable system with excellent
-lead time, and this is usually described in terms of the [Test Pyramid](https://martinfowler.com/articles/practical-test-pyramid.html).
-
-## How to write basic acceptance tests
-
-How does this relate to the original problem? We've just written a package here, and it is entirely unit-testable.
-
-As I mentioned, the unit tests weren't quite giving us the confidence we needed. We want to be *really* sure the package works when integrated with a real, running program. We should be able to automate the manual checks we were making.
-
-Let's take a look at the test program:
+为此，我写了 [https://pkg.go.dev/github.com/quii/go-graceful-shutdown](https://pkg.go.dev/github.com/quii/go-graceful-shutdown)。它提供了一个针对 `*http.Server` 的装饰器函数，会在检测到 `SIGTERM` 信号时调用其 `Shutdown` 方法
 
 ```go
 func main() {
@@ -141,30 +59,108 @@ func main() {
 	)
 
 	if err := server.ListenAndServe(ctx); err != nil {
-		// this will typically happen if our responses aren't written before the ctx deadline, not much can be done
+		// 这种情况通常发生在 ctx 截止前响应没写完，没什么办法
 		log.Fatalf("uh oh, didn't shutdown gracefully, some responses may have been lost %v", err)
 	}
 
-	// hopefully, you'll always see this instead
+	// 但愿你看到的总是这一条
 	log.Println("shutdown gracefully! all responses were sent")
 }
 ```
 
-You may have guessed that `SlowHandler` has a `time.Sleep` to delay responding, so I had time to `SIGTERM` and see what happens. The rest is fairly boilerplate:
+代码的具体细节对本次阅读不太重要，但在继续之前快速看一眼代码是值得的。
 
-- Make a `net/http/Server`;
-- Wrap it in the library (see: [Decorator pattern](https://en.wikipedia.org/wiki/Decorator_pattern));
-- Use the wrapped version to `ListenAndServe`.
+## 测试与反馈循环
 
-### High-level steps for the acceptance test
+当我们写 `gracefulshutdown` 包时，我们有单元测试来证明它行为正确，这给了我们大胆重构的信心。然而我们仍然没有"信心"它**真的**能工作。
 
-- Build the program
-- Run it (and wait for it listen on `8080`)
-- Send an HTTP request to the server
-- Before the server has a chance to send an HTTP response, send `SIGTERM`
-- See if we still get a response
+我们加了一个 `cmd` 包，做了一个真实的程序来使用我们正在编写的包。我们会手动启动它、向它发起一个 HTTP 请求，然后给它发送一个 `SIGTERM` 看看会发生什么。
 
-### Building and running the program
+**作为工程师，你应该对手动测试感到不舒服**。
+它无聊、无法扩展、不准确，而且浪费时间。如果你在写一个打算分享出去的包，但又想保持改动起来简单且低成本，手动测试是行不通的。
+
+## 验收测试
+
+如果你读过这本书的其他章节，那你写的多半都是"单元测试"。单元测试是一个绝佳的工具，可以让你无所畏惧地重构、推动良好的模块化设计、防止回归并提供快速反馈。
+
+由于其本质，它们只测试系统的一小部分。通常，仅靠单元
+测试本身*不足以*构成一个有效的测试策略。记住，我们希望我们的系统**始终可发布**。我们不能依赖手动测试，所以我们需要另一种测试：**验收测试**。
+
+### 它们是什么？
+
+验收测试是一种"黑盒测试"。它们有时也被称为
+"功能测试"。它们应当像系统的用户一样去使用系统。
+
+"黑盒"这个词指的是测试代码无法访问系统的内部实现，它只能使用其公开接口，并对它观察到的行为做断言。这意味着它们只能把系统作为一个整体来测试。
+
+这是一个有利的特性，因为它意味着测试以与真实用户相同的方式运行系统，它不能使用任何特殊的"绕过手段"——那种手段虽然能让测试通过，却并没有真正证明你需要证明的东西。这与一种原则类似：偏向把单元测试文件放在独立的测试包里，例如使用 `package mypkg_test` 而不是 `package mypkg`。
+
+### 验收测试的好处
+
+- 当它们通过时，你就知道你的整个系统行为符合预期。
+- 它们比手动测试更准确、更快、需要的精力更少。
+- 写得好的话，它们就是关于你系统的、准确且经过验证的文档。它不会陷入"文档与系统真实行为分歧"的陷阱。
+- 没有 mock！全是真实的。
+
+### 相比单元测试可能的缺点
+
+- 写起来成本高。
+- 运行起来更慢。
+- 它们依赖于系统的设计。
+- 失败时，它们通常不会给你根因，调试可能会很困难。
+- 它们不会反馈系统内部的质量。你
+  写一坨垃圾代码也照样能让验收测试通过。
+- 由于黑盒的本质，并非所有场景都适合演练。
+
+因此，仅依赖验收测试是愚蠢的。它们不具备单元测试的许多优秀品质，并且一个有大量验收测试的系统在维护成本和交付前置时间方面通常会受影响。
+
+#### 交付前置时间？
+
+交付前置时间（Lead time）指的是从一次提交合并到主分支到它被部署到生产环境所花的时间。这个数字在不同团队之间差异很大，从几周甚至几个月到几分钟都有可能。同样地，在 `$WORK`，我们重视 DORA 的研究，并希望把交付前置时间保持在 10 分钟以内。
+
+要构建一个可靠且交付前置时间出色的系统，需要平衡的测试方法，这通常用[测试金字塔](https://martinfowler.com/articles/practical-test-pyramid.html)来描述。
+
+## 怎么写基本的验收测试
+
+这跟最初的问题有什么关系？我们刚刚写好了一个包，它完全是可以做单元测试的。
+
+正如我提到的，单元测试并不能给我们足够的信心。我们想*真的*确认这个包在与真实运行的程序集成后能工作。我们应当能把之前手动做的检查自动化。
+
+让我们看看那个测试程序：
+
+```go
+func main() {
+	var (
+		ctx        = context.Background()
+		httpServer = &http.Server{Addr: ":8080", Handler: http.HandlerFunc(acceptancetests.SlowHandler)}
+		server     = gracefulshutdown.NewServer(httpServer)
+	)
+
+	if err := server.ListenAndServe(ctx); err != nil {
+		// 这种情况通常发生在 ctx 截止前响应没写完，没什么办法
+		log.Fatalf("uh oh, didn't shutdown gracefully, some responses may have been lost %v", err)
+	}
+
+	// 但愿你看到的总是这一条
+	log.Println("shutdown gracefully! all responses were sent")
+}
+```
+
+你可能已经猜到 `SlowHandler` 里有一个 `time.Sleep` 来延迟响应，这样我才有时间发送 `SIGTERM` 看看会发生什么。其余的部分相当模板化：
+
+- 创建一个 `net/http/Server`；
+- 用我们的库把它包起来（参见：[装饰器模式](https://en.wikipedia.org/wiki/Decorator_pattern)）；
+- 用包装后的版本来 `ListenAndServe`。
+
+### 验收测试的高层步骤
+
+- 构建程序
+- 运行它（并等它在 `8080` 上开始监听）
+- 向服务器发送一个 HTTP 请求
+- 在服务器有机会发送 HTTP 响应之前，发送 `SIGTERM`
+- 看看我们是否还能收到响应
+
+### 构建并运行程序
 
 ```go
 package acceptancetests
@@ -200,7 +196,7 @@ func LaunchTestProgram(port string) (cleanup func(), sendInterrupt func() error,
 	}
 
 	if err != nil {
-		cleanup() // even though it's not listening correctly, the program could still be running
+		cleanup() // 即使监听不正确，程序也可能仍在运行
 		return nil, nil, err
 	}
 
@@ -268,22 +264,22 @@ func randomString(n int) string {
 }
 ```
 
-`LaunchTestProgram` is responsible for:
-- building the program
-- launching the program
-- waiting for it to listen on port `8080`
-- providing a `cleanup` function to kill the program and delete it to ensure that when our tests finish, we're left in a clean state
-- providing an `interrupt` function to send the program a `SIGTERM` to let us test the behaviour
+`LaunchTestProgram` 负责：
+- 构建程序
+- 启动程序
+- 等待它在 `8080` 端口开始监听
+- 提供一个 `cleanup` 函数来杀死并删除该程序，以确保测试结束后我们处于干净的状态
+- 提供一个 `interrupt` 函数，向程序发送 `SIGTERM`，让我们能测试相应的行为
 
-Admittedly, this is not the nicest code in the world, but just focus on the exported function `LaunchTestProgram`, the un-exported functions it calls are uninteresting boilerplate.
+不可否认，这并不是世界上最优雅的代码，但你只需要关注导出函数 `LaunchTestProgram`，它调用的那些未导出函数都是无趣的样板代码。
 
-As discussed, acceptance testing tends to be trickier to set up. This code does make the *testing* code substantially simpler to read, and often with acceptance tests once you've written the ceremonious code, it's done, and you can forget about it.
+正如前面讨论的，验收测试通常更难搭建。这段代码确实让*测试*代码读起来简洁多了，而且通常验收测试一旦把这些仪式性代码写好，就大功告成了，可以忘掉它了。
 
-### The acceptance test(s)
+### 验收测试本身
 
-We wanted to have two acceptance tests for two programs, one with graceful shutdown and one without, so we, and the readers can see the difference in behaviour. With `LaunchTestProgram` to build and run the programs, it's quite simple to write acceptance tests for both, and we benefit from re-use with some helper functions.
+我们想为两个程序写两个验收测试，一个有优雅关闭，一个没有，让我们和读者都能看到行为上的差别。有了 `LaunchTestProgram` 来构建并运行程序，给两者写验收测试就很简单了，并且我们能通过一些辅助函数获得复用的好处。
 
-Here is the test for the server *with* a graceful shutdown, [you can find the test without on GitHub](https://github.com/quii/go-graceful-shutdown/blob/main/acceptancetests/withoutgracefulshutdown/main_test.go)
+下面是*带*优雅关闭的服务器的测试，[不带优雅关闭的版本可以在 GitHub 找到](https://github.com/quii/go-graceful-shutdown/blob/main/acceptancetests/withoutgracefulshutdown/main_test.go)
 
 ```go
 package main
@@ -308,24 +304,24 @@ func TestGracefulShutdown(t *testing.T) {
 	}
 	t.Cleanup(cleanup)
 
-	// just check the server works before we shut things down
+	// 在我们关掉东西之前，先确认服务器能正常工作
 	assert.CanGet(t, url)
 
-	// fire off a request, and before it has a chance to respond send SIGTERM.
+	// 发出一个请求，并在它有机会响应之前发送 SIGTERM。
 	time.AfterFunc(50*time.Millisecond, func() {
 		assert.NoError(t, sendInterrupt())
 	})
-	// Without graceful shutdown, this would fail
+	// 没有优雅关闭的话，这一行会失败
 	assert.CanGet(t, url)
 
-	// after interrupt, the server should be shutdown, and no more requests will work
+	// 中断之后，服务器应该已关闭，更多请求都不会再工作
 	assert.CantGet(t, url)
 }
 ```
 
-With the setup encapsulated away, the tests are comprehensive, describe the behaviour, and are relatively easy to follow.
+把搭建工作封装好之后，测试本身就很全面、能描述行为，而且相对容易理解。
 
-`assert.CanGet/CantGet` are helper functions I made to DRY up this common assertion for this suite.
+`assert.CanGet/CantGet` 是我做的辅助函数，用来 DRY 化这套测试里这种通用断言。
 
 ```go
 func CanGet(t testing.TB, url string) {
@@ -350,15 +346,15 @@ func CanGet(t testing.TB, url string) {
 }
 ```
 
-This will fire off a `GET` to `URL` on a goroutine, and if it responds without error before 3 seconds, then it will not fail. `CantGet` is omitted for brevity, [but you can view it on GitHub here](https://github.com/quii/go-graceful-shutdown/blob/main/assert/assert.go#L61).
+它会在一个 goroutine 上向 `URL` 发起一次 `GET`，如果在 3 秒内无错误地响应，就不会失败。`CantGet` 出于篇幅省略了，[但你可以在 GitHub 上看到](https://github.com/quii/go-graceful-shutdown/blob/main/assert/assert.go#L61)。
 
-It's important to note again, Go has all the tools you need to write acceptance tests out of the box. You don't *need* a special framework to build acceptance tests.
+再次强调，Go 开箱即用就具备了写验收测试所需的所有工具。你*不需要*一个特殊的框架来构建验收测试。
 
-### Small investment with a big pay-off
+### 小投入，大回报
 
-With these tests, readers can look at the example programs and be confident that the example *actually* works, so they can be confident in the package's claims.
+有了这些测试，读者可以查看示例程序并相信示例*确实*能工作，从而对该包的承诺更有信心。
 
-Importantly, as the author, we get **fast feedback** and **massive confidence** that the package works in a real-world setting.
+更重要的是，作为作者，我们获得了**快速反馈**和**巨大的信心**——这个包在真实环境中能工作。
 
 ```shell
 go test -count=1 ./...
@@ -369,32 +365,31 @@ ok  	github.com/quii/go-graceful-shutdown/acceptancetests/withoutgracefulshutdow
 ?   	github.com/quii/go-graceful-shutdown/assert	[no test files]
 ```
 
-## Wrapping up
+## 总结
 
-In this blog post, we introduced acceptance tests into your testing tool belt. They are invaluable when you start to build real systems and are an important complement to your unit tests.
+在这篇博文里，我们把验收测试引入了你的测试工具带。当你开始构建真实系统时，它们价值无可替代，是单元测试的重要补充。
 
-The nature of *how* to write acceptance tests depends on the system you're building, but the principles stay the same. Treat your system like a "black box". If you're making a website, your tests should act like a user, so you'll want to use a headless web browser like [Selenium](https://www.selenium.dev/), to click on links, fill in forms, etc. For a RESTful API, you'll send HTTP requests using a client.
+*如何*编写验收测试取决于你正在构建的系统，但原则保持不变。把你的系统当作一个"黑盒"。如果你做的是网站，你的测试应当像用户一样行动，所以你会想用一个无头浏览器，比如 [Selenium](https://www.selenium.dev/)，去点击链接、填写表单等等。对于一个 RESTful API，你会用客户端发送 HTTP 请求。
 
-### Taking it further for more complicated systems
+### 在更复杂的系统上更进一步
 
-Non-trivial systems don't tend to be single-process applications like the one we've discussed. Typically, you'll depend on other systems such as a database. For these scenarios, you'll need to automate a local environment to test with. Tools like [docker-compose](https://docs.docker.com/compose/) are useful for spinning up containers of the environment you need to run your system locally.
+非平凡的系统通常不会像我们刚讨论的那样是单进程应用。一般来说，你会依赖其他系统，比如数据库。对这些场景，你需要自动化一个本地环境来做测试。像 [docker-compose](https://docs.docker.com/compose/) 这样的工具非常适合启动你需要的容器化本地环境来运行你的系统。
 
-### The next chapter
+### 下一章
 
-In this post the acceptance test was written retrospectively. However, in [Growing Object-Oriented Software](http://www.growing-object-oriented-software.com) the authors show that we can use acceptance tests in a test-driven approach to act as a "north-star" to guide our efforts.
+在这篇文章中，验收测试是事后补写的。然而在 [Growing Object-Oriented Software](http://www.growing-object-oriented-software.com) 一书中，作者展示了我们可以用测试驱动的方式使用验收测试，把它当作"北极星"来引导我们的工作。
 
-As systems get more complex, the costs of writing and maintaining acceptance tests can quickly spiral out of control. There are countless stories of development teams being hamstrung by expensive acceptance test suites.
+随着系统变得更复杂，编写和维护验收测试的成本可能会迅速失控。有无数关于开发团队被昂贵的验收测试套件束缚住的故事。
 
-The next chapter will introduce using acceptance test to guide our design
-along with principles and techniques for managing the costs of acceptance tests.
+下一章会介绍如何用验收测试引导我们的设计，并提供管理验收测试成本的原则与技术。
 
-### Improving the quality of open-source
+### 提升开源项目的质量
 
-If you're writing packages you intend to share, I'd encourage you to create
-simple example programs demonstrating what your package does and invest time in having simple-to-follow acceptance tests to give yourself, and potential users of your work, confidence.
+如果你在写打算分享出去的包，我建议你创建
+简单的示例程序来展示你的包做了什么，并花时间编写易于理解的验收测试，给自己以及你工作的潜在用户一份信心。
 
-Like [Testable Examples](https://go.dev/blog/examples), seeing this little extra effort in developer experience goes a long way toward building trust in your work, and will reduce your own maintenance costs.
+就像[可测试示例](https://go.dev/blog/examples)一样，在开发者体验上多投入这一点点，对于建立人们对你工作的信任、降低你自己的维护成本而言都大有帮助。
 
-## Recruitment plug for `$WORK`
+## `$WORK` 的招聘小广告
 
-If you fancy working in an environment with other engineers solving interesting problems, live near or around London or Porto, and enjoy the contents of this chapter and book -  please [reach out to me on Twitter](https://twitter.com/quii), and maybe we can work together soon!
+如果你想在这样一个环境里工作——同其他工程师一起解决有趣的问题、住在伦敦或波尔图附近、并且喜欢本章和本书的内容——请[在 Twitter 上联系我](https://twitter.com/quii)，也许我们很快就能一起共事！

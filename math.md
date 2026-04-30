@@ -1,18 +1,18 @@
-# Maths
+# 数学
 
-[**You can find all the code for this chapter here**](https://github.com/quii/learn-go-with-tests/tree/main/math)
+[**本章的所有代码可以在这里找到**](https://github.com/quii/learn-go-with-tests/tree/main/math)
 
-For all the power of modern computers to perform huge sums at lightning speed, the average developer rarely uses any mathematics to do their job. But not today! Today we'll use mathematics to solve a _real_ problem. And not boring mathematics - we're going to use trigonometry and vectors and all sorts of stuff that you always said you'd never have to use after highschool.
+尽管现代计算机能以闪电般的速度执行庞大的运算，普通开发者在工作中却很少用到任何数学。但今天不一样！今天我们要用数学来解决一个 _真实_ 的问题。而且不是无聊的数学——我们将用到三角函数、向量等等你曾发誓高中毕业后再也用不到的东西。
 
-## The Problem
+## 问题
 
-You want to make an SVG of a clock. Not a digital clock - no, that would be easy - an _analogue_ clock, with hands. You're not looking for anything fancy, just a nice function that takes a `Time` from the `time` package and spits out an SVG of a clock with all the hands - hour, minute and second - pointing in the right direction. How hard can that be?
+你想做一个时钟的 SVG。不是数字时钟——不，那太简单了——而是一个带指针的 _模拟_ 时钟。你不需要什么花哨的东西，只需要一个不错的函数，它接收 `time` 包中的 `Time`，输出一个时钟的 SVG，所有指针——时针、分针、秒针——都指向正确的方向。能有多难？
 
-First we're going to need an SVG of a clock for us to play with. SVGs are a fantastic image format to manipulate programmatically because they're written as a series of shapes, described in XML. So this clock:
+首先我们需要一个时钟的 SVG 来做练习。SVG 是一种很棒的图像格式，便于以编程方式操作，因为它由一系列形状以 XML 描述。所以这个时钟：
 
 ![an svg of a clock](.gitbook/assets/example_clock.svg)
 
-is described like this:
+是这样描述的：
 
 ```xml
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
@@ -40,51 +40,51 @@ is described like this:
 </svg>
 ```
 
-It's a circle with three lines, each of the lines starting in the middle of the circle (x=150, y=150), and ending some distance away.
+它是一个圆和三条线，每条线从圆心 (x=150, y=150) 出发，延伸到某个距离之外。
 
-So what we're going to do is reconstruct the above somehow, but change the lines so they point in the appropriate directions for a given time.
+所以我们要做的就是以某种方式重建上面的内容，但要根据给定的时间，让线条指向相应的方向。
 
-## An Acceptance Test
+## 一个验收测试
 
-Before we get too stuck in, lets think about an acceptance test.
+在我们陷得太深之前，先想想验收测试。
 
-Wait, you don't know what an acceptance test is yet. Look, let me try to explain.
+等等，你还不知道什么是验收测试。听着，让我试着解释。
 
-Let me ask you: what does winning look like? How do we know we've finished work? TDD provides a good way of knowing when you've finished: when the test passes. Sometimes it's nice - actually, almost all of the time it's nice - to write a test that tells you when you've finished writing the whole usable feature. Not just a test that tells you that a particular function is working in the way you expect, but a test that tells you that the whole thing you're trying to achieve - the 'feature' - is complete.
+我来问你：胜利是什么样子的？我们怎么知道工作完成了？TDD 提供了一种很好的方式来知道你是否完成了：当测试通过时。有时候——其实，几乎所有时候——写一个测试来告诉你整个可用功能是否完成是很不错的。不只是一个告诉你某个特定函数按你期望工作的测试，而是一个告诉你你想要实现的整件事——"功能"——是否完整的测试。
 
-These tests are sometimes called 'acceptance tests', sometimes called 'feature tests'. The idea is that you write a really high level test to describe what you're trying to achieve - a user clicks a button on a website, and they see a complete list of the Pokémon they've caught, for instance. When we've written that test, we can then write more tests - unit tests - that build towards a working system that will pass the acceptance test. So for our example these tests might be about rendering a webpage with a button, testing route handlers on a web server, performing database look ups, etc. All of these things will be TDD'd, and all of them will go towards making the original acceptance test pass.
+这些测试有时被称为"验收测试"，有时被称为"功能测试"。其想法是：你写一个非常高层次的测试来描述你想实现的目标——比如，一个用户点击网站上的按钮，然后看到一份他们捕获到的所有宝可梦的完整列表。一旦写好了那个测试，我们就可以再写更多测试——单元测试——来逐步搭建出一个能让验收测试通过的可工作系统。所以对我们这个例子来说，这些测试可能涉及渲染一个带按钮的网页、测试 web 服务器上的路由 handler、执行数据库查询，等等。所有这些都会用 TDD 来做，所有这些都会让最初那个验收测试通过。
 
-Something like this _classic_ picture by Nat Pryce and Steve Freeman
+类似 Nat Pryce 和 Steve Freeman 的这张 _经典_ 图
 
 ![Outside-in feedback loops in TDD](.gitbook/assets/TDD-outside-in.jpg)
 
-Anyway, let's try and write that acceptance test - the one that will let us know when we're done.
+总之，让我们试着写出那个验收测试——那个会告诉我们什么时候完成的测试。
 
-We've got an example clock, so let's think about what the important parameters are going to be.
+我们已经有了一个示例时钟，那让我们想想哪些是重要的参数。
 
 ```
 <line x1="150" y1="150" x2="114.150000" y2="132.260000"
         style="fill:none;stroke:#000;stroke-width:7px;"/>
 ```
 
-The centre of the clock (the attributes `x1` and `y1` for this line) is the same for each hand of the clock. The numbers that need to change for each hand of the clock - the parameters to whatever builds the SVG - are the `x2` and `y2` attributes. We'll need an X and a Y for each of the hands of the clock.
+时钟的中心（这条线的 `x1` 和 `y1` 属性）对每根指针都是一样的。每根指针需要变化的数字——也就是构建 SVG 所需的参数——是 `x2` 和 `y2` 属性。我们需要为每根指针提供 X 和 Y。
 
-I _could_ think about more parameters - the radius of the clockface circle, the size of the SVG, the colours of the hands, their shape, etc... but it's better to start off by solving a simple, concrete problem with a simple, concrete solution, and then to start adding parameters to make it generalised.
+我 _可以_ 考虑更多参数——表盘圆的半径、SVG 的尺寸、指针的颜色、形状，等等……但更好的做法是先用简单、具体的方案解决一个简单、具体的问题，然后再开始添加参数让它变得通用。
 
-So we'll say that
+所以我们规定：
 
-* every clock has a centre of (150, 150)
-* the hour hand is 50 long
-* the minute hand is 80 long
-* the second hand is 90 long.
+* 每个时钟的中心是 (150, 150)
+* 时针长 50
+* 分针长 80
+* 秒针长 90
 
-A thing to note about SVGs: the origin - point (0,0) - is at the _top left_ hand corner, not the _bottom left_ as we might expect. It'll be important to remember this when we're working out where what numbers to plug in to our lines.
+关于 SVG 有一点要注意：原点——点 (0,0)——在 _左上角_，而不是我们可能期望的 _左下角_。在我们计算往线条里填什么数字时，记住这一点很重要。
 
-Finally, I'm not deciding _how_ to construct the SVG - we could use a template from the [`text/template`](https://golang.org/pkg/text/template/) package, or we could just send bytes into a `bytes.Buffer` or a writer. But we know we'll need those numbers, so let's focus on testing something that creates them.
+最后，我没有决定 _怎么_ 构造 SVG——我们可以用 [`text/template`](https://golang.org/pkg/text/template/) 包的模板，或者只是把字节发送到 `bytes.Buffer` 或一个 writer。但我们知道我们会需要这些数字，所以让我们专注于测试一些能产出这些数字的东西。
 
-### Write the test first
+### 先写测试
 
-So my first test looks like this:
+所以我的第一个测试看起来是这样：
 
 ```go
 package clockface_test
@@ -107,11 +107,11 @@ func TestSecondHandAtMidnight(t *testing.T) {
 }
 ```
 
-Remember how SVGs plot their coordinates from the top left hand corner? To place the second hand at midnight we expect that it hasn't moved from the centre of the clockface on the X axis - still 150 - and the Y axis is the length of the hand 'up' from the centre; 150 minus 90.
+记得 SVG 是从左上角开始绘制坐标的吗？要把秒针放在午夜位置，我们期望它在 X 轴上没有从表盘中心移动——还是 150——而 Y 轴是指针长度从中心向"上"延伸；150 减 90。
 
-### Try to run the test
+### 尝试运行测试
 
-This drives out the expected failures around the missing functions and types:
+这驱动出我们对缺失的函数和类型的预期失败：
 
 ```
 --- FAIL: TestSecondHandAtMidnight (0.00s)
@@ -119,11 +119,11 @@ This drives out the expected failures around the missing functions and types:
 ./clockface_test.go:14:9: undefined: clockface.SecondHand
 ```
 
-So a `Point` where the tip of the second hand should go, and a function to get it.
+所以我们需要一个 `Point` 表示秒针尖端应该到达的位置，还需要一个函数来获取它。
 
-### Write the minimal amount of code for the test to run and check the failing test output
+### 写最少量的代码让测试运行起来，并检查失败的测试输出
 
-Let's implement those types to get the code to compile
+让我们实现这些类型让代码能编译
 
 ```go
 package clockface
@@ -143,7 +143,7 @@ func SecondHand(t time.Time) Point {
 }
 ```
 
-and now we get:
+现在我们得到：
 
 ```
 --- FAIL: TestSecondHandAtMidnight (0.00s)
@@ -153,9 +153,9 @@ exit status 1
 FAIL	learn-go-with-tests/math/clockface	0.006s
 ```
 
-### Write enough code to make it pass
+### 写足够的代码让它通过
 
-When we get the expected failure, we can fill in the return value of `SecondHand`:
+当我们得到了预期的失败之后，可以填充 `SecondHand` 的返回值：
 
 ```go
 // SecondHand is the unit vector of the second hand of an analogue clock at time `t`
@@ -165,22 +165,22 @@ func SecondHand(t time.Time) Point {
 }
 ```
 
-Behold, a passing test.
+瞧，一个通过的测试。
 
 ```
 PASS
 ok  	    clockface	0.006s
 ```
 
-### Refactor
+### 重构
 
-No need to refactor yet - there's barely enough code!
+还不需要重构——代码刚刚好够用！
 
-### Repeat for new requirements
+### 为新需求重复以上流程
 
-We probably need to do some work here that doesn't just involve returning a clock that shows midnight for every time...
+我们大概需要做点不只是返回一个永远显示午夜的时钟的工作……
 
-### Write the test first
+### 先写测试
 
 ```go
 func TestSecondHandAt30Seconds(t *testing.T) {
@@ -195,65 +195,65 @@ func TestSecondHandAt30Seconds(t *testing.T) {
 }
 ```
 
-Same idea, but now the second hand is pointing _downwards_ so we _add_ the length to the Y axis.
+思路相同，只是现在秒针 _向下_ 指，所以我们把长度 _加_ 到 Y 轴上。
 
-This will compile... but how do we make it pass?
+这能编译……但我们怎么让它通过？
 
-## Thinking time
+## 思考时间
 
-How are we going to solve this problem?
+我们要怎么解决这个问题？
 
-Every minute the second hand goes through the same 60 states, pointing in 60 different directions. When it's 0 seconds it points to the top of the clockface, when it's 30 seconds it points to the bottom of the clockface. Easy enough.
+每分钟秒针都会经过相同的 60 个状态，指向 60 个不同的方向。当是 0 秒时它指向表盘顶部，当是 30 秒时它指向表盘底部。够简单。
 
-So if I wanted to think about in what direction the second hand was pointing at, say, 37 seconds, I'd want the angle between 12 o'clock and 37/60ths around the circle. In degrees this is `(360 / 60 ) * 37 = 222`, but it's easier just to remember that it's `37/60` of a complete rotation.
+那如果我想知道，比如 37 秒时秒针指向哪个方向，我会想知道 12 点钟方向和绕圆周 37/60 处之间的角度。换算成度数是 `(360 / 60 ) * 37 = 222`，但更容易记住的是它就是一整圈的 `37/60`。
 
-But the angle is only half the story; we need to know the X and Y coordinate that the tip of the second hand is pointing at. How can we work that out?
+但角度只是故事的一半；我们需要知道秒针尖端指向的 X 和 Y 坐标。怎么算出来？
 
-## Math
+## 数学
 
-Imagine a circle with a radius of 1 drawn around the origin - the coordinate `0, 0`.
+想象一个绕原点（坐标 `0, 0`）画的半径为 1 的圆。
 
 ![picture of the unit circle](.gitbook/assets/unit_circle.png)
 
-This is called the 'unit circle' because... well, the radius is 1 unit!
+这叫做"单位圆"，因为……嗯，半径是 1 个单位！
 
-The circumference of the circle is made of points on the grid - more coordinates. The x and y components of each of these coordinates form a triangle, the hypotenuse of which is always 1 (i.e. the radius of the circle).
+圆周由网格上的点构成——也就是更多坐标。这些坐标的 x 和 y 分量构成了一个三角形，其斜边总是 1（即圆的半径）。
 
 ![picture of the unit circle with a point defined on the circumference](.gitbook/assets/unit_circle_coords.png)
 
-Now, trigonometry will let us work out the lengths of X and Y for each triangle if we know the angle they make with the origin. The X coordinate will be cos(a), and the Y coordinate will be sin(a), where a is the angle made between the line and the (positive) x axis.
+现在，三角函数可以让我们在已知它们与原点构成的角度时，算出每个三角形的 X 和 Y 长度。X 坐标会是 cos(a)，Y 坐标会是 sin(a)，其中 a 是直线与（正）X 轴的夹角。
 
 ![picture of the unit circle with the x and y elements of a ray defined as cos(a) and sin(a) respectively, where a is the angle made by the ray with the x axis](<.gitbook/assets/unit_circle_params (1).png>)
 
-(If you don't believe this, [go and look at Wikipedia...](https://en.wikipedia.org/wiki/Sine#Unit_circle_definition))
+（如果你不信，[去看维基百科吧……](https://en.wikipedia.org/wiki/Sine#Unit_circle_definition)）
 
-One final twist - because we want to measure the angle from 12 o'clock rather than from the X axis (3 o'clock), we need to swap the axis around; now x = sin(a) and y = cos(a).
+最后还有一个转折——因为我们想从 12 点钟方向（而不是 X 轴/3 点钟方向）开始测量角度，我们需要把坐标轴交换一下；现在 x = sin(a)，y = cos(a)。
 
 ![unit circle ray defined from by angle from y axis](.gitbook/assets/unit_circle_12_oclock.png)
 
-So now we know how to get the angle of the second hand (1/60th of a circle for each second) and the X and Y coordinates. We'll need functions for both `sin` and `cos`.
+所以现在我们知道怎么得到秒针的角度（每秒是圆的 1/60）以及 X、Y 坐标。我们需要 `sin` 和 `cos` 这两个函数。
 
 ## `math`
 
-Happily the Go `math` package has both, with one small snag we'll need to get our heads around; if we look at the description of [`math.Cos`](https://golang.org/pkg/math/#Cos):
+幸好 Go 的 `math` 包两者都有，只是有一个小坑我们要弄明白；如果我们看 [`math.Cos`](https://golang.org/pkg/math/#Cos) 的描述：
 
 > Cos returns the cosine of the radian argument x.
 
-It wants the angle to be in radians. So what's a radian? Instead of defining the full turn of a circle to be made up of 360 degrees, we define a full turn as being 2π radians. There are good reasons to do this that we won't go in to.
+它要求角度是弧度。那什么是弧度？我们不再把一整圈的转动定义为 360 度，而是把一整圈定义为 2π 弧度。这样做是有充分理由的，但我们就不深入讨论了。
 
-Now that we've done some reading, some learning and some thinking, we can write our next test.
+既然我们已经做了一些阅读、学习和思考，可以来写下一个测试了。
 
-### Write the test first
+### 先写测试
 
-All this maths is hard and confusing. I'm not confident I understand what's going on - so let's write a test! We don't need to solve the whole problem in one go - let's start off with working out the correct angle, in radians, for the second hand at a particular time.
+这些数学既难又让人困惑。我没把握自己理解了发生的事情——所以让我们写个测试！我们不需要一次性解决整个问题——让我们先从算出某个特定时间秒针的正确角度（以弧度计）开始。
 
-I'm going to _comment out_ the acceptance test that I was working on while I'm working on these tests - I don't want to get distracted by that test while I'm getting this one to pass.
+我会把之前在写的验收测试 _注释掉_，因为我在让这个测试通过的过程中不想被它分散注意力。
 
-### A recap on packages
+### 关于包的回顾
 
-At the moment, our acceptance tests are in the `clockface_test` package. Our tests can be outside of the `clockface` package - as long as their name ends with `_test.go` they can be run.
+目前，我们的验收测试在 `clockface_test` 包中。我们的测试可以在 `clockface` 包之外——只要它们的名字以 `_test.go` 结尾，就能被运行。
 
-I'm going to write these radians tests _within_ the `clockface` package; they may never get exported, and they may get deleted (or moved) once I have a better grip on what's going on. I'll rename my acceptance test file to `clockface_acceptance_test.go`, so that I can create a _new_ file called `clockface_test` to test seconds in radians.
+我打算在 `clockface` 包 _内部_ 写这些弧度测试；它们可能永远不会被导出，并且一旦我对发生的事情有了更好的把握，它们可能会被删除（或移动）。我会把验收测试文件重命名为 `clockface_acceptance_test.go`，以便我可以创建一个 _新_ 文件 `clockface_test` 来测试秒数转弧度。
 
 ```go
 package clockface
@@ -275,15 +275,15 @@ func TestSecondsInRadians(t *testing.T) {
 }
 ```
 
-Here we're testing that 30 seconds past the minute should put the second hand at halfway around the clock. And it's our first use of the `math` package! If a full turn of a circle is 2π radians, we know that halfway round should just be π radians. `math.Pi` provides us with a value for π.
+这里我们测试的是过了 30 秒应该把秒针放在表盘的半圈处。这是我们第一次使用 `math` 包！如果一整圈是 2π 弧度，我们知道半圈应该正好是 π 弧度。`math.Pi` 给我们提供了 π 的值。
 
-### Try to run the test
+### 尝试运行测试
 
 ```
 ./clockface_test.go:12:9: undefined: secondsInRadians
 ```
 
-### Write the minimal amount of code for the test to run and check the failing test output
+### 写最少量的代码让测试运行起来，并检查失败的测试输出
 
 ```go
 func secondsInRadians(t time.Time) float64 {
@@ -295,7 +295,7 @@ func secondsInRadians(t time.Time) float64 {
 clockface_test.go:15: Wanted 3.141592653589793 radians, but got 0
 ```
 
-### Write enough code to make it pass
+### 写足够的代码让它通过
 
 ```go
 func secondsInRadians(t time.Time) float64 {
@@ -308,13 +308,13 @@ PASS
 ok  	clockface	0.011s
 ```
 
-### Refactor
+### 重构
 
-Nothing needs refactoring yet
+还没什么需要重构的
 
-### Repeat for new requirements
+### 为新需求重复以上流程
 
-Now we can extend the test to cover a few more scenarios. I'm going to skip forward a bit and show some already refactored test code - it should be clear enough how I got where I want to.
+现在我们可以扩展测试，覆盖更多场景。我会跳过一些步骤，直接展示一些已经重构过的测试代码——应该能很清楚地看出我是怎么走到这里的。
 
 ```go
 func TestSecondsInRadians(t *testing.T) {
@@ -339,7 +339,7 @@ func TestSecondsInRadians(t *testing.T) {
 }
 ```
 
-I added a couple of helper functions to make writing this table based test a little less tedious. `testName` converts a time into a digital watch format (HH:MM:SS), and `simpleTime` constructs a `time.Time` using only the parts we actually care about (again, hours, minutes and seconds). Here they are:
+我加了几个辅助函数让写这个表驱动测试不那么繁琐。`testName` 把 time 转成数字手表格式 (HH:MM:SS)，`simpleTime` 只用我们真正关心的部分（同样是小时、分钟、秒）来构造一个 `time.Time`。它们在这里：
 
 ```go
 func simpleTime(hours, minutes, seconds int) time.Time {
@@ -351,9 +351,9 @@ func testName(t time.Time) string {
 }
 ```
 
-These two functions should help make these tests (and future tests) a little easier to write and maintain.
+这两个函数应该能让这些测试（以及未来的测试）更容易写和维护。
 
-This gives us some nice test output:
+这给了我们一些不错的测试输出：
 
 ```
 clockface_test.go:24: Wanted 0 radians, but got 3.141592653589793
@@ -361,7 +361,7 @@ clockface_test.go:24: Wanted 0 radians, but got 3.141592653589793
 clockface_test.go:24: Wanted 4.71238898038469 radians, but got 3.141592653589793
 ```
 
-Time to implement all of that maths stuff we were talking about above:
+是时候实现我们上面讨论过的所有数学了：
 
 ```go
 func secondsInRadians(t time.Time) float64 {
@@ -369,40 +369,40 @@ func secondsInRadians(t time.Time) float64 {
 }
 ```
 
-One second is (2π / 60) radians... cancel out the 2 and we get π/30 radians. Multiply that by the number of seconds (as a `float64`) and we should now have all the tests passing...
+一秒是 (2π / 60) 弧度……约掉 2 我们得到 π/30 弧度。把它乘以秒数（作为 `float64`），现在所有测试应该都能通过了……
 
 ```
 clockface_test.go:24: Wanted 3.141592653589793 radians, but got 3.1415926535897936
 ```
 
-Wait, what?
+等等，什么？
 
-### Floats are horrible
+### 浮点数太可怕了
 
-Floating point arithmetic is [notoriously inaccurate](https://0.30000000000000004.com/). Computers can only really handle integers, and rational numbers to some extent. Decimal numbers start to become inaccurate, especially when we factor them up and down as we are in the `secondsInRadians` function. By dividing `math.Pi` by 30 and then by multiplying it by 30 we've ended up with _a number that's no longer the same as `math.Pi`_.
+浮点运算[出了名地不精确](https://0.30000000000000004.com/)。计算机其实只能很好地处理整数，对有理数则只能在某种程度上处理。十进制数会开始变得不精确，特别是当我们像在 `secondsInRadians` 函数里那样把它们除来乘去时。把 `math.Pi` 除以 30 然后再乘以 30，我们最终得到的是 _一个不再和 `math.Pi` 相同的数_。
 
-There are two ways around this:
+有两种方法绕开这个问题：
 
-1. Live with it
-2. Refactor our function by refactoring our equation
+1. 接受它
+2. 通过重构方程来重构我们的函数
 
-Now (1) may not seem all that appealing, but it's often the only way to make floating point equality work. Being inaccurate by some infinitesimal fraction is frankly not going to matter for the purposes of drawing a clockface, so we could write a function that defines a 'close enough' equality for our angles. But there's a simple way we can get the accuracy back: we rearrange the equation so that we're no longer dividing down and then multiplying up. We can do it all by just dividing.
+(1) 看起来似乎不太吸引人，但通常这是让浮点相等比较能工作的唯一办法。在某个无穷小的分数上不精确，对画一个表盘来说坦白讲并不重要，所以我们可以写一个函数，对我们的角度定义"足够接近"的相等。但有一个简单的办法可以恢复精度：我们重新整理方程，让我们不再先除后乘。我们可以全部用除法搞定。
 
-So instead of
+所以与其
 
 ```
 numberOfSeconds * π / 30
 ```
 
-we can write
+我们可以写
 
 ```
 π / (30 / numberOfSeconds)
 ```
 
-which is equivalent.
+这是等价的。
 
-In Go:
+在 Go 中：
 
 ```go
 func secondsInRadians(t time.Time) float64 {
@@ -410,20 +410,20 @@ func secondsInRadians(t time.Time) float64 {
 }
 ```
 
-And we get a pass.
+我们就通过了。
 
 ```
 PASS
 ok      clockface     0.005s
 ```
 
-It should all look [something like this](https://github.com/quii/learn-go-with-tests/tree/main/math/v3/clockface).
+它应该看起来[像这样](https://github.com/quii/learn-go-with-tests/tree/main/math/v3/clockface)。
 
-### A note on dividing by zero
+### 关于除以零的注解
 
-Computers often don't like dividing by zero because infinity is a bit strange.
+计算机通常不喜欢除以零，因为无穷大有点奇怪。
 
-In Go if you try to explicitly divide by zero you will get a compilation error.
+在 Go 中，如果你尝试显式除以零，你会得到一个编译错误。
 
 ```go
 package main
@@ -437,9 +437,9 @@ func main() {
 }
 ```
 
-Obviously the compiler can't always predict that you'll divide by zero, such as our `t.Second()`
+显然编译器不能总是预测出你会除以零，比如我们的 `t.Second()`
 
-Try this
+试试这个
 
 ```go
 func main() {
@@ -451,7 +451,7 @@ func zero() float64 {
 }
 ```
 
-It will print `+Inf` (infinity). Dividing by +Inf seems to result in zero and we can see this with the following:
+它会打印 `+Inf`（无穷大）。除以 +Inf 似乎结果是零，可以通过下面这段代码看到：
 
 ```go
 package main
@@ -474,13 +474,13 @@ func secondsinradians() float64 {
 }
 ```
 
-### Repeat for new requirements
+### 为新需求重复以上流程
 
-So we've got the first part covered here - we know what angle the second hand will be pointing at in radians. Now we need to work out the coordinates.
+所以我们已经覆盖了第一部分——我们知道秒针指向的角度（以弧度计）。现在我们需要算出坐标。
 
-Again, let's keep this as simple as possible and only work with the _unit circle_; the circle with a radius of 1. This means that our hands will all have a length of one but, on the bright side, it means that the maths will be easy for us to swallow.
+同样，让我们尽可能保持简单，只用 _单位圆_——半径为 1 的圆。这意味着我们所有的指针长度都会是 1，但好在数学会更容易消化。
 
-### Write the test first
+### 先写测试
 
 ```go
 func TestSecondHandPoint(t *testing.T) {
@@ -502,13 +502,13 @@ func TestSecondHandPoint(t *testing.T) {
 }
 ```
 
-### Try to run the test
+### 尝试运行测试
 
 ```
 ./clockface_test.go:40:11: undefined: secondHandPoint
 ```
 
-### Write the minimal amount of code for the test to run and check the failing test output
+### 写最少量的代码让测试运行起来，并检查失败的测试输出
 
 ```go
 func secondHandPoint(t time.Time) Point {
@@ -520,7 +520,7 @@ func secondHandPoint(t time.Time) Point {
 clockface_test.go:42: Wanted {0 -1} Point, but got {0 0}
 ```
 
-### Write enough code to make it pass
+### 写足够的代码让它通过
 
 ```go
 func secondHandPoint(t time.Time) Point {
@@ -533,7 +533,7 @@ PASS
 ok  	clockface	0.007s
 ```
 
-### Repeat for new requirements
+### 为新需求重复以上流程
 
 ```go
 func TestSecondHandPoint(t *testing.T) {
@@ -556,23 +556,23 @@ func TestSecondHandPoint(t *testing.T) {
 }
 ```
 
-### Try to run the test
+### 尝试运行测试
 
 ```
 clockface_test.go:43: Wanted {-1 0} Point, but got {0 -1}
 ```
 
-### Write enough code to make it pass
+### 写足够的代码让它通过
 
-Remember our unit circle picture?
+记得我们的单位圆图吗？
 
 ![picture of the unit circle with the x and y elements of a ray defined as cos(a) and sin(a) respectively, where a is the angle made by the ray with the x axis](<.gitbook/assets/unit_circle_params (1).png>)
 
-Also recall that we want to measure the angle from 12 o'clock which is the Y axis instead of from the X axis which we would like measuring the angle between the second hand and 3 o'clock.
+还要记得我们想从 12 点钟方向（也就是 Y 轴）开始测量角度，而不是从 X 轴开始（那相当于测量秒针与 3 点钟方向的夹角）。
 
 ![unit circle ray defined from by angle from y axis](.gitbook/assets/unit_circle_12_oclock.png)
 
-We now want the equation that produces X and Y. Let's write it into seconds:
+我们现在想要产生 X 和 Y 的方程。让我们把它写成秒数版本：
 
 ```go
 func secondHandPoint(t time.Time) Point {
@@ -584,7 +584,7 @@ func secondHandPoint(t time.Time) Point {
 }
 ```
 
-Now we get
+现在我们得到
 
 ```
 clockface_test.go:43: Wanted {0 -1} Point, but got {1.2246467991473515e-16 -1}
@@ -592,9 +592,9 @@ clockface_test.go:43: Wanted {0 -1} Point, but got {1.2246467991473515e-16 -1}
 clockface_test.go:43: Wanted {-1 0} Point, but got {-1 -1.8369701987210272e-16}
 ```
 
-Wait, what (again)? Looks like we've been cursed by the floats once more - both of those unexpected numbers are _infinitesimal_ - way down at the 16th decimal place. So again we can either choose to try to increase precision, or to just say that they're roughly equal and get on with our lives.
+等等，又是什么情况？看起来我们再次被浮点数诅咒了——这两个意外出现的数字都是 _无穷小的_——一直到第 16 位小数。所以我们再一次可以选择尝试提高精度，或者就说它们大致相等然后继续生活。
 
-One option to increase the accuracy of these angles would be to use the rational type `Rat` from the `math/big` package. But given the objective is to draw an SVG and not land on the moon, I think we can live with a bit of fuzziness.
+提高这些角度精度的一个选项是使用 `math/big` 包中的有理数类型 `Rat`。但既然目标是画一个 SVG 而不是登月，我想我们可以接受一点模糊。
 
 ```go
 func TestSecondHandPoint(t *testing.T) {
@@ -627,24 +627,24 @@ func roughlyEqualPoint(a, b Point) bool {
 }
 ```
 
-We've defined two functions to define approximate equality between two `Points` - they'll work if the X and Y elements are within 0.0000001 of each other. That's still pretty accurate.
+我们定义了两个函数来定义两个 `Point` 之间的近似相等——只要它们的 X 和 Y 元素相差在 0.0000001 之内就算相等。这仍然相当精确。
 
-And now we get:
+现在我们得到：
 
 ```
 PASS
 ok  	clockface	0.007s
 ```
 
-### Refactor
+### 重构
 
-I'm still pretty happy with this.
+我对现状还挺满意的。
 
-Here's [what it looks like now](https://github.com/quii/learn-go-with-tests/tree/main/math/v4/clockface)
+[现在它看起来是这样](https://github.com/quii/learn-go-with-tests/tree/main/math/v4/clockface)
 
-### Repeat for new requirements
+### 为新需求重复以上流程
 
-Well, saying _new_ isn't entirely accurate - really what we can do now is get that acceptance test passing! Let's remind ourselves of what it looks like:
+嗯，说 _新_ 不完全准确——其实我们现在能做的是让那个验收测试通过！让我们提醒自己它长什么样：
 
 ```go
 func TestSecondHandAt30Seconds(t *testing.T) {
@@ -659,21 +659,21 @@ func TestSecondHandAt30Seconds(t *testing.T) {
 }
 ```
 
-### Try to run the test
+### 尝试运行测试
 
 ```
 clockface_acceptance_test.go:28: Got {150 60}, wanted {150 240}
 ```
 
-### Write enough code to make it pass
+### 写足够的代码让它通过
 
-We need to do three things to convert our unit vector into a point on the SVG:
+我们需要做三件事来把单位向量转换成 SVG 上的一个点：
 
-1. Scale it to the length of the hand
-2. Flip it over the X axis to account for the SVG having an origin in the top left hand corner
-3. Translate it to the right position (so that it's coming from an origin of (150,150))
+1. 把它放大到指针的长度
+2. 沿 X 轴翻转，以适配 SVG 原点在左上角
+3. 平移到正确的位置（让它从原点 (150,150) 开始）
 
-Fun times!
+有趣的时间到了！
 
 ```go
 // SecondHand is the unit vector of the second hand of an analogue clock at time `t`
@@ -687,16 +687,16 @@ func SecondHand(t time.Time) Point {
 }
 ```
 
-Scale, flip, and translate in exactly that order. Hooray maths!
+按这个顺序进行缩放、翻转和平移。数学万岁！
 
 ```
 PASS
 ok  	clockface	0.007s
 ```
 
-### Refactor
+### 重构
 
-There's a few magic numbers here that should get pulled out as constants, so let's do that
+这里有几个魔法数字应该被提取为常量，让我们这么做：
 
 ```go
 const secondHandLength = 90
@@ -714,13 +714,13 @@ func SecondHand(t time.Time) Point {
 }
 ```
 
-## Draw the clock
+## 画时钟
 
-Well... the second hand anyway...
+嗯……至少先画秒针……
 
-Let's do this thing - because there's nothing worse than not delivering some value when it's just sitting there waiting to get out into the world to dazzle people. Let's draw a second hand!
+让我们做这件事——因为没有什么比明明价值就在那里等着输出到世界里去惊艳别人，却没能交付更糟糕的事了。我们来画一根秒针！
 
-We're going to stick a new directory under our main `clockface` package directory, called (confusingly), `clockface`. In there we'll put the `main` package that will create the binary that will build an SVG:
+我们要在主 `clockface` 包目录下加一个新目录，名字（容易混淆地）也叫 `clockface`。在那里我们会放一个 `main` 包，用来生成创建 SVG 的二进制文件：
 
 ```
 |-- clockface
@@ -730,7 +730,7 @@ We're going to stick a new directory under our main `clockface` package director
 |-- clockface_test.go
 ```
 
-Inside `main.go`, you'll start with this code but change the import for the clockface package to point at your own version:
+在 `main.go` 里，你会从这段代码开始，但要把 clockface 包的导入改成你自己的版本：
 
 ```go
 package main
@@ -770,36 +770,36 @@ const bezel = `<circle cx="150" cy="150" r="100" style="fill:#fff;stroke:#000;st
 const svgEnd = `</svg>`
 ```
 
-Oh boy am I not trying to win any prizes for beautiful code with _this_ mess - but it does the job. It's writing an SVG out to `os.Stdout` - one string at a time.
+我可不会想凭 _这一坨_ 烂代码赢什么漂亮代码大奖——但它干活儿了。它把一个 SVG 写到了 `os.Stdout`——一次写一个字符串。
 
-If we build this
+如果我们构建它
 
 ```
 go build
 ```
 
-and run it, sending the output into a file
+并运行它，把输出送到一个文件里
 
 ```
 ./clockface > clock.svg
 ```
 
-We should see something like
+我们应该能看到类似这样的东西
 
 ![a clock with only a second hand](.gitbook/assets/clock.svg)
 
-And this is [how the code looks](https://github.com/quii/learn-go-with-tests/tree/main/math/v6/clockface).
+[代码看起来是这样](https://github.com/quii/learn-go-with-tests/tree/main/math/v6/clockface)。
 
-### Refactor
+### 重构
 
-This stinks. Well, it doesn't quite _stink_ stink, but I'm not happy about it.
+这有点臭。嗯，倒不是 _特别_ 臭，但我对它不满意。
 
-1. That whole `SecondHand` function is _super_ tied to being an SVG... without mentioning SVGs or actually producing an SVG...
-2. ... while at the same time I'm not testing any of my SVG code.
+1. 整个 `SecondHand` 函数 _极度_ 绑定于 SVG……虽然它没提到 SVG 也没真正生产 SVG……
+2. ……同时我也没在测试任何 SVG 代码。
 
-Yeah, I guess I screwed up. This feels wrong. Let's try to recover with a more SVG-centric test.
+是的，我猜我搞砸了。这感觉不对。让我们试着用一个更以 SVG 为中心的测试来挽回。
 
-What are our options? Well, we could try testing that the characters spewing out of the `SVGWriter` contain things that look like the sort of SVG tag we're expecting for a particular time. For instance:
+我们有什么选择？嗯，我们可以试着测试 `SVGWriter` 喷出的字符里包含我们对某个特定时间所期望的那种 SVG 标签。例如：
 
 ```go
 func TestSVGWriterAtMidnight(t *testing.T) {
@@ -817,21 +817,21 @@ func TestSVGWriterAtMidnight(t *testing.T) {
 }
 ```
 
-But is this really an improvement?
+但这真的算改进吗？
 
-Not only will it still pass if I don't produce a valid SVG (as it's only testing that a string appears in the output), but it will also fail if I make the smallest, unimportant change to that string - if I add an extra space between the attributes, for instance.
+它不仅在我没有产生有效 SVG 的情况下也会通过（因为它只测试某个字符串是否出现在输出里），而且如果我对那个字符串做最小、不重要的改动（比如在属性间多加一个空格）它也会失败。
 
-The _biggest_ smell is that I'm testing a data structure - XML - by looking at its representation as a series of characters - as a string. This is _never_, _ever_ a good idea as it produces problems just like the ones I outline above: a test that's both too fragile and not sensitive enough. A test that's testing the wrong thing!
+_最大_ 的味道是我在测试一个数据结构——XML——通过看它作为一系列字符的表示——作为一个字符串。这 _永远、永远_ 不是个好主意，因为它会产生我上面提到的那些问题：一个既太脆弱又不够敏感的测试。一个测错东西的测试！
 
-So the only solution is to test the output _as XML_. And to do that we'll need to parse it.
+所以唯一的解决方案是把输出 _作为 XML_ 来测试。要做到这一点我们需要解析它。
 
-## Parsing XML
+## 解析 XML
 
-[`encoding/xml`](https://pkg.go.dev/encoding/xml) is the Go package that can handle all things to do with simple XML parsing.
+[`encoding/xml`](https://pkg.go.dev/encoding/xml) 是 Go 中处理简单 XML 解析所有事项的包。
 
-The function [`xml.Unmarshal`](https://pkg.go.dev/encoding/xml#Unmarshal) takes a `[]byte` of XML data, and a pointer to a struct for it to get unmarshalled in to.
+函数 [`xml.Unmarshal`](https://pkg.go.dev/encoding/xml#Unmarshal) 接收一个 `[]byte` 的 XML 数据，以及一个指向某个结构体的指针来反序列化进去。
 
-So we'll need a struct to unmarshall our XML into. We could spend some time working out what the correct names for all of the nodes and attributes, and how to write the correct structure but, happily, someone has written [`zek`](https://github.com/miku/zek) a program that will automate all of that hard work for us. Even better, there's an online version at [https://xml-to-go.github.io/](https://xml-to-go.github.io/). Just paste the SVG from the top of the file into one box and - bam - out pops:
+所以我们需要一个结构体把我们的 XML 反序列化进去。我们可以花一些时间研究所有节点和属性的正确名字以及如何写出正确的结构，但幸运的是有人写了 [`zek`](https://github.com/miku/zek)，一个能为我们自动完成所有这些艰苦工作的程序。更棒的是，还有一个在线版本在 [https://xml-to-go.github.io/](https://xml-to-go.github.io/)。只需把文件顶部的 SVG 粘贴到一个框里——砰——就出来了：
 
 ```go
 type Svg struct {
@@ -860,7 +860,7 @@ type Svg struct {
 }
 ```
 
-We could make adjustments to this if we needed to (like changing the name of the struct to `SVG`) but it's definitely good enough to start us off. Paste the struct into the `clockface_acceptance_test` file and let's write a test with it:
+如果需要我们可以对它做一些调整（比如把结构体的名字改成 `SVG`），但作为开始它绝对足够好了。把这个结构体粘贴到 `clockface_acceptance_test` 文件里，让我们用它写一个测试：
 
 ```go
 func TestSVGWriterAtMidnight(t *testing.T) {
@@ -885,13 +885,13 @@ func TestSVGWriterAtMidnight(t *testing.T) {
 }
 ```
 
-We write the output of `clockface.SVGWriter` to a `bytes.Buffer` and then `Unmarshal` it into an `Svg`. We then look at each `Line` in the `Svg` to see if any of them have the expected `X2` and `Y2` values. If we get a match we return early (passing the test); if not we fail with a (hopefully) informative message.
+我们把 `clockface.SVGWriter` 的输出写到一个 `bytes.Buffer`，然后 `Unmarshal` 进一个 `Svg`。然后我们查看 `Svg` 中的每个 `Line`，看是否有任何一个有期望的 `X2` 和 `Y2` 值。如果匹配上了我们提前返回（让测试通过）；否则我们用一条（希望能）提供信息的消息让它失败。
 
 ```sh
 ./clockface_acceptance_test.go:41:2: undefined: clockface.SVGWriter
 ```
 
-Looks like we'd better create `SVGWriter.go`...
+看起来我们最好创建 `SVGWriter.go`……
 
 ```go
 package clockface
@@ -937,7 +937,7 @@ const bezel = `<circle cx="150" cy="150" r="100" style="fill:#fff;stroke:#000;st
 const svgEnd = `</svg>`
 ```
 
-The most beautiful SVG writer? No. But hopefully it'll do the job...
+最美的 SVG writer？不是。但希望它能干活儿……
 
 ```
 clockface_acceptance_test.go:56: Expected to find the second hand with x2 of 150 and y2 of 60, in the SVG output <?xml version="1.0" encoding="UTF-8" standalone="no"?>
@@ -949,27 +949,27 @@ clockface_acceptance_test.go:56: Expected to find the second hand with x2 of 150
          version="2.0"><circle cx="150" cy="150" r="100" style="fill:#fff;stroke:#000;stroke-width:5px;"/><line x1="150" y1="150" x2="150.000000" y2="60.000000" style="fill:none;stroke:#f00;stroke-width:3px;"/></svg>
 ```
 
-Oooops! The `%f` format directive is printing our coordinates to the default level of precision - six decimal places. We should be explicit as to what level of precision we're expecting for the coordinates. Let's say three decimal places.
+哎哟！`%f` 格式指令把我们的坐标按默认精度——六位小数——打印出来。我们应该明确表示我们对坐标期望的精度。我们就说三位小数。
 
 ```go
 	fmt.Fprintf(w, `<line x1="150" y1="150" x2="%.3f" y2="%.3f" style="fill:none;stroke:#f00;stroke-width:3px;"/>`, p.X, p.Y)
 ```
 
-And after we update our expectations in the test
+然后在我们更新测试中的预期之后
 
 ```go
 	x2 := "150.000"
 	y2 := "60.000"
 ```
 
-We get:
+我们得到：
 
 ```
 PASS
 ok  	clockface	0.006s
 ```
 
-We can now shorten our `main` function:
+我们现在可以缩短 `main` 函数：
 
 ```go
 package main
@@ -987,19 +987,19 @@ func main() {
 }
 ```
 
-This is what [things should look like now](https://github.com/quii/learn-go-with-tests/tree/main/math/v7b/clockface).
+[现在的样子](https://github.com/quii/learn-go-with-tests/tree/main/math/v7b/clockface)就是这样。
 
-And we can write a test for another time following the same pattern, but not before...
+我们可以遵循同样的模式给另一个时间写一个测试，但在那之前……
 
-### Refactor
+### 重构
 
-Three things stick out:
+有三件事很突出：
 
-1. We're not really testing for all of the information we need to ensure is present - what about the `x1` values, for instance?
-2. Also, those attributes for `x1` etc. aren't really `strings` are they? They're numbers!
-3. Do I really care about the `style` of the hand? Or, for that matter, the empty `Text` node that's been generated by `zak`?
+1. 我们没有真正测试我们需要确保存在的所有信息——比如 `x1` 的值呢？
+2. 而且，那些 `x1` 等属性其实不真的是 `string`，对吧？它们是数字！
+3. 我真的关心指针的 `style` 吗？或者说，关心 `zak` 生成的那个空 `Text` 节点吗？
 
-We can do better. Let's make a few adjustments to the `Svg` struct, and the tests, to sharpen everything up.
+我们可以做得更好。让我们对 `Svg` 结构体和测试做一些调整，把一切都收紧。
 
 ```go
 type SVG struct {
@@ -1027,14 +1027,14 @@ type Line struct {
 }
 ```
 
-Here I've
+这里我
 
-* Made the important parts of the struct named types -- the `Line` and the `Circle`
-* Turned the numeric attributes into `float64`s instead of `string`s.
-* Deleted unused attributes like `Style` and `Text`
-* Renamed `Svg` to `SVG` because _it's the right thing to do_.
+* 把结构体中重要的部分变成命名类型——`Line` 和 `Circle`
+* 把数字属性从 `string` 改成了 `float64`
+* 删掉了未使用的属性，如 `Style` 和 `Text`
+* 把 `Svg` 重命名成了 `SVG`，因为 _这是该做的事_。
 
-This will let us assert more precisely on the line we're looking for:
+这能让我们对要找的那条线做更精确的断言：
 
 ```go
 func TestSVGWriterAtMidnight(t *testing.T) {
@@ -1059,7 +1059,7 @@ func TestSVGWriterAtMidnight(t *testing.T) {
 }
 ```
 
-Finally we can take a leaf out of the unit tests' tables, and we can write a helper function `containsLine(line Line, lines []Line) bool` to really make these tests shine:
+最后，我们可以借鉴单元测试的表驱动思路，写一个辅助函数 `containsLine(line Line, lines []Line) bool` 来真正让这些测试发光：
 
 ```go
 func TestSVGWriterSecondHand(t *testing.T) {
@@ -1102,13 +1102,13 @@ func containsLine(l Line, ls []Line) bool {
 }
 ```
 
-Here's what [it looks like](https://github.com/quii/learn-go-with-tests/tree/main/math/v7c/clockface)
+[它现在的样子](https://github.com/quii/learn-go-with-tests/tree/main/math/v7c/clockface)就在这里
 
-Now _that's_ what I call an acceptance test!
+现在 _这_ 才是我说的验收测试！
 
-### Write the test first
+### 先写测试
 
-So that's the second hand done. Now let's get started on the minute hand.
+至此秒针搞定。现在让我们开始做分针。
 
 ```go
 func TestSVGWriterMinuteHand(t *testing.T) {
@@ -1138,13 +1138,13 @@ func TestSVGWriterMinuteHand(t *testing.T) {
 }
 ```
 
-### Try to run the test
+### 尝试运行测试
 
 ```
 clockface_acceptance_test.go:87: Expected to find the minute hand line {X1:150 Y1:150 X2:150 Y2:70}, in the SVG lines [{X1:150 Y1:150 X2:150 Y2:60}]
 ```
 
-We'd better start building some other clock hands, Much in the same way as we produced the tests for the second hand, we can iterate to produce the following set of tests. Again we'll comment out our acceptance test while we get this working:
+我们最好开始构建其他的时钟指针。和秒针的测试一样，我们可以迭代地产出下面这套测试。同样在我们让它工作期间我们会注释掉验收测试：
 
 ```go
 func TestMinutesInRadians(t *testing.T) {
@@ -1166,13 +1166,13 @@ func TestMinutesInRadians(t *testing.T) {
 }
 ```
 
-### Try to run the test
+### 尝试运行测试
 
 ```
 ./clockface_test.go:59:11: undefined: minutesInRadians
 ```
 
-### Write the minimal amount of code for the test to run and check the failing test output
+### 写最少量的代码让测试运行起来，并检查失败的测试输出
 
 ```go
 func minutesInRadians(t time.Time) float64 {
@@ -1180,9 +1180,9 @@ func minutesInRadians(t time.Time) float64 {
 }
 ```
 
-### Repeat for new requirements
+### 为新需求重复以上流程
 
-Well, OK - now let's make ourselves do some _real_ work. We could model the minute hand as only moving every full minute - so that it 'jumps' from 30 to 31 minutes past without moving in between. But that would look a bit rubbish. What we want it to do is move a _tiny little bit_ every second.
+好吧——现在让我们做一些 _真正的_ 工作。我们可以把分针建模成只在每整分钟移动——所以它会从 30 分钟 "跳" 到 31 分钟，中间不动。但这看起来会有点垃圾。我们想要的是它每秒钟移动 _一点点_。
 
 ```go
 func TestMinutesInRadians(t *testing.T) {
@@ -1205,23 +1205,23 @@ func TestMinutesInRadians(t *testing.T) {
 }
 ```
 
-How much is that tiny little bit? Well...
+那一点点是多少？嗯……
 
-* Sixty seconds in a minute
-* thirty minutes in a half turn of the circle (`math.Pi` radians)
-* so `30 * 60` seconds in a half turn.
-* So if the time is 7 seconds past the hour ...
-* ... we're expecting to see the minute hand at `7 * (math.Pi / (30 * 60))` radians past the 12.
+* 一分钟有六十秒
+* 半圈圆有三十分钟（`math.Pi` 弧度）
+* 所以半圈是 `30 * 60` 秒。
+* 所以如果时间是过了整点 7 秒……
+* ……我们期望分针在 12 点钟过 `7 * (math.Pi / (30 * 60))` 弧度的位置。
 
-### Try to run the test
+### 尝试运行测试
 
 ```
 clockface_test.go:62: Wanted 0.012217304763960306 radians, but got 3.141592653589793
 ```
 
-### Write enough code to make it pass
+### 写足够的代码让它通过
 
-In the immortal words of Jennifer Aniston: [Here comes the science bit](https://www.youtube.com/watch?v=29Im23SPNok)
+用 Jennifer Aniston 永恒的那句台词：[科学环节来了](https://www.youtube.com/watch?v=29Im23SPNok)
 
 ```go
 func minutesInRadians(t time.Time) float64 {
@@ -1230,38 +1230,38 @@ func minutesInRadians(t time.Time) float64 {
 }
 ```
 
-Rather than working out how far to push the minute hand around the clockface for every second from scratch, here we can just leverage the `secondsInRadians` function. For every second the minute hand will move 1/60th of the angle the second hand moves.
+与其每秒都从头计算分针在表盘上要移动多远，我们可以利用 `secondsInRadians` 函数。每过一秒分针移动的角度是秒针移动角度的 1/60。
 
 ```go
 secondsInRadians(t) / 60
 ```
 
-Then we just add on the movement for the minutes - similar to the movement of the second hand.
+然后我们再加上分钟的移动量——和秒针的移动方式类似。
 
 ```go
 math.Pi / (30 / float64(t.Minute()))
 ```
 
-And...
+然后……
 
 ```
 PASS
 ok  	clockface	0.007s
 ```
 
-Nice and easy. This is what things [look like now](https://github.com/quii/learn-go-with-tests/tree/main/math/v8/clockface/clockface_acceptance_test.go)
+简单又轻松。[现在的样子](https://github.com/quii/learn-go-with-tests/tree/main/math/v8/clockface/clockface_acceptance_test.go)是这样。
 
-### Repeat for new requirements
+### 为新需求重复以上流程
 
-Should I add more cases to the `minutesInRadians` test? At the moment there are only two. How many cases do I need before I move on to the testing the `minuteHandPoint` function?
+我应该给 `minutesInRadians` 测试再加一些用例吗？目前只有两个。在我转去测试 `minuteHandPoint` 函数之前需要多少用例？
 
-One of my favourite TDD quotes, often attributed to Kent Beck, is
+我最喜欢的 TDD 名言之一，常被归功于 Kent Beck：
 
 > Write tests until fear is transformed into boredom.
 
-And, frankly, I'm bored of testing that function. I'm confident I know how it works. So it's on to the next one.
+而坦白讲，我已经厌倦了测试这个函数。我有信心知道它怎么工作。所以是时候转向下一个了。
 
-### Write the test first
+### 先写测试
 
 ```go
 func TestMinuteHandPoint(t *testing.T) {
@@ -1283,13 +1283,13 @@ func TestMinuteHandPoint(t *testing.T) {
 }
 ```
 
-### Try to run the test
+### 尝试运行测试
 
 ```
 ./clockface_test.go:79:11: undefined: minuteHandPoint
 ```
 
-### Write the minimal amount of code for the test to run and check the failing test output
+### 写最少量的代码让测试运行起来，并检查失败的测试输出
 
 ```go
 func minuteHandPoint(t time.Time) Point {
@@ -1301,7 +1301,7 @@ func minuteHandPoint(t time.Time) Point {
 clockface_test.go:80: Wanted {0 -1} Point, but got {0 0}
 ```
 
-### Write enough code to make it pass
+### 写足够的代码让它通过
 
 ```go
 func minuteHandPoint(t time.Time) Point {
@@ -1314,9 +1314,9 @@ PASS
 ok  	clockface	0.007s
 ```
 
-### Repeat for new requirements
+### 为新需求重复以上流程
 
-And now for some actual work
+现在做点真正的活儿
 
 ```go
 func TestMinuteHandPoint(t *testing.T) {
@@ -1343,9 +1343,9 @@ func TestMinuteHandPoint(t *testing.T) {
 clockface_test.go:81: Wanted {-1 0} Point, but got {0 -1}
 ```
 
-### Write enough code to make it pass
+### 写足够的代码让它通过
 
-A quick copy and paste of the `secondHandPoint` function with some minor changes ought to do it...
+把 `secondHandPoint` 函数复制粘贴一下，做一些小改动应该就行……
 
 ```go
 func minuteHandPoint(t time.Time) Point {
@@ -1362,9 +1362,9 @@ PASS
 ok  	clockface	0.009s
 ```
 
-### Refactor
+### 重构
 
-We've definitely got a bit of repetition in the `minuteHandPoint` and `secondHandPoint` - I know because we just copied and pasted one to make the other. Let's DRY it out with a function.
+`minuteHandPoint` 和 `secondHandPoint` 之间确实有些重复——我知道是因为我们刚刚是复制粘贴一个来做的另一个。让我们用一个函数把它们 DRY 掉。
 
 ```go
 func angleToPoint(angle float64) Point {
@@ -1375,7 +1375,7 @@ func angleToPoint(angle float64) Point {
 }
 ```
 
-and we can rewrite `minuteHandPoint` and `secondHandPoint` as one liners:
+然后我们可以把 `minuteHandPoint` 和 `secondHandPoint` 改写成一行：
 
 ```go
 func minuteHandPoint(t time.Time) Point {
@@ -1394,11 +1394,11 @@ PASS
 ok  	clockface	0.007s
 ```
 
-Now we can uncomment the acceptance test and get to work drawing the minute hand.
+现在我们可以取消验收测试的注释，开始画分针。
 
-### Write enough code to make it pass
+### 写足够的代码让它通过
 
-The `minuteHand` function is a copy-and-paste of `secondHand` with some minor adjustments, such as declaring a `minuteHandLength`:
+`minuteHand` 函数是 `secondHand` 的复制粘贴，做了一些小调整，比如声明一个 `minuteHandLength`：
 
 ```go
 const minuteHandLength = 80
@@ -1414,7 +1414,7 @@ func minuteHand(w io.Writer, t time.Time) {
 }
 ```
 
-And a call to it in our `SVGWriter` function:
+并在 `SVGWriter` 函数里调用它：
 
 ```go
 func SVGWriter(w io.Writer, t time.Time) {
@@ -1426,20 +1426,20 @@ func SVGWriter(w io.Writer, t time.Time) {
 }
 ```
 
-Now we should see that `TestSVGWriterMinuteHand` passes:
+现在我们应该看到 `TestSVGWriterMinuteHand` 通过：
 
 ```
 PASS
 ok  	clockface	0.006s
 ```
 
-But the proof of the pudding is in the eating - if we now compile and run our `clockface` program, we should see something like
+但布丁好不好吃，得吃了才知道——如果我们现在编译并运行 `clockface` 程序，应该能看到类似这样的东西
 
 ![a clock with second and minute hands](<.gitbook/assets/clock (1).svg>)
 
-### Refactor
+### 重构
 
-Let's remove the duplication from the `secondHand` and `minuteHand` functions, putting all of that scale, flip and translate logic all in one place.
+让我们去掉 `secondHand` 和 `minuteHand` 函数中的重复，把所有缩放、翻转和平移的逻辑放到一个地方。
 
 ```go
 func secondHand(w io.Writer, t time.Time) {
@@ -1464,11 +1464,11 @@ PASS
 ok  	clockface	0.007s
 ```
 
-This is [where we're up to now](https://github.com/quii/learn-go-with-tests/tree/main/math/v9/clockface).
+[到这里我们的进度](https://github.com/quii/learn-go-with-tests/tree/main/math/v9/clockface)。
 
-There... now it's just the hour hand to do!
+到这……就只剩时针了！
 
-### Write the test first
+### 先写测试
 
 ```go
 func TestSVGWriterHourHand(t *testing.T) {
@@ -1498,15 +1498,15 @@ func TestSVGWriterHourHand(t *testing.T) {
 }
 ```
 
-### Try to run the test
+### 尝试运行测试
 
 ```
 clockface_acceptance_test.go:113: Expected to find the hour hand line {X1:150 Y1:150 X2:150 Y2:200}, in the SVG lines [{X1:150 Y1:150 X2:150 Y2:60} {X1:150 Y1:150 X2:150 Y2:70}]
 ```
 
-Again, let's comment this one out until we've got the some coverage with the lower level tests:
+同样地，让我们把这个先注释掉，等我们用更底层的测试覆盖之后再说：
 
-### Write the test first
+### 先写测试
 
 ```go
 func TestHoursInRadians(t *testing.T) {
@@ -1528,13 +1528,13 @@ func TestHoursInRadians(t *testing.T) {
 }
 ```
 
-### Try to run the test
+### 尝试运行测试
 
 ```
 ./clockface_test.go:97:11: undefined: hoursInRadians
 ```
 
-### Write the minimal amount of code for the test to run and check the failing test output
+### 写最少量的代码让测试运行起来，并检查失败的测试输出
 
 ```go
 func hoursInRadians(t time.Time) float64 {
@@ -1547,7 +1547,7 @@ PASS
 ok  	clockface	0.007s
 ```
 
-### Repeat for new requirements
+### 为新需求重复以上流程
 
 ```go
 func TestHoursInRadians(t *testing.T) {
@@ -1570,13 +1570,13 @@ func TestHoursInRadians(t *testing.T) {
 }
 ```
 
-### Try to run the test
+### 尝试运行测试
 
 ```
 clockface_test.go:100: Wanted 0 radians, but got 3.141592653589793
 ```
 
-### Write enough code to make it pass
+### 写足够的代码让它通过
 
 ```go
 func hoursInRadians(t time.Time) float64 {
@@ -1584,7 +1584,7 @@ func hoursInRadians(t time.Time) float64 {
 }
 ```
 
-### Repeat for new requirements
+### 为新需求重复以上流程
 
 ```go
 func TestHoursInRadians(t *testing.T) {
@@ -1608,13 +1608,13 @@ func TestHoursInRadians(t *testing.T) {
 }
 ```
 
-### Try to run the test
+### 尝试运行测试
 
 ```
 clockface_test.go:101: Wanted 4.71238898038469 radians, but got 10.995574287564276
 ```
 
-### Write enough code to make it pass
+### 写足够的代码让它通过
 
 ```go
 func hoursInRadians(t time.Time) float64 {
@@ -1622,16 +1622,16 @@ func hoursInRadians(t time.Time) float64 {
 }
 ```
 
-Remember, this is not a 24-hour clock; we have to use the remainder operator to get the remainder of the current hour divided by 12.
+记住，这不是 24 小时制时钟；我们必须用取模运算符来获取当前小时除以 12 的余数。
 
 ```
 PASS
 ok  	learn-go-with-tests/math/clockface	0.008s
 ```
 
-### Write the test first
+### 先写测试
 
-Now let's try to move the hour hand around the clockface based on the minutes and the seconds that have passed.
+现在让我们试着根据已经过去的分钟和秒来移动时针。
 
 ```go
 func TestHoursInRadians(t *testing.T) {
@@ -1656,17 +1656,17 @@ func TestHoursInRadians(t *testing.T) {
 }
 ```
 
-### Try to run the test
+### 尝试运行测试
 
 ```
 clockface_test.go:102: Wanted 0.013089969389957472 radians, but got 0
 ```
 
-### Write enough code to make it pass
+### 写足够的代码让它通过
 
-Again, a bit of thinking is now required. We need to move the hour hand along a little bit for both the minutes and the seconds. Luckily we have an angle already to hand for the minutes and the seconds - the one returned by `minutesInRadians`. We can reuse it!
+同样，需要思考一下。我们需要为分钟和秒钟都把时针稍微移动一点。幸运的是我们已经有一个分钟和秒钟的角度可用——`minutesInRadians` 返回的那个。我们可以复用它！
 
-So the only question is by what factor to reduce the size of that angle. One full turn is one hour for the minute hand, but for the hour hand it's twelve hours. So we just divide the angle returned by `minutesInRadians` by twelve:
+所以唯一的问题是要把这个角度的大小缩小多少倍。对分针来说一整圈是一小时，但对时针来说是十二小时。所以我们就把 `minutesInRadians` 返回的角度除以十二：
 
 ```go
 func hoursInRadians(t time.Time) float64 {
@@ -1675,15 +1675,15 @@ func hoursInRadians(t time.Time) float64 {
 }
 ```
 
-and behold:
+然后看：
 
 ```
 clockface_test.go:104: Wanted 0.013089969389957472 radians, but got 0.01308996938995747
 ```
 
-Floating point arithmetic strikes again.
+浮点运算又来了。
 
-Let's update our test to use `roughlyEqualFloat64` for the comparison of the angles.
+让我们更新测试，使用 `roughlyEqualFloat64` 来比较角度。
 
 ```go
 func TestHoursInRadians(t *testing.T) {
@@ -1713,15 +1713,15 @@ PASS
 ok  	clockface	0.007s
 ```
 
-### Refactor
+### 重构
 
-If we're going to use `roughlyEqualFloat64` in _one_ of our radians tests, we should probably use it for _all_ of them. That's a nice and simple refactor, which will leave things [looking like this](https://github.com/quii/learn-go-with-tests/tree/main/math/v10/clockface).
+如果我们要在 _一个_ 弧度测试中使用 `roughlyEqualFloat64`，那大概应该 _所有_ 测试都用它。这是一个简单干净的重构，做完之后[看起来是这样](https://github.com/quii/learn-go-with-tests/tree/main/math/v10/clockface)。
 
-## Hour Hand Point
+## 时针的点
 
-Right, it's time to calculate where the hour hand point is going to go by working out the unit vector.
+好了，是时候通过算出单位向量来计算时针点要去哪里了。
 
-### Write the test first
+### 先写测试
 
 ```go
 func TestHourHandPoint(t *testing.T) {
@@ -1744,27 +1744,27 @@ func TestHourHandPoint(t *testing.T) {
 }
 ```
 
-Wait, am I going to write _two_ test cases _at once_? Isn't this _bad TDD_?
+等等，我要 _一次_ 写 _两个_ 测试用例？这是不是 _糟糕的 TDD_？
 
-### On TDD Zealotry
+### 关于 TDD 的狂热
 
-Test driven development is not a religion. Some people might act like it is - usually people who don't do TDD but are happy to moan on Twitter or Dev.to that it's only done by zealots and that they're 'being pragmatic' when they don't write tests. But it's not a religion. It's a tool.
+测试驱动开发不是一种宗教。有些人可能表现得像是——通常是那些不做 TDD 但乐于在 Twitter 或 Dev.to 上抱怨它只是狂热分子才做的事，而他们不写测试是"务实"的。但它不是宗教。它是一个工具。
 
-I _know_ what the two tests are going to be - I've tested two other clock hands in exactly the same way - and I already know what my implementation is going to be - I wrote a function for the general case of changing an angle into a point in the minute hand iteration.
+我 _知道_ 这两个测试会是什么——我以完全相同的方式测过另外两个时钟指针——而且我已经知道我的实现会是什么——我在分针迭代时已经写过一个把角度变成点的通用函数。
 
-I'm not going to plough through TDD ceremony for the sake of it. TDD is a technique that helps me understand the code I'm writing - and the code that I'm going to write - better. TDD gives me feedback, knowledge and insight. But if I've already got that knowledge, then I'm not going to plough through the ceremony for no reason. Neither tests nor TDD are an end in themselves.
+我不会为了 TDD 仪式而硬要走完那一套。TDD 是一种帮助我更好理解我正在写的代码——以及我即将写的代码——的技术。TDD 给我反馈、知识和洞察。但如果我已经有那些知识，就没有理由为了仪式而走流程。无论是测试还是 TDD 本身都不是目的。
 
-My confidence has increased, so I feel I can make larger strides forward. I'm going to 'skip' a few steps, because I know where I am, I know where I'm going and I've been down this road before.
+我的信心增加了，所以我感觉可以迈更大的步子。我会"跳过"几个步骤，因为我知道我在哪、知道我要去哪、而且我以前走过这条路。
 
-But also note: I'm not skipping writing the tests entirely - I'm still writing them first. They're just appearing in less granular chunks.
+不过也要注意：我不是完全跳过写测试——我还是先写测试。它们只是以更不细的颗粒度出现而已。
 
-### Try to run the test
+### 尝试运行测试
 
 ```
 ./clockface_test.go:119:11: undefined: hourHandPoint
 ```
 
-### Write enough code to make it pass
+### 写足够的代码让它通过
 
 ```go
 func hourHandPoint(t time.Time) Point {
@@ -1772,16 +1772,16 @@ func hourHandPoint(t time.Time) Point {
 }
 ```
 
-As I said, I know where I am, and I know where I'm going. Why pretend otherwise? The tests will soon tell me if I'm wrong.
+如我所说，我知道我在哪里，知道我要去哪里。何必假装不是？如果我错了测试很快就会告诉我。
 
 ```
 PASS
 ok  	learn-go-with-tests/math/clockface	0.009s
 ```
 
-## Draw the hour hand
+## 画时针
 
-And finally we get to draw in the hour hand. We can bring in that acceptance test by uncommenting it:
+最后我们来画时针。我们可以把那个验收测试取消注释加进来：
 
 ```go
 func TestSVGWriterHourHand(t *testing.T) {
@@ -1811,16 +1811,16 @@ func TestSVGWriterHourHand(t *testing.T) {
 }
 ```
 
-### Try to run the test
+### 尝试运行测试
 
 ```
 clockface_acceptance_test.go:113: Expected to find the hour hand line {X1:150 Y1:150 X2:150 Y2:200},
     in the SVG lines [{X1:150 Y1:150 X2:150 Y2:60} {X1:150 Y1:150 X2:150 Y2:70}]
 ```
 
-### Write enough code to make it pass
+### 写足够的代码让它通过
 
-And we can now make our final adjustments to the SVG writing constants and functions:
+我们现在可以对 SVG writing 的常量和函数做最后的调整：
 
 ```go
 const (
@@ -1850,19 +1850,19 @@ func hourHand(w io.Writer, t time.Time) {
 
 ```
 
-And so...
+然后……
 
 ```
 ok  	clockface	0.007s
 ```
 
-Let's just check by compiling and running our `clockface` program.
+让我们编译并运行 `clockface` 程序检查一下。
 
 ![a clock](<.gitbook/assets/clock (2).svg>)
 
-### Refactor
+### 重构
 
-Looking at `clockface.go`, there are a few 'magic numbers' floating about. They are all based around how many hours/minutes/seconds there are in a half-turn around a clockface. Let's refactor so that we make explicit their meaning.
+看看 `clockface.go`，里面有一些"魔法数字"。它们都是基于一个表盘半圈有多少小时/分钟/秒。让我们重构来明确它们的含义。
 
 ```go
 const (
@@ -1875,42 +1875,42 @@ const (
 )
 ```
 
-Why do this? Well, it makes explicit what each number _means_ in the equation. If - _when_ - we come back to this code, these names will help us to understand what's going on.
+为什么这么做？嗯，它让方程中每个数字 _的含义_ 变得明确。如果——_当_ 我们以后回到这段代码时——这些名字会帮助我们理解发生了什么。
 
-Moreover, should we ever want to make some really, really WEIRD clocks - ones with 4 hours for the hour hand, and 20 seconds for the second hand say - these constants could easily become parameters. We're helping to leave that door open (even if we never go through it).
+而且，万一我们想做一些非常非常奇怪的时钟——比如时针有 4 小时、秒针 20 秒的——这些常量很容易就能变成参数。我们正在帮自己留着那扇门（即使我们永远不会走过去）。
 
-## Wrapping up
+## 总结
 
-Do we need to do anything else?
+我们还需要做什么吗？
 
-First, let's pat ourselves on the back - we've written a program that makes an SVG clockface. It works and it's great. It will only ever make one sort of clockface - but that's fine! Maybe you only _want_ one sort of clockface. There's nothing wrong with a program that solves a specific problem and nothing else.
+首先，让我们给自己一个鼓励——我们写出了一个能生成 SVG 表盘的程序。它能工作而且很棒。它只能做一种表盘——但那也没关系！或许你也只 _需要_ 一种表盘。一个程序解决一个具体问题、不做其他，没什么不对。
 
-### A Program... and a Library
+### 一个程序……和一个库
 
-But the code we've written _does_ solve a more general set of problems to do with drawing a clockface. Because we used tests to think about each small part of the problem in isolation, and because we codified that isolation with functions, we've built a very reasonable little API for clockface calculations.
+但我们写的代码 _确实_ 解决了一系列与画表盘相关的更通用的问题。因为我们用测试来思考问题的每个小部分（彼此独立），并且通过函数把那种独立性固化下来，我们已经构建了一个相当合理的小型 API 用于表盘计算。
 
-We can work on this project and turn it into something more general - a library for calculating clockface angles and/or vectors.
+我们可以在这个项目上继续工作，把它变成更通用的东西——一个用于计算表盘角度和/或向量的库。
 
-In fact, providing the library along with the program is _a really good idea_. It costs us nothing, while increasing the utility of our program and helping to document how it works.
+事实上，把库和程序一起提供 _是个非常好的主意_。它对我们没什么成本，同时能增加程序的实用性，并帮助记录它的工作方式。
 
 > APIs should come with programs, and vice versa. An API that you must write C code to use, which cannot be invoked easily from the command line, is harder to learn and use. And contrariwise, it's a royal pain to have interfaces whose only open, documented form is a program, so you cannot invoke them easily from a C program. -- Henry Spencer, in _The Art of Unix Programming_
 
-In [my final take on this program](https://github.com/quii/learn-go-with-tests/tree/main/math/vFinal/clockface), I've made the unexported functions within `clockface` into a public API for the library, with functions to calculate the angle and unit vector for each of the clock hands. I've also split the SVG generation part into its own package, `svg`, which is then used by the `clockface` program directly. Naturally I've documented each of the functions and packages.
+在[我对这个程序的最终版本](https://github.com/quii/learn-go-with-tests/tree/main/math/vFinal/clockface)中，我把 `clockface` 中未导出的函数变成了库的公开 API，提供了为每根时钟指针计算角度和单位向量的函数。我也把 SVG 生成部分拆分到了它自己的包 `svg`，然后由 `clockface` 程序直接使用。当然，每个函数和包我都写了文档。
 
-Talking about SVGs...
+说到 SVG……
 
-### The Most Valuable Test
+### 最有价值的测试
 
-I'm sure you've noticed that the most sophisticated piece of code for handling SVGs isn't in our application code at all; it's in the test code. Should this make us feel uncomfortable? Shouldn't we do something like
+我相信你已经注意到处理 SVG 最复杂的代码并不在我们的应用代码里；它在测试代码里。这应该让我们感到不舒服吗？我们是不是该做点什么，比如
 
-* use a template from `text/template`?
-* use an XML library (much as we're doing in our test)?
-* use an SVG library?
+* 用 `text/template` 中的模板？
+* 用一个 XML 库（就像我们在测试中做的）？
+* 用一个 SVG 库？
 
-We could refactor our code to do any of these things, and we can do so because it doesn't matter _how_ we produce our SVG, what is important is _what_ we produce - _an SVG_. As such, the part of our system that needs to know the most about SVGs - that needs to be the strictest about what constitutes an SVG - is the test for the SVG output: it needs to have enough context and knowledge about what an SVG is for us to be confident that we're outputting an SVG. The _what_ of an SVG lives in our tests; the _how_ in the code.
+我们可以把代码重构成做这些事情的任何一种，而且我们能这样做，是因为我们 _怎么_ 生产 SVG 并不重要，重要的是我们 _生产了什么_——_一个 SVG_。因此，我们系统中需要最了解 SVG 的部分——需要对什么构成 SVG 最严格的部分——是对 SVG 输出的测试：它需要有足够的关于 SVG 的上下文和知识，这样我们才能确信我们正在输出一个 SVG。SVG 的 _是什么_ 存活在我们的测试里；_怎么做_ 在代码里。
 
-We may have felt odd that we were pouring a lot of time and effort into those SVG tests - importing an XML library, parsing XML, refactoring the structs - but that test code is a valuable part of our codebase - possibly more valuable than the current production code. It will help guarantee that the output is always a valid SVG, no matter what we choose to use to produce it.
+我们或许会觉得在 SVG 测试上倾注大量时间和精力很奇怪——引入一个 XML 库、解析 XML、重构结构体——但那段测试代码是我们代码库中有价值的一部分——可能比当前的生产代码更有价值。它将帮助保证输出始终是有效的 SVG，无论我们选择用什么来生成它。
 
-Tests are not second class citizens - they are not 'throwaway' code. Good tests will last a lot longer than the version of the code they are testing. You should never feel like you're spending 'too much time' writing your tests. It is an investment.
+测试不是二等公民——它们不是"用完即扔"的代码。好的测试会比它们正在测试的那个版本的代码活得久得多。你不应该觉得你"花太多时间"写测试。这是一项投资。
 
-1. In short it makes it easier to do calculus with circles as π just keeps coming up as an angle if you use normal degrees, so if you count your angles in πs it makes all the equations simpler.
+1. 简而言之它让用圆做微积分更容易，因为如果用普通度数，π 会作为角度不断出现，所以如果你用 π 来数你的角度，所有方程都会变得更简单。

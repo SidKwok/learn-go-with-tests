@@ -1,16 +1,16 @@
 # Maps
 
-**[You can find all the code for this chapter here](https://github.com/quii/learn-go-with-tests/tree/main/maps)**
+**[本章的所有代码可以在这里找到](https://github.com/quii/learn-go-with-tests/tree/main/maps)**
 
-In [arrays & slices](arrays-and-slices.md), you saw how to store values in order. Now, we will look at a way to store items by a `key` and look them up quickly.
+在[数组与切片](arrays-and-slices.md)一章中，你看到了如何按顺序存储值。现在我们来看看一种通过 `key` 存储元素并快速查找的方式。
 
-Maps allow you to store items in a manner similar to a dictionary. You can think of the `key` as the word and the `value` as the definition. And what better way is there to learn about Maps than to build our own dictionary?
+map 让你可以以类似字典的方式存储元素。你可以把 `key` 想成单词，把 `value` 想成定义。还有什么比构建一个我们自己的字典更好的方式来学习 map 呢？
 
-First, assuming we already have some words with their definitions in the dictionary, if we search for a word, it should return the definition of it.
+首先，假设字典里已经有一些单词及其定义，当我们搜索一个单词时，应该返回它的定义。
 
-## Write the test first
+## 先写测试
 
-In `dictionary_test.go`
+在 `dictionary_test.go` 中：
 
 ```go
 package main
@@ -29,21 +29,21 @@ func TestSearch(t *testing.T) {
 }
 ```
 
-Declaring a Map is somewhat similar to an array. Except, it starts with the `map` keyword and requires two types. The first is the key type, which is written inside the `[]`. The second is the value type, which goes right after the `[]`.
+声明一个 map 在某种程度上和声明数组类似。区别是它以 `map` 关键字开头并且需要两个类型。第一个是 key 的类型，写在 `[]` 里。第二个是 value 的类型，紧跟在 `[]` 之后。
 
-The key type is special. It can only be a comparable type because without the ability to tell if 2 keys are equal, we have no way to ensure that we are getting the correct value. Comparable types are explained in depth in the [language spec](https://golang.org/ref/spec#Comparison_operators).
+key 的类型是特殊的，它只能是可比较的类型，因为如果没法判断两个 key 是否相等，我们就没办法保证拿到的是正确的 value。可比较类型的详细说明见[语言规范](https://golang.org/ref/spec#Comparison_operators)。
 
-The value type, on the other hand, can be any type you want. It can even be another map.
+而 value 的类型可以是任何你想要的类型，甚至可以是另一个 map。
 
-Everything else in this test should be familiar.
+这个测试中其他的内容你应该都熟悉。
 
-## Try to run the test
+## 尝试运行测试
 
-By running `go test` the compiler will fail with `./dictionary_test.go:8:9: undefined: Search`.
+运行 `go test`，编译器会报错 `./dictionary_test.go:8:9: undefined: Search`。
 
-## Write the minimal amount of code for the test to run and check the output
+## 写最少量的代码让测试运行起来，并检查输出
 
-In `dictionary.go`
+在 `dictionary.go` 中：
 
 ```go
 package main
@@ -53,11 +53,11 @@ func Search(dictionary map[string]string, word string) string {
 }
 ```
 
-Your test should now fail with a *clear error message*
+现在你的测试应该会失败，并给出一条 *清晰的错误信息*：
 
-`dictionary_test.go:12: got '' want 'this is just a test' given, 'test'`.
+`dictionary_test.go:12: got '' want 'this is just a test' given, 'test'`。
 
-## Write enough code to make it pass
+## 写足够的代码让测试通过
 
 ```go
 func Search(dictionary map[string]string, word string) string {
@@ -65,9 +65,9 @@ func Search(dictionary map[string]string, word string) string {
 }
 ```
 
-Getting a value out of a Map is the same as getting a value out of Array `map[key]`.
+从 map 里取值的方式和从数组取值一样，`map[key]`。
 
-## Refactor
+## 重构
 
 ```go
 func TestSearch(t *testing.T) {
@@ -88,13 +88,13 @@ func assertStrings(t testing.TB, got, want string) {
 }
 ```
 
-I decided to create an `assertStrings` helper to make the implementation more general.
+我决定创建一个 `assertStrings` 辅助函数，让实现更通用。
 
-### Using a custom type
+### 使用自定义类型
 
-We can improve our dictionary's usage by creating a new type around map and making `Search` a method.
+我们可以围绕 map 创建一个新类型，并把 `Search` 做成方法，从而改善字典的用法。
 
-In `dictionary_test.go`:
+在 `dictionary_test.go` 中：
 
 ```go
 func TestSearch(t *testing.T) {
@@ -107,11 +107,11 @@ func TestSearch(t *testing.T) {
 }
 ```
 
-We started using the `Dictionary` type, which we have not defined yet. Then called `Search` on the `Dictionary` instance.
+我们开始使用 `Dictionary` 类型，虽然还没定义它。然后在 `Dictionary` 实例上调用 `Search`。
 
-We did not need to change `assertStrings`.
+我们没必要修改 `assertStrings`。
 
-In `dictionary.go`:
+在 `dictionary.go` 中：
 
 ```go
 type Dictionary map[string]string
@@ -121,13 +121,13 @@ func (d Dictionary) Search(word string) string {
 }
 ```
 
-Here we created a `Dictionary` type which acts as a thin wrapper around `map`. With the custom type defined, we can create the `Search` method.
+这里我们创建了一个 `Dictionary` 类型，它是对 `map` 的一层薄封装。有了自定义类型之后，我们就可以创建 `Search` 方法了。
 
-## Write the test first
+## 先写测试
 
-The basic search was very easy to implement, but what will happen if we supply a word that's not in our dictionary?
+基础的搜索实现起来很简单，但如果传入字典里没有的单词会怎样？
 
-We actually get nothing back. This is good because the program can continue to run, but there is a better approach. The function can report that the word is not in the dictionary. This way, the user isn't left wondering if the word doesn't exist or if there is just no definition (this might not seem very useful for a dictionary. However, it's a scenario that could be key in other usecases).
+实际上我们什么都不会得到。这虽然挺好，因为程序还能继续跑，但有更好的做法。函数可以反馈"这个词不在字典里"。这样用户就不会困惑：到底是单词不存在还是单词没有定义（这一点对字典来说也许没什么用，但在其他场景里这种区分可能很关键）。
 
 ```go
 func TestSearch(t *testing.T) {
@@ -153,20 +153,20 @@ func TestSearch(t *testing.T) {
 }
 ```
 
-The way to handle this scenario in Go is to return a second argument which is an `Error` type.
+在 Go 中处理这种场景的方式是返回第二个参数，是一个 `Error` 类型。
 
-Notice that as we've seen in the [pointers and error section](./pointers-and-errors.md) here in order to assert the error message
-we first check that the error is not `nil` and then use `.Error()` method to get the string which we can then pass to the assertion.
+注意，正如我们在[指针与错误](./pointers-and-errors.md)那一章里看到的，要断言错误信息，
+我们先检查错误不为 `nil`，然后用 `.Error()` 方法拿到字符串再传给断言。
 
-## Try and run the test
+## 尝试运行测试
 
-This does not compile
+它编译不过：
 
 ```
 ./dictionary_test.go:18:10: assignment mismatch: 2 variables but 1 values
 ```
 
-## Write the minimal amount of code for the test to run and check the output
+## 写最少量的代码让测试运行起来，并检查输出
 
 ```go
 func (d Dictionary) Search(word string) (string, error) {
@@ -174,11 +174,11 @@ func (d Dictionary) Search(word string) (string, error) {
 }
 ```
 
-Your test should now fail with a much clearer error message.
+现在你的测试会失败，并给出一条更清晰的错误信息：
 
 `dictionary_test.go:22: expected to get an error.`
 
-## Write enough code to make it pass
+## 写足够的代码让测试通过
 
 ```go
 func (d Dictionary) Search(word string) (string, error) {
@@ -191,11 +191,11 @@ func (d Dictionary) Search(word string) (string, error) {
 }
 ```
 
-In order to make this pass, we are using an interesting property of the map lookup. It can return 2 values. The second value is a boolean which indicates if the key was found successfully.
+为了让测试通过，我们利用了 map 查找的一个有趣特性：它可以返回两个值。第二个值是一个布尔值，表示 key 是否成功被找到。
 
-This property allows us to differentiate between a word that doesn't exist and a word that just doesn't have a definition.
+这个特性让我们能够区分"不存在的单词"与"存在但没有定义的单词"。
 
-## Refactor
+## 重构
 
 ```go
 var ErrNotFound = errors.New("could not find the word you were looking for")
@@ -210,7 +210,7 @@ func (d Dictionary) Search(word string) (string, error) {
 }
 ```
 
-We can get rid of the magic error in our `Search` function by extracting it into a variable. This will also allow us to have a better test.
+我们可以通过把"魔法"错误抽取成一个变量来去掉它。这也能让我们的测试更好。
 
 ```go
 t.Run("unknown word", func(t *testing.T) {
@@ -231,11 +231,11 @@ func assertError(t testing.TB, got, want error) {
 }
 ```
 
-By creating a new helper we were able to simplify our test, and start using our `ErrNotFound` variable so our test doesn't fail if we change the error text in the future.
+通过创建一个新的辅助函数，我们简化了测试，并开始使用 `ErrNotFound` 变量，这样以后我们改了错误文本也不会让测试失败。
 
-## Write the test first
+## 先写测试
 
-We have a great way to search the dictionary. However, we have no way to add new words to our dictionary.
+我们已经有了一种很好的搜索字典的方式，但还没办法往字典里添加新单词。
 
 ```go
 func TestAdd(t *testing.T) {
@@ -252,24 +252,24 @@ func TestAdd(t *testing.T) {
 }
 ```
 
-In this test, we are utilizing our `Search` function to make the validation of the dictionary a little easier.
+在这个测试里，我们利用 `Search` 函数让字典验证更简单一点。
 
-## Write the minimal amount of code for the test to run and check output
+## 写最少量的代码让测试运行起来，并检查输出
 
-In `dictionary.go`
+在 `dictionary.go` 中：
 
 ```go
 func (d Dictionary) Add(word, definition string) {
 }
 ```
 
-Your test should now fail
+现在你的测试应该会失败：
 
 ```
 dictionary_test.go:31: should find added word: could not find the word you were looking for
 ```
 
-## Write enough code to make it pass
+## 写足够的代码让测试通过
 
 ```go
 func (d Dictionary) Add(word, definition string) {
@@ -277,27 +277,27 @@ func (d Dictionary) Add(word, definition string) {
 }
 ```
 
-Adding to a map is also similar to an array. You just need to specify a key and set it equal to a value.
+往 map 里添加也和数组类似，你只需要指定一个 key 并把它设为某个 value。
 
-### Pointers, copies, et al
+### 指针、拷贝以及其他
 
-An interesting property of maps is that you can modify them without passing as an address to it (e.g `&myMap`)
+map 的一个有趣特性是你可以修改它而不需要传入它的地址（例如 `&myMap`）。
 
-This may make them _feel_ like a "reference type", [but as Dave Cheney describes](https://dave.cheney.net/2017/04/30/if-a-map-isnt-a-reference-variable-what-is-it) they are not.
+这可能让 map _感觉_ 像是"引用类型"，[但正如 Dave Cheney 解释的那样](https://dave.cheney.net/2017/04/30/if-a-map-isnt-a-reference-variable-what-is-it)它们并不是。
 
-> A map value is a pointer to a runtime.hmap structure.
+> map 值是一个指向 runtime.hmap 结构体的指针。
 
-So when you pass a map to a function/method, you are indeed copying it, but just the pointer part, not the underlying data structure that contains the data.
+所以当你把一个 map 传给函数/方法时，你确实是在拷贝它，但只是拷贝指针那部分，而不是底层包含数据的数据结构。
 
-A gotcha with maps is that they can be a `nil` value. A `nil` map behaves like an empty map when reading, but attempts to write to a `nil` map will cause a runtime panic. You can read more about maps [here](https://blog.golang.org/go-maps-in-action).
+map 有一个坑：它可能是 `nil` 值。`nil` map 在读取时表现得像空 map，但尝试往 `nil` map 里写入会触发运行时 panic。你可以在[这里](https://blog.golang.org/go-maps-in-action)读到更多关于 map 的内容。
 
-Therefore, you should never initialize a nil map variable:
+因此，你不应该这样初始化一个 nil map 变量：
 
 ```go
 var m map[string]string
 ```
 
-Instead, you can initialize an empty map or use the `make` keyword to create a map for you:
+相反，你可以初始化一个空 map 或者用 `make` 关键字来创建：
 
 ```go
 var dictionary = map[string]string{}
@@ -307,11 +307,11 @@ var dictionary = map[string]string{}
 var dictionary = make(map[string]string)
 ```
 
-Both approaches create an empty `hash map` and point `dictionary` at it. Which ensures that you will never get a runtime panic.
+这两种方式都会创建一个空的 `hash map`，并把 `dictionary` 指向它。这样能确保你永远不会触发运行时 panic。
 
-## Refactor
+## 重构
 
-There isn't much to refactor in our implementation but the test could use a little simplification.
+我们的实现没什么可以重构的，但测试可以稍微简化一下。
 
 ```go
 func TestAdd(t *testing.T) {
@@ -335,13 +335,13 @@ func assertDefinition(t testing.TB, dictionary Dictionary, word, definition stri
 }
 ```
 
-We made variables for word and definition, and moved the definition assertion into its own helper function.
+我们为 word 和 definition 创建了变量，并把 definition 的断言移到了它自己的辅助函数里。
 
-Our `Add` is looking good. Except, we didn't consider what happens when the value we are trying to add already exists!
+我们的 `Add` 看起来不错。但是，我们没考虑当我们尝试添加的值已经存在时会怎样！
 
-Map will not throw an error if the value already exists. Instead, they will go ahead and overwrite the value with the newly provided value. This can be convenient in practice, but makes our function name less than accurate. `Add` should not modify existing values. It should only add new words to our dictionary.
+如果 value 已经存在，map 不会抛错。相反，它会直接用新提供的值覆盖原值。这在实际中可能很方便，但让我们的函数名变得不太准确。`Add` 不应该修改已有的 value，它只应该往字典里添加新单词。
 
-## Write the test first
+## 先写测试
 
 ```go
 func TestAdd(t *testing.T) {
@@ -368,20 +368,20 @@ func TestAdd(t *testing.T) {
 }
 ```
 
-For this test, we modified `Add` to return an error, which we are validating against a new error variable, `ErrWordExists`. We also modified the previous test to check for a `nil` error.
+在这个测试中，我们修改了 `Add` 让它返回一个错误，并和一个新的错误变量 `ErrWordExists` 做对比。我们还修改了之前的测试来检查错误是 `nil`。
 
-## Try to run test
+## 尝试运行测试
 
-The compiler will fail because we are not returning a value for `Add`.
+编译器会失败，因为我们没有为 `Add` 返回值。
 
 ```
 ./dictionary_test.go:30:13: dictionary.Add(word, definition) used as value
 ./dictionary_test.go:41:13: dictionary.Add(word, "new test") used as value
 ```
 
-## Write the minimal amount of code for the test to run and check the output
+## 写最少量的代码让测试运行起来，并检查输出
 
-In `dictionary.go`
+在 `dictionary.go` 中：
 
 ```go
 var (
@@ -395,14 +395,14 @@ func (d Dictionary) Add(word, definition string) error {
 }
 ```
 
-Now we get two more errors. We are still modifying the value, and returning a `nil` error.
+现在我们多了两个错误。我们仍然在修改 value，并且返回了 `nil` 错误。
 
 ```
 dictionary_test.go:43: got error '%!q(<nil>)' want 'cannot add word because it already exists'
 dictionary_test.go:44: got 'new test' want 'this is just a test'
 ```
 
-## Write enough code to make it pass
+## 写足够的代码让测试通过
 
 ```go
 func (d Dictionary) Add(word, definition string) error {
@@ -421,11 +421,11 @@ func (d Dictionary) Add(word, definition string) error {
 }
 ```
 
-Here we are using a `switch` statement to match on the error. Having a `switch` like this provides an extra safety net, in case `Search` returns an error other than `ErrNotFound`.
+这里我们用 `switch` 语句来匹配错误。像这样使用 `switch` 提供了一个额外的安全网，以防 `Search` 返回 `ErrNotFound` 之外的错误。
 
-## Refactor
+## 重构
 
-We don't have too much to refactor, but as our error usage grows we can make a few modifications.
+我们没什么要重构的，但随着错误使用变多，我们可以做一些调整。
 
 ```go
 const (
@@ -440,11 +440,11 @@ func (e DictionaryErr) Error() string {
 }
 ```
 
-We made the errors constant; this required us to create our own `DictionaryErr` type which implements the `error` interface. You can read more about the details in [this excellent article by Dave Cheney](https://dave.cheney.net/2016/04/07/constant-errors). Simply put, it makes the errors more reusable and immutable.
+我们让错误成为常量；这要求我们创建自己的 `DictionaryErr` 类型，它实现了 `error` 接口。你可以在 [Dave Cheney 这篇优秀的文章](https://dave.cheney.net/2016/04/07/constant-errors)里读到更多细节。简而言之，这让错误更可复用、更不可变。
 
-Next, let's create a function to `Update` the definition of a word.
+接下来，让我们创建一个 `Update` 函数来更新单词的定义。
 
-## Write the test first
+## 先写测试
 
 ```go
 func TestUpdate(t *testing.T) {
@@ -459,31 +459,31 @@ func TestUpdate(t *testing.T) {
 }
 ```
 
-`Update` is very closely related to `Add` and will be our next implementation.
+`Update` 与 `Add` 关系非常密切，将是我们下一个要实现的功能。
 
-## Try and run the test
+## 尝试运行测试
 
 ```
 ./dictionary_test.go:53:2: dictionary.Update undefined (type Dictionary has no field or method Update)
 ```
 
-## Write minimal amount of code for the test to run and check the failing test output
+## 写最少量的代码让测试运行起来，并检查失败的输出
 
-We already know how to deal with an error like this. We need to define our function.
+我们已经知道怎么处理这种错误。我们需要定义这个函数。
 
 ```go
 func (d Dictionary) Update(word, definition string) {}
 ```
 
-With that in place, we are able to see that we need to change the definition of the word.
+加上之后我们能看到，需要把单词的定义改掉。
 
 ```
 dictionary_test.go:55: got 'this is just a test' want 'new definition'
 ```
 
-## Write enough code to make it pass
+## 写足够的代码让测试通过
 
-We already saw how to do this when we fixed the issue with `Add`. So let's implement something really similar to `Add`.
+我们在修复 `Add` 的问题时已经看到怎么做。所以让我们实现一个和 `Add` 非常相似的版本。
 
 ```go
 func (d Dictionary) Update(word, definition string) {
@@ -491,9 +491,9 @@ func (d Dictionary) Update(word, definition string) {
 }
 ```
 
-There is no refactoring we need to do on this since it was a simple change. However, we now have the same issue as with `Add`. If we pass in a new word, `Update` will add it to the dictionary.
+这里没什么需要重构的，因为改动很简单。然而，我们现在遇到了和 `Add` 一样的问题。如果传入一个新单词，`Update` 会把它加到字典里。
 
-## Write the test first
+## 先写测试
 
 ```go
 t.Run("existing word", func(t *testing.T) {
@@ -519,9 +519,9 @@ t.Run("new word", func(t *testing.T) {
 })
 ```
 
-We added yet another error type for when the word does not exist. We also modified `Update` to return an `error` value.
+我们又添加了一个错误类型，用于单词不存在的情况。我们也修改了 `Update` 让它返回一个 `error` 值。
 
-## Try and run the test
+## 尝试运行测试
 
 ```
 ./dictionary_test.go:53:16: dictionary.Update(word, newDefinition) used as value
@@ -529,9 +529,9 @@ We added yet another error type for when the word does not exist. We also modifi
 ./dictionary_test.go:66:23: undefined: ErrWordDoesNotExist
 ```
 
-We get 3 errors this time, but we know how to deal with these.
+这次我们得到了 3 个错误，但我们已经知道怎么处理了。
 
-## Write the minimal amount of code for the test to run and check the failing test output
+## 写最少量的代码让测试运行起来，并检查失败的输出
 
 ```go
 const (
@@ -546,15 +546,15 @@ func (d Dictionary) Update(word, definition string) error {
 }
 ```
 
-We added our own error type and are returning a `nil` error.
+我们添加了自己的错误类型，并返回了 `nil` 错误。
 
-With these changes, we now get a very clear error:
+经过这些改动，我们现在能看到一条非常清晰的错误：
 
 ```
 dictionary_test.go:66: got error '%!q(<nil>)' want 'cannot update word because it does not exist'
 ```
 
-## Write enough code to make it pass
+## 写足够的代码让测试通过
 
 ```go
 func (d Dictionary) Update(word, definition string) error {
@@ -573,19 +573,19 @@ func (d Dictionary) Update(word, definition string) error {
 }
 ```
 
-This function looks almost identical to `Add` except we switched when we update the `dictionary` and when we return an error.
+这个函数看起来几乎和 `Add` 一样，区别只是我们调换了"何时更新 `dictionary`"和"何时返回错误"。
 
-### Note on declaring a new error for Update
+### 关于为 Update 声明新错误的说明
 
-We could reuse `ErrNotFound` and not add a new error. However, it is often better to have a precise error for when an update fails.
+我们可以复用 `ErrNotFound` 而不必新加一个错误。然而，针对更新失败的情况有一个明确的错误通常更好。
 
-Having specific errors gives you more information about what went wrong. Here is an example in a web app:
+具体的错误能给你更多关于哪里出问题的信息。来看一个 Web 应用的例子：
 
-> You can redirect the user when `ErrNotFound` is encountered, but display an error message when `ErrWordDoesNotExist` is encountered.
+> 当遇到 `ErrNotFound` 时你可以重定向用户，但遇到 `ErrWordDoesNotExist` 时你可以显示一条错误消息。
 
-Next, let's create a function to `Delete` a word in the dictionary.
+接下来，让我们创建一个函数来 `Delete` 字典中的单词。
 
-## Write the test first
+## 先写测试
 
 ```go
 func TestDelete(t *testing.T) {
@@ -599,17 +599,17 @@ func TestDelete(t *testing.T) {
 }
 ```
 
-Our test creates a `Dictionary` with a word and then checks if the word has been removed.
+我们的测试创建了一个含有某个单词的 `Dictionary`，然后检查这个单词是否被移除了。
 
-## Try to run the test
+## 尝试运行测试
 
-By running `go test` we get:
+运行 `go test` 我们得到：
 
 ```
 ./dictionary_test.go:74:6: dictionary.Delete undefined (type Dictionary has no field or method Delete)
 ```
 
-## Write the minimal amount of code for the test to run and check the failing test output
+## 写最少量的代码让测试运行起来，并检查失败的输出
 
 ```go
 func (d Dictionary) Delete(word string) {
@@ -617,13 +617,13 @@ func (d Dictionary) Delete(word string) {
 }
 ```
 
-After we add this, the test tells us we are not deleting the word.
+加上这个之后，测试告诉我们没有删除该单词。
 
 ```
 dictionary_test.go:78: got error '%!q(<nil>)' want 'could not find the word you were looking for'
 ```
 
-## Write enough code to make it pass
+## 写足够的代码让测试通过
 
 ```go
 func (d Dictionary) Delete(word string) {
@@ -631,10 +631,10 @@ func (d Dictionary) Delete(word string) {
 }
 ```
 
-Go has a built-in function `delete` that works on maps. It takes two arguments and returns nothing. The first argument is the map and the second is the key to be removed.
+Go 有一个内置的 `delete` 函数，可作用于 map。它接受两个参数，没有返回值。第一个参数是 map，第二个是要被移除的 key。
 
-## Refactor
-There isn't much to refactor, but we can implement the same logic from `Update` to handle cases where word doesn't exist.
+## 重构
+没什么要重构的，但我们可以把 `Update` 的同样逻辑用上，处理单词不存在的情形。
 
 ```go
 func TestDelete(t *testing.T) {
@@ -662,16 +662,16 @@ func TestDelete(t *testing.T) {
 }
 ```
 
-## Try to run test
+## 尝试运行测试
 
-The compiler will fail because we are not returning a value for `Delete`.
+编译器会失败，因为我们没有为 `Delete` 返回值。
 
 ```
 ./dictionary_test.go:77:10: dictionary.Delete(word) (no value) used as value
 ./dictionary_test.go:90:10: dictionary.Delete(word) (no value) used as value
 ```
 
-## Write enough code to make it pass
+## 写足够的代码让测试通过
 
 ```go
 func (d Dictionary) Delete(word string) error {
@@ -690,17 +690,17 @@ func (d Dictionary) Delete(word string) error {
 }
 ```
 
-We are again using a switch statement to match on the error when we attempt to delete a word that doesn't exist. 
+我们再次用 switch 语句来匹配错误，处理尝试删除一个不存在单词时的情况。
 
-## Wrapping up
+## 总结
 
-In this section, we covered a lot. We made a full CRUD (Create, Read, Update and Delete) API for our dictionary. Throughout the process we learned how to:
+在这一节，我们涉及了很多内容。我们为字典做了一套完整的 CRUD（Create、Read、Update 和 Delete）API。这一过程中我们学习了如何：
 
-* Create maps
-* Search for items in maps
-* Add new items to maps
-* Update items in maps
-* Delete items from a map
-* Learned more about errors
-  * How to create errors that are constants
-  * Writing error wrappers
+* 创建 map
+* 在 map 中查找元素
+* 往 map 中添加新元素
+* 更新 map 中的元素
+* 从 map 中删除元素
+* 进一步了解错误
+  * 如何创建常量错误
+  * 编写错误包装类型

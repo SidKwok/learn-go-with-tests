@@ -1,133 +1,133 @@
-# TDD Anti-patterns
+# TDD 反模式
 
-From time to time it's necessary to review your TDD techniques and remind yourself of behaviours to avoid.
+我们时不时需要回顾一下自己的 TDD 技术，提醒自己有哪些行为应该避免。
 
-The TDD process is conceptually simple to follow, but as you do it you'll find it challenging your design skills. **Don't mistake this for TDD being hard, it's design that's hard!**
+TDD 流程在概念上很简单，但当你真正去做的时候，会发现它在挑战你的设计能力。**别把这误解为 TDD 难，难的是设计！**
 
-This chapter lists a number of TDD and testing anti-patterns, and how to remedy them.
+本章列出了一些 TDD 和测试的反模式，以及如何应对它们。
 
-## Not doing TDD at all
+## 完全不做 TDD
 
-Of course, it is possible to write great software without TDD but, a lot of problems I've seen with the design of code and the quality of tests would be very difficult to arrive at if a disciplined approach to TDD had been used.
+当然，不用 TDD 也能写出很棒的软件，但我看到的很多代码设计和测试质量上的问题，如果用了规范的 TDD 方法是很难走到那一步的。
 
-One of the strengths of TDD is that it gives you a formal process to break down problems, understand what you're trying to achieve (red), get it done (green), then have a good think about how to make it right (blue/refactor).
+TDD 的优点之一是它给你一个正式的流程来拆解问题，理解你想达成什么（红），把它做出来（绿），然后好好思考怎么把它做对（蓝/重构）。
 
-Without this, the process is often ad-hoc and loose, which _can_ make engineering more difficult than it _could_ be.
+没有这套流程，过程往往是临时的、松散的，这 _可能_ 让工程比它 _本来可以_ 的样子更难。
 
-## Misunderstanding the constraints of the refactoring step
+## 误解重构步骤的约束
 
-I have been in a number of workshops, mobbing or pairing sessions where someone has made a test pass and is in the refactoring stage. After some thought, they think it would be good to abstract away some code into a new struct; a budding pedant yells:
+我参加过不少工作坊、群体编程或结对编程的活动，有人让测试通过了，正处在重构阶段。思考一会儿之后，他们觉得把一些代码抽到一个新的结构体里会更好；这时一个初露头角的迂腐者大喊：
 
-> You're not allowed to do this! You should write a test for this first, we're doing TDD!
+> 你不能这么做！你应该先为这个写一个测试，我们做的是 TDD！
 
-This seems to be a common misunderstanding. **You can do whatever you like to the code when the tests are green**, the only thing you're not allowed to do is **add or change behaviour**.
+这看起来是一个常见的误解。**当测试是绿色的时候，你想对代码做什么都可以**，唯一不能做的就是 **添加或改变行为**。
 
-The point of these tests are to give you the _freedom to refactor_, find the right abstractions and make the code easier to change and understand.
+这些测试存在的意义是给你 _重构的自由_，找到合适的抽象，让代码更易于改变和理解。
 
-## Having tests that won't fail (or, evergreen tests)
+## 永远不会失败的测试（即"常青"测试）
 
-It's astonishing how often this comes up. You start debugging or changing some tests and realise: there are no scenarios where this test can fail. Or at least, it won't fail in the way the test is _supposed_ to be protecting against.
+这种情况出现的频率多得惊人。你开始调试或修改某些测试，然后意识到：根本没有任何场景能让这个测试失败。或者至少，它不会以测试 _本应_ 防范的方式失败。
 
-This is _next to impossible_ with TDD if you're following **the first step**,
+如果你遵循 **第一步**，使用 TDD 是 _几乎不可能_ 出现这种情况的：
 
-> Write a test, see it fail
+> 写一个测试，看它失败
 
-This is almost always done when developers write tests _after_ code is written, and/or chasing test coverage rather than creating a useful test suite.
+这种事情几乎总是发生在开发者 _在代码写完之后_ 才补写测试，或/和追逐测试覆盖率而非创建有用的测试套件时。
 
-## Useless assertions
+## 没有意义的断言
 
-Ever worked on a system, and you've broken a test, then you see this?
+有没有过这样的体验：你在系统上工作，弄坏了一个测试，然后看到这个？
 
 > `false was not equal to true`
 
-I know that false is not equal to true. This is not a helpful message; it doesn't tell me what I've broken. This is a symptom of not following the TDD process and not reading the failure error message.
+我知道 false 不等于 true。这条信息毫无帮助；它没有告诉我我弄坏了什么。这是不遵循 TDD 流程并且不读失败错误信息的症状。
 
-Going back to the drawing board,
+回到起点，
 
-> Write a test, see it fail (and don't be ashamed of the error message)
+> 写一个测试，看它失败（别因为错误信息不好看而难为情）
 
-## Asserting on irrelevant detail
+## 在无关细节上做断言
 
-An example of this is making an assertion on a complex object, when in practice all you care about in the test is the value of one of the fields.
+一个例子是：你在测试中对一个复杂对象做断言，但实际上你只关心其中一个字段的值。
 
 ```go
-// not this, now your test is tightly coupled to the whole object
+// 不要这样，现在你的测试和整个对象紧紧耦合在一起
 if !cmp.Equal(complexObject, want) {
 	t.Error("got %+v, want %+v", complexObject, want)
 }
 
-// be specific, and loosen the coupling
+// 要具体一点，松开耦合
 got := complexObject.fieldYouCareAboutForThisTest
 if got != want {
 	t.Error("got %q, want %q", got, want)
 }
 ```
 
-Additional assertions not only make your test more difficult to read by creating 'noise' in your documentation, but also needlessly couples the test with data it doesn't care about. This means if you happen to change the fields for your object, or the way they behave you may get unexpected compilation problems or failures with your tests.
+额外的断言不仅会在你的"文档"中制造"噪音"使测试更难读，还会让测试与它本不关心的数据产生不必要的耦合。这意味着如果你恰好修改了对象的字段或它们的行为，你可能会得到意料之外的编译问题或测试失败。
 
-This is an example of not following the red stage strictly enough.
+这是没有严格遵循红色阶段的一个例子。
 
-- Letting an existing design influence how you write your test **rather than thinking of the desired behaviour**
-- Not giving enough consideration to the failing test's error message
+- 让既有的设计影响你怎么写测试，**而不是去思考期望的行为**
+- 没有充分考虑失败测试的错误信息
 
-## Lots of assertions within a single scenario for unit tests
+## 在单元测试的单个场景里塞太多断言
 
-Many assertions can make tests difficult to read and challenging to debug when they fail.
+太多的断言会让测试难以阅读，失败时也难以调试。
 
-They often creep in gradually, especially if test setup is complicated because you're reluctant to replicate the same horrible setup to assert on something else. Instead of this you should fix the problems in your design which are making it difficult to assert on new things.
+它们经常是逐渐潜入的，特别是当测试的 setup 很复杂时，因为你不愿意把那一堆糟糕的 setup 重复一遍来断言别的东西。与其这样，你应该去修复设计中让你难以对新东西做断言的问题。
 
-A helpful rule of thumb is to aim to make one assertion per test. In Go, take advantage of subtests to clearly delineate between assertions on the occasions where you need to. This is also a handy technique to separate assertions on behaviour vs implementation detail.
+一个有用的经验法则是：每个测试只做一个断言。在 Go 中，必要时利用子测试来清晰地划分不同断言。这也是把对行为的断言和对实现细节的断言分开的便捷技巧。
 
-For other tests where setup or execution time may be a constraint (e.g an acceptance test driving a web browser), you need to weigh up the pros and cons of slightly trickier to debug tests against test execution time.
+对于其他类型的测试，setup 或执行时间可能是约束（例如驱动浏览器的验收测试），你需要权衡一下：稍微难一点调试的测试 vs 测试执行时间。
 
-## Not listening to your tests
+## 不听你的测试
 
-[Dave Farley in his video "When TDD goes wrong"](https://www.youtube.com/watch?v=UWtEVKVPBQ0&feature=youtu.be) points out,
+[Dave Farley 在他的视频 "When TDD goes wrong" 中](https://www.youtube.com/watch?v=UWtEVKVPBQ0&feature=youtu.be) 指出，
 
-> TDD gives you the fastest feedback possible on your design
+> TDD 给你关于设计的最快反馈
 
-From my own experience, a lot of developers are trying to practice TDD but frequently ignore the signals coming back to them from the TDD process. So they're still stuck with fragile, annoying systems, with a poor test suite.
+从我自己的经验看，许多开发者在尝试实践 TDD 时，常常忽略 TDD 流程返回给他们的信号。所以他们仍然困在脆弱、烦人的系统中，伴着糟糕的测试套件。
 
-Simply put, if testing your code is difficult, then _using_ your code is difficult too. Treat your tests as the first user of your code and then you'll see if your code is pleasant to work with or not.
+简单地说，如果测试你的代码很难，那么 _使用_ 你的代码也会很难。把你的测试当作你代码的第一个用户，然后你就会看到你的代码用起来是不是顺手。
 
-I've emphasised this a lot in the book, and I'll say it again **listen to your tests**.
+我在书中已经强调过这一点很多次，再说一遍：**听你的测试**。
 
-### Excessive setup, too many test doubles, etc.
+### 过度的 setup、太多的 test double，等等
 
-Ever looked at a test with 20, 50, 100, 200 lines of setup code before anything interesting in the test happens? Do you then have to change the code and revisit the mess and wish you had a different career?
+有没有看过那种测试：在真正有趣的内容发生之前，已经有 20、50、100、200 行的 setup 代码？然后你不得不修改代码，再次面对这堆烂摊子，并希望自己当初选了别的职业？
 
-What are the signals here? _Listen_, complicated tests `==` complicated code. Why is your code complicated? Does it have to be?
+这里有什么信号？_听一听_：复杂的测试 `==` 复杂的代码。为什么你的代码这么复杂？它必须这样吗？
 
-- When you have lots of test doubles in your tests, that means the code you're testing has lots of dependencies - which means your design needs work.
-- If your test is reliant on setting up various interactions with mocks, that means your code is making lots of interactions with its dependencies. Ask yourself whether these interactions could be simpler.
+- 如果你的测试里有很多 test double，意味着你测试的代码有很多依赖——意味着你的设计需要打磨。
+- 如果你的测试依赖于设置和 mock 的各种交互，意味着你的代码与它的依赖之间有很多交互。问问自己这些交互能不能更简单。
 
-#### Leaky interfaces
+#### 漏抽象的接口
 
-If you have declared an `interface` that has many methods, that points to a leaky abstraction. Think about how you could define that collaboration with a more consolidated set of methods, ideally one.
+如果你声明了一个有很多方法的 `interface`，那是一个漏抽象的信号。想想看你能不能用一组更精简的方法，最理想是只有一个方法，来定义这个协作。
 
-#### Interface pollution
+#### 接口污染
 
-As a Go proverb says, *the bigger the interface, the weaker the abstraction*. If you expose a huge interface to the users of your package, you force them to create in their tests a stub/mock that matches the entire API, providing an implementation also for methods they do not use (sometimes, they just panic to make clear that they should not be used). This situation is an anti-pattern known as [interface pollution](https://rakyll.org/interface-pollution/) and this is the reason why the standard library offers you just tiny little interfaces. 
+正如 Go 谚语所说，*接口越大，抽象越弱*。如果你向你包的使用者暴露了一个庞大的接口，你就强迫他们在测试中创建一个匹配整个 API 的 stub/mock，连他们用不到的方法也要提供实现（有时他们就让那些方法直接 panic，明确表示不应该被使用）。这种情况是一种被称为 [接口污染](https://rakyll.org/interface-pollution/) 的反模式，这也是为什么标准库提供给你的都是非常小的接口。
 
-Instead, you should expose from your package a bare struct with all relevant methods exported, leaving to the clients of your API the freedom to declare their own interfaces abstracting over the subset of the methods they need: e.g [go-redis](https://github.com/redis/go-redis) exposes a struct (`redis.Client`) to the API clients.
+相反，你应该从你的包中暴露一个带有所有相关导出方法的纯粹结构体，把"声明各自接口"这件事的自由留给你 API 的客户——他们只需要为自己用到的方法子集做抽象：例如 [go-redis](https://github.com/redis/go-redis) 向 API 客户暴露的就是一个结构体（`redis.Client`）。
 
-Generally speaking, you should expose an interface to the clients only when:
-- the interface consists of a small and coherent set of functions.
-- the interface and its implementation need to be decoupled (e.g. because users can choose among multiple implementations or they need to mock an external dependency).
+一般来说，仅当满足下列条件时，你才应该向客户暴露接口：
+- 接口由一组小而连贯的函数组成。
+- 接口和它的实现需要解耦（例如因为用户可以在多个实现间选择，或他们需要 mock 一个外部依赖）。
 
-#### Think about the types of test doubles you use
+#### 想想你使用的 test double 类型
 
-- Mocks are sometimes helpful, but they're extremely powerful and therefore easy to misuse. Try giving yourself the constraint of using stubs instead.
-- Verifying implementation detail with spies is sometimes helpful, but try to avoid it. Remember your implementation detail is usually not important, and you don't want your tests coupled to them if possible. Look to couple your tests to **useful behaviour rather than incidental details**.
-- [Read my posts on naming test doubles](https://quii.dev/Start_naming_your_test_doubles_correctly) if the taxonomy of test doubles is a little unclear
+- mock 有时很有用，但它们极其强大，因此很容易被滥用。试着给自己加个约束——改用 stub。
+- 用 spy 验证实现细节有时也有帮助，但尽量避免。记住实现细节通常并不重要，你也不希望测试和它们耦合。尽量让你的测试与 **有用的行为耦合，而不是与偶然的细节耦合**。
+- 如果你对 test double 的分类还不太清楚，[读读我关于命名 test double 的博文](https://quii.dev/Start_naming_your_test_doubles_correctly)
 
-#### Consolidate dependencies
+#### 整合依赖
 
-Here is some code for a `http.HandlerFunc` to handle new user registrations for a website.
+下面是处理网站新用户注册的 `http.HandlerFunc` 的一些代码。
 
 ```go
 type User struct {
-	// Some user fields
+	// 一些用户字段
 }
 
 type UserStore interface {
@@ -141,35 +141,35 @@ type Emailer interface {
 
 func NewRegistrationHandler(userStore UserStore, emailer Emailer) http.HandlerFunc {
 	return func(writer http.ResponseWriter, request *http.Request) {
-		// extract out the user from the request body (handle error)
-		// check user exists (handle duplicates, errors)
-		// store user (handle errors)
-		// compose and send confirmation email (handle error)
-		// if we got this far, return 2xx response
+		// 从请求体中取出 user（处理错误）
+		// 检查 user 是否存在（处理重复、错误）
+		// 存储 user（处理错误）
+		// 组装并发送确认邮件（处理错误）
+		// 如果走到这里，返回 2xx 响应
 	}
 }
 ```
 
-At first pass it's reasonable to say the design isn't so bad. It only has 2 dependencies!
+第一眼看上去这个设计还算合理。它只有 2 个依赖！
 
-Re-evaluate the design by considering the handler's responsibilities:
+我们从 handler 的职责出发重新评估一下设计：
 
-- Parse the request body into a `User` :white_check_mark:
-- Use `UserStore` to check if the user exists :question:
-- Use `UserStore` to store the user :question:
-- Compose an email :question:
-- Use `Emailer` to send the email :question:
-- Return an appropriate http response, depending on success, errors, etc :white_check_mark:
+- 把请求体解析为 `User` :white_check_mark:
+- 用 `UserStore` 检查 user 是否存在 :question:
+- 用 `UserStore` 存储 user :question:
+- 组装一封邮件 :question:
+- 用 `Emailer` 发送邮件 :question:
+- 根据成功、错误等返回合适的 http 响应 :white_check_mark:
 
-To exercise this code, you're going to have to write many tests with varying degrees of test double setups, spies, etc
+要练好这段代码，你得写很多测试，每个测试要做不同程度的 test double 设置、spy 等等。
 
-- What if the requirements expand? Translations for the emails? Sending an SMS confirmation too? Does it make sense to you that you have to change a HTTP handler to accommodate this change?
-- Does it feel right that the important rule of "we should send an email" resides within a HTTP handler?
-    - Why do you have to go through the ceremony of creating HTTP requests and reading responses to verify that rule?
+- 如果需求扩展了怎么办？邮件需要翻译？还要发短信确认？修改一个 HTTP handler 来适应这种变化对你来说合理吗？
+- "我们应该发邮件"这个重要规则放在 HTTP handler 里你觉得对吗？
+    - 你为什么必须经过创建 HTTP 请求和读取响应的繁文缛节才能验证这条规则？
 
-**Listen to your tests**. Writing tests for this code in a TDD fashion should quickly make you feel uncomfortable (or at least, make the lazy developer in you be annoyed). If it feels painful, stop and think.
+**听你的测试**。用 TDD 的方式给这段代码写测试应该会很快让你感到不舒服（或者至少让你内心懒惰的开发者感到烦躁）。如果感觉痛苦，停下来想一想。
 
-What if the design was like this instead?
+如果设计变成下面这样会怎么样？
 
 ```go
 type UserService interface {
@@ -178,31 +178,31 @@ type UserService interface {
 
 func NewRegistrationHandler(userService UserService) http.HandlerFunc {
 	return func(writer http.ResponseWriter, request *http.Request) {
-		// parse user
-		// register user
-		// check error, send response
+		// 解析 user
+		// 注册 user
+		// 检查错误，发送响应
 	}
 }
 ```
 
-- Simple to test the handler ✅
-- Changes to the rules around registration are isolated away from HTTP, so they are also simpler to test ✅
+- 测试 handler 很简单 ✅
+- 围绕注册的规则变化与 HTTP 隔离开来，因此它们也更易于测试 ✅
 
-## Violating encapsulation
+## 破坏封装
 
-Encapsulation is very important. There's a reason we don't make everything in a package exported (or public). We want coherent APIs with a small surface area to avoid tight coupling.
+封装非常重要。我们把包里的所有东西都设为非导出（或私有）是有原因的。我们想要的是一致的、表面积小的 API，避免紧耦合。
 
-People will sometimes be tempted to make a function or method public in order to test something. By doing this you make your design worse and send confusing messages to maintainers and users of your code.
+人们有时会为了测试某个东西而把一个函数或方法设为公开。这样做会让你的设计变差，并向代码的维护者和使用者发出令人困惑的信号。
 
-A result of this can be developers trying to debug a test and then eventually realising the function being tested is _only called from tests_. Which is obviously **a terrible outcome, and a waste of time**.
+这样做的一个结果可能是：开发者尝试调试一个测试，最终发现被测的函数 _只在测试里被调用_。这显然 **是一个糟糕的结果，纯粹是浪费时间**。
 
-In Go, consider your default position for writing tests as _from the perspective of a consumer of your package_. You can make this a compile-time constraint by having your tests live in a test package e.g `package gocoin_test`. If you do this, you'll only have access to the exported members of the package so it won't be possible to couple yourself to implementation detail.
+在 Go 中，写测试时默认采用的视角应该是 _作为你包的消费者_。你可以通过把测试放在一个 test 包里（例如 `package gocoin_test`）来把这变成一个编译时约束。如果你这么做，你就只能访问包的导出成员，因此不可能让自己耦合到实现细节上。
 
-## Complicated table tests
+## 复杂的表驱动测试
 
-Table tests are a great way of exercising a number of different scenarios when the test setup is the same, and you only wish to vary the inputs.
+当测试 setup 相同、你只想改变输入时，表驱动测试是练习多个场景的极佳方法。
 
-_But_ they can be messy to read and understand when you try to shoehorn other kinds of tests under the name of having one, glorious table.
+_但_ 当你为了拥有一张"光荣的大表"而把其他类型的测试硬塞进来时，它们读起来和理解起来可能会一团糟。
 
 ```go
 cases := []struct {
@@ -216,25 +216,25 @@ cases := []struct {
 }{}
 ```
 
-**Don't be afraid to break out of your table and write new tests** rather than adding new fields and booleans to the table `struct`.
+**别害怕跳出你的表去写新的测试**，而不是给表的 `struct` 不停加新字段和布尔值。
 
-A thing to bear in mind when writing software is,
+写软件时一件需要记在心里的事是，
 
 > [Simple is not easy](https://www.infoq.com/presentations/Simple-Made-Easy/)
 
-"Just" adding a field to a table might be easy, but it can make things far from simple.
+"只是"在表里加个字段也许很容易（easy），但它可能让事情远谈不上简单（simple）。
 
-## Summary
+## 总结
 
-Most problems with unit tests can normally be traced to:
+单元测试上的大多数问题通常可以追溯到：
 
-- Developers not following the TDD process
-- Poor design
+- 开发者没有遵循 TDD 流程
+- 糟糕的设计
 
-So, learn about good software design!
+所以，去学习好的软件设计吧！
 
-The good news is TDD can help you _improve your design skills_ because as stated in the beginning:
+好消息是 TDD 可以帮你 _提升设计能力_，因为正如开头所说：
 
-**TDD's main purpose is to provide feedback on your design.** For the millionth time, listen to your tests, they are reflecting your design back at you.
+**TDD 的主要目的是为你的设计提供反馈。** 第一万次说：听你的测试，它们正把你的设计反映给你看。
 
-Be honest about the quality of your tests by listening to the feedback they give you, and you'll become a better developer for it.
+诚实地面对你测试的质量，听它们给你的反馈，你会因此成为一名更优秀的开发者。

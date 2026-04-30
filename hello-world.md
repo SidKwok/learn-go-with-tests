@@ -1,11 +1,11 @@
 # Hello, World
 
-**[You can find all the code for this chapter here](https://github.com/quii/learn-go-with-tests/tree/main/hello-world)**
+**[本章的所有代码可以在这里找到](https://github.com/quii/learn-go-with-tests/tree/main/hello-world)**
 
-It is traditional for your first program in a new language to be [Hello, World](https://en.m.wikipedia.org/wiki/%22Hello,_World!%22_program).
+按惯例，学习一门新语言的第一个程序是 [Hello, World](https://en.m.wikipedia.org/wiki/%22Hello,_World!%22_program)。
 
-- Create a folder wherever you like
-- Put a new file in it called `hello.go` and put the following code inside it
+- 在你喜欢的位置创建一个文件夹
+- 在里面新建一个名为 `hello.go` 的文件，并把下面的代码放进去
 
 ```go
 package main
@@ -17,21 +17,21 @@ func main() {
 }
 ```
 
-To run it, type `go run hello.go`.
+要运行它，输入 `go run hello.go`。
 
-## How it works
+## 它是怎么工作的
 
-When you write a program in Go, you will have a `main` package defined with a `main` func inside it. Packages are ways of grouping up related Go code together.
+当你用 Go 写程序时，你会有一个名为 `main` 的包，里面定义了一个名为 `main` 的函数。包是把相关 Go 代码组织在一起的方式。
 
-The `func` keyword defines a function with a name and a body.
+`func` 关键字定义了一个带名称和函数体的函数。
 
-With `import "fmt"` we are importing a package which contains the `Println` function that we use to print.
+通过 `import "fmt"`，我们引入了一个包，它包含我们用来打印的 `Println` 函数。
 
-## How to test
+## 怎么测试
 
-How do you test this? It is good to separate your "domain" code from the outside world \(side-effects\). The `fmt.Println` is a side effect \(printing to stdout\), and the string we send in is our domain.
+你怎么测试这段代码？把你的"领域"代码与外部世界（副作用）分离是个好习惯。`fmt.Println` 是一个副作用（向标准输出打印），而我们传入的字符串是我们的领域。
 
-So let's separate these concerns so it's easier to test
+那让我们把这两个关注点分离开，使代码更易测试
 
 ```go
 package main
@@ -47,9 +47,9 @@ func main() {
 }
 ```
 
-We have created a new function with `func`, but this time, we've added another keyword, `string,` to the definition. This means this function returns a `string`.
+我们用 `func` 创建了一个新函数，但这次我们在定义中加上了另一个关键字 `string`。这表示这个函数返回一个 `string`。
 
-Now create a new file called `hello_test.go` where we are going to write a test for our `Hello` function
+现在创建一个新文件 `hello_test.go`，我们将在其中为 `Hello` 函数编写测试
 
 ```go
 package main
@@ -66,16 +66,16 @@ func TestHello(t *testing.T) {
 }
 ```
 
-## Go modules?
+## Go modules？
 
-The next step is to run the tests. Enter `go test` in your terminal. If the tests pass, then you are probably using an earlier version of Go. However, if you are using Go 1.16 or later, the tests will likely not run. Instead, you will see an error message like this in the terminal:
+下一步是运行测试。在终端输入 `go test`。如果测试通过了，你大概用的是较早版本的 Go。然而如果你用的是 Go 1.16 或更高版本，测试很可能跑不起来。相反，你会在终端看到类似下面的错误信息：
 
 ```shell
 $ go test
 go: cannot find main module; see 'go help modules'
 ```
 
-What's the problem? In a word, [modules](https://blog.golang.org/go116-module-changes). Luckily, the problem is easy to fix. Enter `go mod init example.com/hello` in your terminal. That will create a new file with the following contents:
+问题出在哪？一句话：[modules](https://blog.golang.org/go116-module-changes)。幸好，问题很容易修。在终端输入 `go mod init example.com/hello`。这会创建一个新文件，内容如下：
 
 ```
 module example.com/hello
@@ -83,49 +83,49 @@ module example.com/hello
 go 1.16
 ```
 
-This file tells the `go` tools essential information about your code. If you planned to distribute your application, you would include where the code was available for download as well as information about dependencies.  The name of the module, example\.com\/hello, usually refers to a URL where the module can be found and downloaded. For compatibility with tools we'll start using soon, make sure your module's name has a dot somewhere in it, like the dot in .com of example\.com/hello. For now, your module file is minimal, and you can leave it that way. To read more about modules, [you can check out the reference in the Golang documentation](https://golang.org/doc/modules/gomod-ref). We can get back to testing and learning Go now since the tests should run, even on Go 1.16.
+这个文件告诉 `go` 工具关于你代码的关键信息。如果你打算分发你的应用，你会在其中包含代码可下载的位置以及依赖信息。模块名 example\.com\/hello 通常指向模块可以被找到和下载的 URL。为了与我们即将使用的工具兼容，请确保你的模块名中带一个点，就像 example\.com/hello 中 .com 里的那个点。目前你的模块文件很简单，可以保持这样。要更深入了解 modules，[可以查看 Golang 文档中的参考](https://golang.org/doc/modules/gomod-ref)。我们现在可以回到测试和学习 Go 了，因为即使在 Go 1.16 上，测试也应该能跑起来了。
 
-In future chapters, you will need to run `go mod init SOMENAME` in each new folder before running commands like `go test` or `go build`.
+在后续章节中，你需要在每个新文件夹里运行 `go mod init SOMENAME`，然后才能运行 `go test` 或 `go build` 这类命令。
 
-## Back to Testing
+## 回到测试
 
-Run `go test` in your terminal. It should've passed! Just to check, try deliberately breaking the test by changing the `want` string.
+在终端运行 `go test`。它应该通过了！为了确认，可以试着故意把 `want` 字符串改错来让测试失败。
 
-Notice how you have not had to pick between multiple testing frameworks and then figure out how to install them. Everything you need is built into the language, and the syntax is the same as the rest of the code you will write.
+注意你不需要在多个测试框架之间挑选，再去琢磨怎么安装它们。你需要的一切都内置在语言里，语法也和你写的其他代码一致。
 
-### Writing tests
+### 编写测试
 
-Writing a test is just like writing a function, with a few rules
+写测试就像写函数一样，只有几条规则
 
-* It needs to be in a file with a name like `xxx_test.go`
-* The test function must start with the word `Test`
-* The test function takes one argument only `t *testing.T`
-* To use the `*testing.T` type, you need to `import "testing"`, like we did with `fmt` in the other file
+* 它需要在一个名字形如 `xxx_test.go` 的文件里
+* 测试函数的名字必须以 `Test` 开头
+* 测试函数只接受一个参数 `t *testing.T`
+* 要使用 `*testing.T` 类型，你需要 `import "testing"`，就像我们在另一个文件里 import `fmt` 那样
 
-For now, it's enough to know that your `t` of type `*testing.T` is your "hook" into the testing framework so you can do things like `t.Fail()` when you want to fail.
+目前你只需要知道，类型为 `*testing.T` 的 `t` 是你与测试框架交互的"钩子"，你可以通过它做一些事，比如想让测试失败时调用 `t.Fail()`。
 
-We've covered some new topics:
+我们已经涉及了一些新主题：
 
 #### `if`
-If statements in Go are very much like other programming languages.
+Go 中的 if 语句和其他编程语言非常相似。
 
-#### Declaring variables
+#### 声明变量
 
-We're declaring some variables with the syntax `varName := value`, which lets us reuse some values in our test for readability.
+我们用 `varName := value` 的语法声明一些变量，这样我们可以在测试里复用这些值，提升可读性。
 
 #### `t.Errorf`
 
-We are calling the `Errorf` _method_ on our `t`, which will print out a message and fail the test. The `f` stands for format, which allows us to build a string with values inserted into the placeholder values `%q`. When you make the test fail, it should be clear how it works.
+我们调用了 `t` 上的 `Errorf` _方法_，它会打印一条消息并使测试失败。`f` 代表 format（格式化），它允许我们用占位符 `%q` 把值插入字符串中构建消息。当你让测试失败时，应该能看清它是怎么工作的。
 
-You can read more about the placeholder strings in the [fmt documentation](https://pkg.go.dev/fmt#hdr-Printing). For tests, `%q` is very useful as it wraps your values in double quotes.
+你可以在 [fmt 文档](https://pkg.go.dev/fmt#hdr-Printing) 里了解更多关于占位符的内容。在测试中，`%q` 非常有用，因为它会用双引号把你的值包起来。
 
-We will later explore the difference between methods and functions.
+我们之后会探讨方法和函数的区别。
 
-### Go's documentation
+### Go 的文档
 
-Another quality-of-life feature of Go is the documentation.  We just saw the documentation for the fmt package at the official package viewing website, and Go also provides ways for quickly getting at the documentation offline.
+Go 另一个让生活更便利的特性是它的文档。我们刚才在官方包查阅网站上看到了 fmt 包的文档，Go 也提供了快速离线获取文档的方式。
 
-Go has a built-in tool, doc, which lets you examine any package installed on your system, or the module you're currently working on. To view that same documentation for the Printing verbs:
+Go 自带一个工具 doc，它能让你查看任何安装在系统上的包，或者你正在开发的模块。要查看刚才那些 Printing 动词的文档：
 
 ```
 $ go doc fmt
@@ -148,20 +148,20 @@ General:
 ...
 ```
 
-Go's second tool for viewing documentation is the pkgsite command, which powers Go's official package viewing website.  You can install pkgsite with `go install golang.org/x/pkgsite/cmd/pkgsite@latest`, then run it with `pkgsite -open .`.  Go's install command will download the source files from that repository and build them into an executable binary.  For a default installation of Go, that executable will be in `$HOME/go/bin` for Linux and macOS, and `%USERPROFILE%\go\bin` for Windows.  If you have not already added those paths to your $PATH var, you might want to do so to make running go-installed commands easier.
+Go 的第二个查看文档的工具是 pkgsite 命令，它驱动了 Go 的官方包查阅网站。你可以用 `go install golang.org/x/pkgsite/cmd/pkgsite@latest` 安装 pkgsite，然后用 `pkgsite -open .` 来运行。Go 的 install 命令会从对应仓库下载源代码并编译成可执行二进制。在 Go 的默认安装中，可执行文件会在 Linux 和 macOS 的 `$HOME/go/bin` 中，Windows 上则是 `%USERPROFILE%\go\bin`。如果你还没把这些路径加到 $PATH 里，建议加一下，会让运行通过 go install 安装的命令更方便。
 
-The vast majority of the standard library has excellent documentation with examples. Navigating to [http://localhost:8080/testing](http://localhost:8080/testing) would be worthwhile to see what's available to you.
+绝大部分标准库都有非常优秀的文档和示例。访问 [http://localhost:8080/testing](http://localhost:8080/testing) 看看你能用到什么是值得的。
 
 
 ### Hello, YOU
 
-Now that we have a test, we can iterate on our software safely.
+现在我们有了测试，可以放心地迭代我们的软件了。
 
-In the last example, we wrote the test _after_ the code had been written so that you could get an example of how to write a test and declare a function. From this point on, we will be _writing tests first_.
+在上一个例子里，我们是 _在代码写完之后_ 才写测试的，目的是让你看到一个写测试和声明函数的例子。从这里开始，我们会 _先写测试_。
 
-Our next requirement is to let us specify the recipient of the greeting.
+我们的下一个需求是允许指定问候的对象。
 
-Let's start by capturing these requirements in a test. This is basic test-driven development and allows us to make sure our test is _actually_ testing what we want. When you retrospectively write tests, there is the risk that your test may continue to pass even if the code doesn't work as intended.
+让我们从把这些需求转成测试开始。这是基本的测试驱动开发，能确保我们的测试 _确实_ 在测试我们想要的东西。当你事后才补写测试时，存在一个风险：即使代码没按预期工作，你的测试也可能继续通过。
 
 ```go
 package main
@@ -178,7 +178,7 @@ func TestHello(t *testing.T) {
 }
 ```
 
-Now run `go test`, you should have a compilation error
+现在运行 `go test`，你应该会看到一个编译错误
 
 ```text
 ./hello_test.go:6:18: too many arguments in call to Hello
@@ -186,11 +186,11 @@ Now run `go test`, you should have a compilation error
     want ()
 ```
 
-When using a statically typed language like Go it is important to _listen to the compiler_. The compiler understands how your code should snap together and work so you don't have to.
+使用像 Go 这样的静态类型语言时，_听编译器的话_ 很重要。编译器明白你的代码应当如何拼接和工作，所以你不必都自己想清楚。
 
-In this case the compiler is telling you what you need to do to continue. We have to change our function `Hello` to accept an argument.
+在这个例子里，编译器在告诉你需要做什么才能继续。我们必须修改 `Hello` 函数让它接受一个参数。
 
-Edit the `Hello` function to accept an argument of type string
+修改 `Hello` 函数让它接受一个 string 类型的参数
 
 ```go
 func Hello(name string) string {
@@ -198,7 +198,7 @@ func Hello(name string) string {
 }
 ```
 
-If you try and run your tests again your `hello.go` will fail to compile because you're not passing an argument. Send in "world" to make it compile.
+如果你再次运行测试，你的 `hello.go` 会编译失败，因为你没有传入参数。传入 "world" 让它能编译。
 
 ```go
 func main() {
@@ -206,15 +206,15 @@ func main() {
 }
 ```
 
-Now when you run your tests, you should see something like
+现在运行测试，你应该会看到类似这样的输出
 
 ```text
 hello_test.go:10: got 'Hello, world' want 'Hello, Chris''
 ```
 
-We finally have a compiling program but it is not meeting our requirements according to the test.
+我们终于有了一个能编译的程序，但根据测试它还没满足我们的需求。
 
-Let's make the test pass by using the name argument and concatenate it with `Hello,`
+让我们通过使用 name 参数并把它和 `Hello,` 拼接起来让测试通过
 
 ```go
 func Hello(name string) string {
@@ -222,27 +222,25 @@ func Hello(name string) string {
 }
 ```
 
-When you run the tests, they should now pass. Normally, as part of the TDD cycle, we should now _refactor_.
+当你再运行测试时，它们应该能通过了。通常作为 TDD 循环的一部分，我们现在应该 _重构_。
 
-### A note on source control
+### 关于版本控制的提醒
 
-At this point, if you are using source control \(which you should!\) I would
-`commit` the code as it is. We have working software backed by a test.
+到这里如果你在使用版本控制（你应该用！）的话，我会把代码现在的状态 `commit` 一下。我们有了能工作的软件并有测试支持。
 
-I _wouldn't_ push to main though, because I plan to refactor next. It is nice
-to commit at this point in case you somehow get into a mess with refactoring - you can always go back to the working version.
+不过我 _不会_ 推送到 main 分支，因为我打算接下来重构。在这个时间点提交一下挺好的，万一你重构搞乱了，你总能回到能工作的版本。
 
-There's not a lot to refactor here, but we can introduce another language feature, _constants_.
+这里没什么可重构的，但我们可以引入另一个语言特性，_常量_。
 
-### Constants
+### 常量
 
-Constants are defined like so
+常量是这样定义的
 
 ```go
 const englishHelloPrefix = "Hello, "
 ```
 
-We can now refactor our code
+我们现在可以重构代码
 
 ```go
 const englishHelloPrefix = "Hello, "
@@ -252,15 +250,15 @@ func Hello(name string) string {
 }
 ```
 
-After refactoring, re-run your tests to make sure you haven't broken anything.
+重构后，重新运行测试以确保没有破坏任何东西。
 
-It's worth thinking about creating constants to capture the meaning of values and sometimes to aid performance.
+值得思考的是，创建常量来表达值的含义有时也能帮助提升性能。
 
-## Hello, world... again
+## Hello, world... 再来一次
 
-The next requirement is when our function is called with an empty string it defaults to printing "Hello, World", rather than "Hello, ".
+下一个需求是当我们的函数被传入空字符串时，默认打印 "Hello, World"，而不是 "Hello, "。
 
-Start by writing a new failing test
+先写一个失败的测试
 
 ```go
 func TestHello(t *testing.T) {
@@ -283,11 +281,11 @@ func TestHello(t *testing.T) {
 }
 ```
 
-Here, we are introducing another tool in our testing arsenal: subtests. Sometimes, it is useful to group tests around a "thing" and then have subtests describing different scenarios.
+这里我们引入了测试武器库里的另一个工具：子测试。有时把围绕"某件事物"的测试归在一起，再用子测试描述不同场景，会很有用。
 
-A benefit of this approach is you can set up shared code that can be used in the other tests.
+这种方式的一个好处是你可以设置一些可以被其他测试共享的代码。
 
-While we have a failing test, let's fix the code, using an `if`.
+测试还是失败的，让我们用 `if` 来修代码。
 
 ```go
 const englishHelloPrefix = "Hello, "
@@ -300,13 +298,13 @@ func Hello(name string) string {
 }
 ```
 
-If we run our tests we should see it satisfies the new requirement and we haven't accidentally broken the other functionality.
+如果我们运行测试，应该会看到它满足了新需求，并且我们没有意外地破坏其他功能。
 
-It is important that your tests _are clear specifications_ of what the code needs to do. But there is repeated code when we check if the message is what we expect.
+测试 _作为代码该做什么的清晰规范_ 是很重要的。但当我们检查消息是否符合预期时，存在重复代码。
 
-Refactoring is not _just_ for the production code!
+重构 _不仅是_ 针对生产代码的！
 
-Now that the tests are passing, we can and should refactor our tests.
+既然测试通过了，我们可以也应该重构我们的测试。
 
 ```go
 func TestHello(t *testing.T) {
@@ -332,47 +330,47 @@ func assertCorrectMessage(t testing.TB, got, want string) {
 }
 ```
 
-What have we done here?
+我们做了什么？
 
-We've refactored our assertion into a new function. This reduces duplication and improves the readability of our tests. We need to pass in `t *testing.T` so that we can tell the test code to fail when we need to.
+我们把断言重构成一个新函数。这减少了重复，并提升了测试的可读性。我们需要传入 `t *testing.T`，这样在需要时可以让测试代码失败。
 
-For helper functions, it's a good idea to accept a `testing.TB` which is an interface that `*testing.T` and `*testing.B` both satisfy, so you can call helper functions from a test, or a benchmark (don't worry if words like "interface" mean nothing to you right now, it will be covered later).
+对于辅助函数，最好接受 `testing.TB`，它是一个接口，`*testing.T` 和 `*testing.B` 都满足这个接口，因此你可以从测试或基准测试中调用辅助函数（如果"接口"这样的词现在对你来说一无所知，别担心，后面会讲到）。
 
-`t.Helper()` is needed to tell the test suite that this method is a helper. By doing this, when it fails, the line number reported will be in our _function call_ rather than inside our test helper. This will help other developers track down problems more easily. If you still don't understand, comment it out, make a test fail and observe the test output. Comments in Go are a great way to add additional information to your code, or in this case, a quick way to tell the compiler to ignore a line. You can comment out the `t.Helper()` code by adding two forward slashes `//` at the beginning of the line. You should see that line turn grey or change to another color than the rest of your code to indicate it's now commented out.
+`t.Helper()` 用来告诉测试套件这个方法是辅助函数。这样做之后，当它失败时，报告的行号会指向 _我们的函数调用_，而不是测试辅助函数内部。这能帮助其他开发者更容易追踪问题。如果你还不理解，把它注释掉，让一个测试失败，观察测试输出。Go 中的注释是给代码增加额外信息的好方法，或者像这里这样，是快速告诉编译器忽略某行的方式。你可以通过在行首加两个斜杠 `//` 来注释掉 `t.Helper()` 那行代码。你会看到那行变灰或变成与其他代码不同的颜色，表示它已被注释。
 
-When you have more than one argument of the same type \(in our case two strings\) rather than having `(got string, want string)` you can shorten it to `(got, want string)`.
+当你有多个相同类型的参数（这里是两个 string）时，相比 `(got string, want string)`，你可以缩写成 `(got, want string)`。
 
-### Back to source control
+### 回到版本控制
 
-Now that we are happy with the code, I would amend the previous commit so that we only check in the lovely version of our code with its test.
+现在我们对代码满意了，我会 amend（修改）之前那个提交，这样我们只签入了带测试的整洁版本代码。
 
-### Discipline
+### 纪律
 
-Let's go over the cycle again
+让我们再过一遍这个循环
 
-* Write a test
-* Make the compiler pass
-* Run the test, see that it fails and check the error message is meaningful
-* Write enough code to make the test pass
-* Refactor
+* 写一个测试
+* 让编译器通过
+* 运行测试，看到它失败，并检查错误信息是否有意义
+* 写刚好够让测试通过的代码
+* 重构
 
-On the face of it this may seem tedious but sticking to the feedback loop is important.
+表面上看这可能很繁琐，但坚持这个反馈循环很重要。
 
-Not only does it ensure that you have _relevant tests_, it helps ensure _you design good software_ by refactoring with the safety of tests.
+它不仅能确保你有 _相关的测试_，还能帮你在测试的安全保障下通过重构来 _设计出好的软件_。
 
-Seeing the test fail is an important check because it also lets you see what the error message looks like. As a developer it can be very hard to work with a codebase when failing tests do not give a clear idea as to what the problem is.
+看到测试失败是一个重要的检查，因为它也让你看到错误信息长什么样。作为开发者，当失败的测试不能清晰地告诉你问题所在时，要在代码库里工作会非常困难。
 
-By ensuring your tests are _fast_ and setting up your tools so that running tests is simple you can get in to a state of flow when writing your code.
+通过确保测试 _快速_、并配置好工具让运行测试变得简单，你就能在写代码时进入心流状态。
 
-By not writing tests, you are committing to manually checking your code by running your software, which breaks your state of flow. You won't be saving yourself any time, especially in the long run.
+不写测试的话，你就承诺要通过运行软件手动检查代码，这会打断你的心流。你不会节省任何时间，从长远来看尤其如此。
 
-## Keep going! More requirements
+## 继续！更多需求
 
-Goodness me, we have more requirements. We now need to support a second parameter, specifying the language of the greeting. If a language is passed in that we do not recognise, just default to English.
+天哪，又来更多需求了。我们现在需要支持第二个参数，用来指定问候的语言。如果传入一个我们不认识的语言，就默认用英文。
 
-We should be confident that we can easily use TDD to flesh out this functionality!
+我们应该有信心可以轻松用 TDD 把这个功能补齐！
 
-Write a test for a user passing in Spanish. Add it to the existing suite.
+写一个测试，让用户传入西班牙语。把它加到现有的测试套件里。
 
 ```go
 	t.Run("in Spanish", func(t *testing.T) {
@@ -382,7 +380,7 @@ Write a test for a user passing in Spanish. Add it to the existing suite.
 	})
 ```
 
-Remember not to cheat! _Test first_. When you try to run the test, the compiler _should_ complain because you are calling `Hello` with two arguments rather than one.
+记得别作弊！_先写测试_。当你尝试运行测试时，编译器 _应该_ 会抱怨，因为你用两个参数调用了 `Hello`，而不是一个。
 
 ```text
 ./hello_test.go:27:19: too many arguments in call to Hello
@@ -390,7 +388,7 @@ Remember not to cheat! _Test first_. When you try to run the test, the compiler 
     want (string)
 ```
 
-Fix the compilation problems by adding another string argument to `Hello`
+通过给 `Hello` 加另一个 string 参数来修复编译问题
 
 ```go
 func Hello(name string, language string) string {
@@ -401,7 +399,7 @@ func Hello(name string, language string) string {
 }
 ```
 
-When you try and run the test again it will complain about not passing through enough arguments to `Hello` in your other tests and in `hello.go`
+当你再尝试运行测试时，它会抱怨在其他测试和 `hello.go` 中调用 `Hello` 时没有传够参数。
 
 ```text
 ./hello.go:15:19: not enough arguments in call to Hello
@@ -409,13 +407,13 @@ When you try and run the test again it will complain about not passing through e
     want (string, string)
 ```
 
-Fix them by passing through empty strings. Now all your tests should compile _and_ pass, apart from our new scenario
+通过传入空字符串来修复它们。现在所有测试都应该能编译 _并_ 通过，除了我们的新场景
 
 ```text
 hello_test.go:29: got 'Hello, Elodie' want 'Hola, Elodie'
 ```
 
-We can use `if` here to check the language is equal to "Spanish" and if so change the message
+这里我们可以用 `if` 检查 language 是否等于 "Spanish"，如果是，就改变消息
 
 ```go
 func Hello(name string, language string) string {
@@ -430,9 +428,9 @@ func Hello(name string, language string) string {
 }
 ```
 
-The tests should now pass.
+测试现在应该能通过。
 
-Now it is time to _refactor_. You should see some problems in the code, "magic" strings, some of which are repeated. Try and refactor it yourself, with every change make sure you re-run the tests to make sure your refactoring isn't breaking anything.
+现在是 _重构_ 的时间。你应该看到代码里有些问题，"魔法"字符串，其中一些还重复了。你自己试着去重构它，每次改动都要重新运行测试以确保你的重构没有破坏任何东西。
 
 ```go
 	const spanish = "Spanish"
@@ -451,13 +449,13 @@ Now it is time to _refactor_. You should see some problems in the code, "magic" 
 	}
 ```
 
-### French
+### 法语
 
-* Write a test asserting that if you pass in `"French"` you get `"Bonjour, "`
-* See it fail, check the error message is easy to read
-* Do the smallest reasonable change in the code
+* 写一个测试，断言如果你传入 `"French"`，会得到 `"Bonjour, "`
+* 看着它失败，检查错误信息易读
+* 在代码里做最小的合理改动
 
-You may have written something that looks roughly like this
+你大概会写出下面这样的东西
 
 ```go
 func Hello(name string, language string) string {
@@ -477,7 +475,7 @@ func Hello(name string, language string) string {
 
 ## `switch`
 
-When you have lots of `if` statements checking a particular value it is common to use a `switch` statement instead. We can use `switch` to refactor the code to make it easier to read and more extensible if we wish to add more language support later
+当你有很多 `if` 语句去检查同一个值时，常用的做法是改用 `switch`。我们可以用 `switch` 重构代码，让它更易读，并且如果以后想加更多语言支持时也更易扩展
 
 ```go
 func Hello(name string, language string) string {
@@ -498,11 +496,11 @@ func Hello(name string, language string) string {
 }
 ```
 
-Write a test to now include a greeting in the language of your choice and you should see how simple it is to extend our _amazing_ function.
+写一个测试加上你选择的语言的问候，你应该能看到扩展我们这个 _出色的_ 函数有多简单。
 
-### one...last...refactor?
+### 最后...再...重构一次？
 
-You could argue that maybe our function is getting a little big. The simplest refactor for this would be to extract out some functionality into another function.
+你也可以认为我们的函数变得有点大了。最简单的重构是把一些功能抽成另一个函数。
 
 ```go
 
@@ -536,36 +534,36 @@ func greetingPrefix(language string) (prefix string) {
 }
 ```
 
-A few new concepts:
+几个新概念：
 
-* In our function signature we have made a _named return value_ `(prefix string)`.
-* This will create a variable called `prefix` in your function.
-  * It will be assigned the "zero" value. This depends on the type, for example `int`s are 0 and for `string`s it is `""`.
-    * You can return whatever it's set to by just calling `return` rather than `return prefix`.
-  * This will display in the Go Doc for your function so it can make the intent of your code clearer.
-* `default` in the switch case will be branched to if none of the other `case` statements match.
-* The function name starts with a lowercase letter. In Go, public functions start with a capital letter, and private ones start with a lowercase letter. We don't want the internals of our algorithm exposed to the world, so we made this function private.
-* Also, we can group constants in a block instead of declaring them on their own line. For readability, it's a good idea to use a line between sets of related constants.
+* 在我们的函数签名里我们使用了 _命名返回值_ `(prefix string)`。
+* 这会在你的函数里创建一个名为 `prefix` 的变量。
+  * 它会被赋予"零值"。这取决于类型，例如 `int` 是 0，`string` 是 `""`。
+    * 你可以通过仅调用 `return` 而不是 `return prefix` 来返回它当前的值。
+  * 它会显示在你函数的 Go Doc 中，可以让你代码的意图更清晰。
+* 当所有 `case` 语句都不匹配时，switch 会走 `default` 分支。
+* 函数名以小写字母开头。在 Go 中，公开函数以大写字母开头，私有函数以小写字母开头。我们不希望算法的内部细节暴露给外部，所以把这个函数设为私有。
+* 此外，我们可以把常量用一个块组织在一起，而不是各自单独声明。为了可读性，相关常量组之间用一空行分隔是个好主意。
 
-## Wrapping up
+## 总结
 
-Who knew you could get so much out of `Hello, world`?
+谁能想到从 `Hello, world` 中能挖出这么多东西？
 
-By now you should have some understanding of:
+到现在为止你应该理解了：
 
-### Some of Go's syntax around
+### Go 的部分语法
 
-* Writing tests
-* Declaring functions, with arguments and return types
-* `if`, `const` and `switch`
-* Declaring variables and constants
+* 编写测试
+* 声明带参数和返回类型的函数
+* `if`、`const` 和 `switch`
+* 声明变量和常量
 
-### The TDD process and _why_ the steps are important
+### TDD 流程，以及 _为什么_ 这些步骤很重要
 
-* _Write a failing test and see it fail_ so we know we have written a _relevant_ test for our requirements and seen that it produces an _easy to understand description of the failure_
-* Writing the smallest amount of code to make it pass so we know we have working software
-* _Then_ refactor, backed with the safety of our tests to ensure we have well-crafted code that is easy to work with
+* _写一个失败的测试并看到它失败_，这样我们就知道我们写的是 _符合需求_ 的测试，并且能看到它产生 _易于理解的失败描述_
+* 写最少量的代码让测试通过，这样我们就知道我们有了能工作的软件
+* _然后_ 重构，在测试的安全保障下，确保我们的代码精雕细琢、易于维护
 
-In our case, we've gone from `Hello()` to `Hello("name")` and then to `Hello("name", "French")` in small, easy-to-understand steps.
+在我们这个例子里，我们以小而易懂的步骤，从 `Hello()` 走到了 `Hello("name")`，再到 `Hello("name", "French")`。
 
-Of course, this is trivial compared to "real-world" software, but the principles still stand. TDD is a skill that needs practice to develop, but by breaking problems down into smaller components that you can test, you will have a much easier time writing software.
+当然，这与"真实世界"的软件相比是微不足道的，但原则依然成立。TDD 是一项需要练习才能掌握的技能，但通过把问题拆解成可以测试的更小组件，你会更轻松地写出软件。

@@ -1,12 +1,12 @@
-# Chapter template
+# 章节模板
 
-Some intro
+简单介绍
 
-## Write the test first
-## Try to run the test
-## Write the minimal amount of code for the test to run and check the failing test output
-## Write enough code to make it pass
-## Refactor
+## 先写测试
+## 尝试运行测试
+## 写最少量的代码让测试运行起来，并检查失败的输出
+## 写足够的代码让测试通过
+## 重构
 
-## Repeat for new requirements
-## Wrapping up
+## 针对新需求重复以上步骤
+## 总结

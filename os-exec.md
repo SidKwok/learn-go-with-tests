@@ -1,23 +1,23 @@
 # OS Exec
 
-**[You can find all the code here](https://github.com/quii/learn-go-with-tests/tree/main/q-and-a/os-exec)**
+**[本章的所有代码可以在这里找到](https://github.com/quii/learn-go-with-tests/tree/main/q-and-a/os-exec)**
 
-[keith6014](https://www.reddit.com/user/keith6014) asks on [reddit](https://www.reddit.com/r/golang/comments/aaz8ji/testdata_and_function_setup_help/)
+[keith6014](https://www.reddit.com/user/keith6014) 在 [reddit](https://www.reddit.com/r/golang/comments/aaz8ji/testdata_and_function_setup_help/) 上提问
 
-> I am executing a command using os/exec.Command() which generated XML data. The command will be executed in a function called GetData().
+> 我用 os/exec.Command() 执行了一个命令，它生成了一些 XML 数据。这个命令会在一个叫 GetData() 的函数里执行。
 
-> In order to test GetData(), I have some testdata which I created.
+> 为了测试 GetData()，我准备了一些 testdata。
 
-> In my _test.go I have a TestGetData which calls GetData() but that will use os.exec, instead I would like for it to use my testdata.
+> 在我的 _test.go 里有一个 TestGetData，它会调用 GetData()，但 GetData 内部会用到 os.exec，我希望让它改用我的 testdata。
 
-> What is a good way to achieve this? When calling GetData should I have a "test" flag mode so it will read a file ie GetData(mode string)?
+> 有什么好办法做到？调用 GetData 时是不是该加一个"test"标志参数，让它去读文件，比如写成 GetData(mode string)？
 
-A few things
+几点想法
 
-- When something is difficult to test, it's often due to the separation of concerns not being quite right
-- Don't add "test modes" into your code, instead use [Dependency Injection](./dependency-injection.md) so that you can model your dependencies and separate concerns.
+- 当某个东西难以测试时，往往是因为关注点没分开
+- 不要把"测试模式"加到代码里，而应该用[依赖注入](./dependency-injection.md)，对依赖进行建模并分离关注点。
 
-I have taken the liberty of guessing what the code might look like
+我斗胆猜测了一下代码可能长什么样
 
 ```go
 type Payload struct {
@@ -31,7 +31,7 @@ func GetData() string {
 	var payload Payload
 	decoder := xml.NewDecoder(out)
 
-	// these 3 can return errors but I'm ignoring for brevity
+	// 这 3 个调用都可能返回错误，但为了简洁我忽略了
 	cmd.Start()
 	decoder.Decode(&payload)
 	cmd.Wait()
@@ -40,12 +40,12 @@ func GetData() string {
 }
 ```
 
-- It uses `exec.Command` which allows you to execute an external command to the process
-- We capture the output in `cmd.StdoutPipe` which returns us a `io.ReadCloser` (this will become important)
-- The rest of the code is more or less copy and pasted from the [excellent documentation](https://golang.org/pkg/os/exec/#example_Cmd_StdoutPipe).
-    - We capture any output from stdout into an `io.ReadCloser` and then we `Start` the command and then wait for all the data to be read by calling `Wait`. In between those two calls we decode the data into our `Payload` struct.
+- 它使用 `exec.Command`，可以在进程外执行一个外部命令
+- 我们用 `cmd.StdoutPipe` 捕获输出，它返回一个 `io.ReadCloser`（这一点稍后会很重要）
+- 剩下的代码大致是从[官方优秀文档](https://golang.org/pkg/os/exec/#example_Cmd_StdoutPipe)里复制粘贴过来的。
+    - 我们把 stdout 的输出捕获到一个 `io.ReadCloser`，然后 `Start` 命令，再调用 `Wait` 等所有数据被读完。在这两个调用之间，我们把数据解码到我们的 `Payload` 结构体里。
 
-Here is what is contained inside `msg.xml`
+下面是 `msg.xml` 的内容
 
 ```xml
 <payload>
@@ -53,7 +53,7 @@ Here is what is contained inside `msg.xml`
 </payload>
 ```
 
-I wrote a simple test to show it in action
+我写了一个简单的测试来演示它的运作
 
 ```go
 func TestGetData(t *testing.T) {
@@ -66,22 +66,22 @@ func TestGetData(t *testing.T) {
 }
 ```
 
-## Testable code
+## 可测试的代码
 
-Testable code is decoupled and single purpose. To me it feels like there are two main concerns for this code
+可测试的代码是解耦的、单一职责的。在我看来，这段代码主要有两个关注点
 
-1. Retrieving the raw XML data
-2. Decoding the XML data and applying our business logic (in this case `strings.ToUpper` on the `<message>`)
+1. 获取原始的 XML 数据
+2. 解码 XML 数据并应用我们的业务逻辑（这里就是对 `<message>` 调用 `strings.ToUpper`）
 
-The first part is just copying the example from the standard lib.
+第一部分只是从标准库示例里抄下来的。
 
-The second part is where we have our business logic and by looking at the code we can see where the "seam" in our logic starts; it's where we get our `io.ReadCloser`. We can use this existing abstraction to separate concerns and make our code testable.
+第二部分才是我们的业务逻辑所在，看代码就能发现逻辑里"接缝"从哪里开始：就是我们拿到 `io.ReadCloser` 的地方。我们可以利用这个已有的抽象来分离关注点，让代码可测试。
 
-**The problem with GetData is the business logic is coupled with the means of getting the XML. To make our design better we need to decouple them**
+**`GetData` 的问题在于业务逻辑与获取 XML 的方式耦合在一起了。要让设计更好，我们需要把它们解耦**
 
-Our `TestGetData` can act as our integration test between our two concerns so we'll keep hold of that to make sure it keeps working.
+我们的 `TestGetData` 可以作为这两个关注点之间的集成测试，所以我们会保留它，确保整体仍然能正常工作。
 
-Here is what the newly separated code looks like
+下面是新分离后的代码
 
 ```go
 type Payload struct {
@@ -115,7 +115,7 @@ func TestGetDataIntegration(t *testing.T) {
 }
 ```
 
-Now that `GetData` takes its input from just an `io.Reader` we have made it testable and it is no longer concerned how the data is retrieved; people can re-use the function with anything that returns an `io.Reader` (which is extremely common). For example we could start fetching the XML from a URL instead of the command line.
+现在 `GetData` 只从一个 `io.Reader` 取输入，我们让它变得可测试，并且不再关心数据是怎么来的；任何返回 `io.Reader` 的东西（这非常常见）都可以复用这个函数。比如我们可以改成从 URL 而不是命令行获取 XML。
 
 ```go
 func TestGetData(t *testing.T) {
@@ -134,6 +134,6 @@ func TestGetData(t *testing.T) {
 
 ```
 
-Here is an example of a unit test for `GetData`.
+这是 `GetData` 的一个单元测试示例。
 
-By separating the concerns and using existing abstractions within Go testing our important business logic is a breeze.
+通过分离关注点并利用 Go 已有的抽象，测试我们重要的业务逻辑变得轻而易举。

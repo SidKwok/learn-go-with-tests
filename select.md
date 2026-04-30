@@ -1,19 +1,19 @@
 # Select
 
-**[You can find all the code for this chapter here](https://github.com/quii/learn-go-with-tests/tree/main/select)**
+**[本章的所有代码可以在这里找到](https://github.com/quii/learn-go-with-tests/tree/main/select)**
 
-You have been asked to make a function called `WebsiteRacer` which takes two URLs and "races" them by hitting them with an HTTP GET and returning the URL which returned first. If none of them return within 10 seconds then it should return an `error`.
+你被要求实现一个名为 `WebsiteRacer` 的函数，它接收两个 URL，对它们发起 HTTP GET 请求来"赛跑"，返回先响应的那个 URL。如果 10 秒内都没有任何一个返回，应该返回一个 `error`。
 
-For this, we will be using:
+为此，我们将使用：
 
-- `net/http` to make the HTTP calls.
-- `net/http/httptest` to help us test them.
-- goroutines.
-- `select` to synchronise processes.
+- `net/http` 来发起 HTTP 调用。
+- `net/http/httptest` 帮我们做测试。
+- goroutine。
+- `select` 来同步进程。
 
-## Write the test first
+## 先写测试
 
-Let's start with something naive to get us going.
+我们从一些朴素的方式入手开始。
 
 ```go
 func TestRacer(t *testing.T) {
@@ -29,13 +29,13 @@ func TestRacer(t *testing.T) {
 }
 ```
 
-We know this isn't perfect and has problems, but it's a start. It's important not to get too hung-up on getting things perfect first time.
+我们知道这并不完美，存在一些问题，但这是一个起点。重要的是不要太执着于一开始就把事情做到完美。
 
-## Try to run the test
+## 尝试运行测试
 
 `./racer_test.go:14:9: undefined: Racer`
 
-## Write the minimal amount of code for the test to run and check the failing test output
+## 写最少的代码让测试能跑起来，并检查失败的测试输出
 
 ```go
 func Racer(a, b string) (winner string) {
@@ -45,7 +45,7 @@ func Racer(a, b string) (winner string) {
 
 `racer_test.go:25: got '', want 'http://www.quii.dev'`
 
-## Write enough code to make it pass
+## 写足够的代码让它通过
 
 ```go
 func Racer(a, b string) (winner string) {
@@ -65,29 +65,29 @@ func Racer(a, b string) (winner string) {
 }
 ```
 
-For each URL:
+对于每个 URL：
 
-1. We use `time.Now()` to record just before we try and get the `URL`.
-1. Then we use [`http.Get`](https://golang.org/pkg/net/http/#Client.Get) to try and perform an HTTP `GET` request against the `URL`. This function returns an [`http.Response`](https://golang.org/pkg/net/http/#Response) and an `error` but so far we are not interested in these values.
-1. `time.Since` takes the start time and returns a `time.Duration` of the difference.
+1. 我们用 `time.Now()` 记录在尝试请求 `URL` 之前的时间。
+1. 然后用 [`http.Get`](https://golang.org/pkg/net/http/#Client.Get) 对 `URL` 发起一个 HTTP `GET` 请求。这个函数返回一个 [`http.Response`](https://golang.org/pkg/net/http/#Response) 和一个 `error`，但目前我们对这些值还不感兴趣。
+1. `time.Since` 接受开始时间，返回两者差值的 `time.Duration`。
 
-Once we have done this we simply compare the durations to see which is the quickest.
+做完这些之后，我们只需要比较两个时长，看哪个更快。
 
-### Problems
+### 问题
 
-This may or may not make the test pass for you. The problem is we're reaching out to real websites to test our own logic.
+测试结果可能让你通过，也可能不会。问题在于我们正在访问真实的网站来测试我们自己的逻辑。
 
-Testing code that uses HTTP is so common that Go has tools in the standard library to help you test it.
+测试使用 HTTP 的代码非常常见，所以 Go 在标准库中提供了帮你测试它的工具。
 
-In the mocking and dependency injection chapters, we covered how ideally we don't want to be relying on external services to test our code because they can be
+在 mock 和依赖注入的章节里，我们讲过：理想情况下，我们不希望依赖外部服务来测试自己的代码，因为它们可能：
 
-- Slow
-- Flaky
-- Can't test edge cases
+- 慢
+- 不稳定
+- 没办法测边界情况
 
-In the standard library, there is a package called [`net/http/httptest`](https://golang.org/pkg/net/http/httptest/) which enables users to easily create a mock HTTP server.
+标准库里有一个叫做 [`net/http/httptest`](https://golang.org/pkg/net/http/httptest/) 的包，让用户可以轻松创建一个 mock HTTP 服务器。
 
-Let's change our tests to use mocks so we have reliable servers to test against that we can control.
+让我们改一下测试，用 mock 来获得可靠且可控的服务器进行测试。
 
 ```go
 func TestRacer(t *testing.T) {
@@ -116,23 +116,23 @@ func TestRacer(t *testing.T) {
 }
 ```
 
-The syntax may look a bit busy but just take your time.
+语法看起来可能有点繁琐，但慢慢看就好。
 
-`httptest.NewServer` takes an `http.HandlerFunc` which we are sending in via an _anonymous function_.
+`httptest.NewServer` 接受一个 `http.HandlerFunc`，我们通过一个 _匿名函数_ 把它传进去。
 
-`http.HandlerFunc` is a type that looks like this: `type HandlerFunc func(ResponseWriter, *Request)`.
+`http.HandlerFunc` 是一个类型，长得像这样：`type HandlerFunc func(ResponseWriter, *Request)`。
 
-All it's really saying is it needs a function that takes a `ResponseWriter` and a `Request`, which is not too surprising for an HTTP server.
+它真正在表达的就是：它需要一个接受 `ResponseWriter` 和 `Request` 的函数，对一个 HTTP 服务器来说这并不令人意外。
 
-It turns out there's really no extra magic here, **this is also how you would write a _real_ HTTP server in Go**. The only difference is we are wrapping it in an `httptest.NewServer` which makes it easier to use with testing, as it finds an open port to listen on and then you can close it when you're done with your test.
+事实上这里没有什么额外的魔法，**这也是你在 Go 中编写一个 _真实_ HTTP 服务器的方式**。唯一的区别是我们用 `httptest.NewServer` 把它包了一层，这样在测试中使用起来更方便：它会找一个空闲端口来监听，测试结束后你可以关闭它。
 
-Inside our two servers, we make the slow one have a short `time.Sleep` when we get a request to make it slower than the other one. Both servers then write an `OK` response with `w.WriteHeader(http.StatusOK)` back to the caller.
+在我们的两个服务器内部，我们让慢的那个在收到请求时执行一个短暂的 `time.Sleep`，这样它就比另一个慢。两个服务器都会通过 `w.WriteHeader(http.StatusOK)` 返回一个 `OK` 响应给调用方。
 
-If you re-run the test it will definitely pass now and should be faster. Play with these sleeps to deliberately break the test.
+如果你重新运行测试，它现在肯定会通过，并且应该更快了。可以试着调一下这些 sleep，故意让测试失败看看。
 
-## Refactor
+## 重构
 
-We have some duplication in both our production code and test code.
+我们的生产代码和测试代码里都有一些重复。
 
 ```go
 func Racer(a, b string) (winner string) {
@@ -153,7 +153,7 @@ func measureResponseTime(url string) time.Duration {
 }
 ```
 
-This DRY-ing up makes our `Racer` code a lot easier to read.
+这种 DRY 处理让我们的 `Racer` 代码更易读。
 
 ```go
 func TestRacer(t *testing.T) {
@@ -183,24 +183,24 @@ func makeDelayedServer(delay time.Duration) *httptest.Server {
 }
 ```
 
-We've refactored creating our fake servers into a function called `makeDelayedServer` to move some uninteresting code out of the test and reduce repetition.
+我们把创建假服务器的逻辑重构成了一个名为 `makeDelayedServer` 的函数，把一些不重要的代码从测试里挪出去，并减少重复。
 
 ### `defer`
 
-By prefixing a function call with `defer` it will now call that function _at the end of the containing function_.
+通过在函数调用前加上 `defer`，它会在 _所在函数结束时_ 调用那个函数。
 
-Sometimes you will need to clean up resources, such as closing a file or in our case closing a server so that it does not continue to listen to a port.
+有时候你需要清理资源，比如关闭一个文件，或者在我们的例子里，关闭一个服务器，这样它就不会继续监听端口。
 
-You want this to execute at the end of the function, but keep the instruction near where you created the server for the benefit of future readers of the code.
+你希望它在函数结束时执行，但又希望让指令靠近创建服务器的地方，方便后来阅读代码的人理解。
 
-Our refactoring is an improvement and is a reasonable solution given the Go features covered so far, but we can make the solution simpler.
+我们的重构是个改进，并且就目前覆盖到的 Go 特性来说算是一个合理的方案，但我们可以让方案更简单。
 
-### Synchronising processes
+### 同步进程
 
-- Why are we testing the speeds of the websites one after another when Go is great at concurrency? We should be able to check both at the same time.
-- We don't really care about _the exact response times_ of the requests, we just want to know which one comes back first.
+- 当 Go 这么擅长并发的时候，我们为什么要一个接一个地测试网站速度？我们应该能同时检查两个。
+- 我们其实并不关心请求的 _确切响应时间_，我们只想知道哪个先回来。
 
-To do this, we're going to introduce a new construct called `select` which helps us synchronise processes really easily and clearly.
+为了做到这一点，我们要引入一个新的语法结构 `select`，它能帮我们非常简单清晰地同步进程。
 
 ```go
 func Racer(a, b string) (winner string) {
@@ -224,37 +224,36 @@ func ping(url string) chan struct{} {
 
 #### `ping`
 
-We have defined a function `ping` which creates a `chan struct{}` and returns it.
+我们定义了一个 `ping` 函数，它创建一个 `chan struct{}` 并返回它。
 
-In our case, we don't _care_ what type is sent to the channel, _we just want to signal we are done_ and closing the channel works perfectly!
+在我们这里，我们 _不关心_ 往 channel 里发送的是什么类型，_我们只是想发出一个完成信号_，关闭这个 channel 完美地达成了这个目的！
 
-Why `struct{}` and not another type like a `bool`? Well, a `chan struct{}` is the smallest data type available from a memory perspective so we
-get no allocation versus a `bool`. Since we are closing and not sending anything on the chan, why allocate anything?
+为什么用 `struct{}` 而不是其他类型，比如 `bool`？因为从内存角度看 `chan struct{}` 是最小的可用数据类型，相比 `bool`，它不会有内存分配。既然我们是关闭 channel 而不是往里发送任何东西，那为什么要分配任何东西呢？
 
-Inside the same function, we start a goroutine which will send a signal into that channel once we have completed `http.Get(url)`.
+在同一个函数内部，我们启动了一个 goroutine，它会在 `http.Get(url)` 完成之后向那个 channel 发送一个信号。
 
-##### Always `make` channels
+##### 总是用 `make` 创建 channel
 
-Notice how we have to use `make` when creating a channel; rather than say `var ch chan struct{}`. When you use `var` the variable will be initialised with the "zero" value of the type. So for `string` it is `""`, `int` it is 0, etc.
+注意我们在创建 channel 时必须使用 `make`，而不是写 `var ch chan struct{}`。当你使用 `var` 时，变量会被初始化为该类型的"零值"。所以对于 `string` 是 `""`，对于 `int` 是 0，等等。
 
-For channels the zero value is `nil` and if you try and send to it with `<-` it will block forever because you cannot send to `nil` channels
+对于 channel，零值是 `nil`，如果你试图用 `<-` 向它发送，会永远阻塞，因为你不能向 `nil` 的 channel 发送。
 
-[You can see this in action in The Go Playground](https://play.golang.org/p/IIbeAox5jKA)
+[你可以在 Go Playground 中实际看到这一点](https://play.golang.org/p/IIbeAox5jKA)
 #### `select`
 
-You'll recall from the concurrency chapter that you can wait for values to be sent to a channel with `myVar := <-ch`. This is a _blocking_ call, as you're waiting for a value.
+你应该还记得在并发那一章里，你可以用 `myVar := <-ch` 等待一个值被发送到 channel。这是一个 _阻塞_ 调用，因为你在等一个值。
 
-`select` allows you to wait on _multiple_ channels. The first one to send a value "wins" and the code underneath the `case` is executed.
+`select` 让你可以在 _多个_ channel 上等待。第一个发送值过来的"获胜"，对应 `case` 下的代码会被执行。
 
-We use `ping` in our `select` to set up two channels, one for each of our `URL`s. Whichever one writes to its channel first will have its code executed in the `select`, which results in its `URL` being returned (and being the winner).
+我们在 `select` 中使用 `ping` 来设置两个 channel，每个 `URL` 对应一个。先写到自己 channel 的那个，会让它在 `select` 中对应的代码被执行，结果就是它的 `URL` 被返回（成为获胜者）。
 
-After these changes, the intent behind our code is very clear and the implementation is actually simpler.
+经过这些修改，我们代码背后的意图非常清晰了，而且实现也确实更简单了。
 
-### Timeouts
+### 超时
 
-Our final requirement was to return an error if `Racer` takes longer than 10 seconds.
+我们最后一个需求是：如果 `Racer` 用时超过 10 秒，要返回一个错误。
 
-## Write the test first
+## 先写测试
 
 ```go
 func TestRacer(t *testing.T) {
@@ -292,15 +291,15 @@ func TestRacer(t *testing.T) {
 }
 ```
 
-We've made our test servers take longer than 10s to return to exercise this scenario and we are expecting `Racer` to return two values now, the winning URL (which we ignore in this test with `_`) and an `error`.
+我们让测试服务器超过 10 秒才返回，以验证这个场景，并期望 `Racer` 现在返回两个值：获胜的 URL（在这个测试里我们用 `_` 忽略它）和一个 `error`。
 
-Note that we've also handled the error return in our original test, we're using	`_` for now to ensure the tests will run.
+注意我们在原先的测试里也处理了 error 的返回值，我们暂时用 `_` 来确保测试能跑起来。
 
-## Try to run the test
+## 尝试运行测试
 
 `./racer_test.go:37:10: assignment mismatch: 2 variables but Racer returns 1 value`
 
-## Write the minimal amount of code for the test to run and check the failing test output
+## 写最少的代码让测试能跑起来，并检查失败的测试输出
 
 ```go
 func Racer(a, b string) (winner string, error error) {
@@ -313,11 +312,11 @@ func Racer(a, b string) (winner string, error error) {
 }
 ```
 
-Change the signature of `Racer` to return the winner and an `error`. Return `nil` for our happy cases.
+修改 `Racer` 的签名，让它返回获胜者和一个 `error`。在正常情况下返回 `nil`。
 
-The compiler will complain about your _first test_ only looking for one value so change that line to `got, err := Racer(slowURL, fastURL)`, knowing that we should check we _don't_ get an error in our happy scenario.
+编译器会抱怨你的 _第一个测试_ 只接收一个返回值，所以把那一行改成 `got, err := Racer(slowURL, fastURL)`，并知道我们应该检查在正常场景下我们 _不会_ 收到错误。
 
-If you run it now after 11 seconds it will fail.
+如果你现在运行它，11 秒后它会失败。
 
 ```
 --- FAIL: TestRacer (12.00s)
@@ -325,7 +324,7 @@ If you run it now after 11 seconds it will fail.
         racer_test.go:40: expected an error but didn't get one
 ```
 
-## Write enough code to make it pass
+## 写足够的代码让它通过
 
 ```go
 func Racer(a, b string) (winner string, error error) {
@@ -340,15 +339,15 @@ func Racer(a, b string) (winner string, error error) {
 }
 ```
 
-`time.After` is a very handy function when using `select`. Although it didn't happen in our case you can potentially write code that blocks forever if the channels you're listening on never return a value. `time.After` returns a `chan` (like `ping`) and will send a signal down it after the amount of time you define.
+`time.After` 在使用 `select` 时是一个非常方便的函数。虽然在我们这里不会发生，但你完全有可能写出永远阻塞的代码，如果你监听的 channel 永远不返回值的话。`time.After` 返回一个 `chan`（和 `ping` 类似），并在你定义的时间之后向其发送一个信号。
 
-For us this is perfect; if `a` or `b` manage to return they win, but if we get to 10 seconds then our `time.After` will send a signal and we'll return an `error`.
+对我们来说这很完美：如果 `a` 或 `b` 成功返回，它们获胜，但如果时间到了 10 秒，`time.After` 就会发送信号，我们会返回一个 `error`。
 
-### Slow tests
+### 慢测试
 
-The problem we have is that this test takes 10 seconds to run. For such a simple bit of logic, this doesn't feel great.
+我们碰到的问题是：这个测试要跑 10 秒。对这么简单的一段逻辑来说，感觉不太好。
 
-What we can do is make the timeout configurable. So in our test, we can have a very short timeout and then when the code is used in the real world it can be set to 10 seconds.
+我们可以做的是把超时变成可配置的。这样在测试中我们可以使用一个非常短的超时，而当代码在真实世界中使用时则可以设为 10 秒。
 
 ```go
 func Racer(a, b string, timeout time.Duration) (winner string, error error) {
@@ -363,14 +362,14 @@ func Racer(a, b string, timeout time.Duration) (winner string, error error) {
 }
 ```
 
-Our tests now won't compile because we're not supplying a timeout.
+我们的测试现在编译不通过，因为我们没有提供 timeout。
 
-Before rushing in to add this default value to both our tests let's _listen to them_.
+在着急把这个默认值加进我们两个测试之前，我们先 _听听测试在说什么_。
 
-- Do we care about the timeout in the "happy" test?
-- The requirements were explicit about the timeout.
+- 我们在"正常路径"测试中关心 timeout 吗？
+- 需求里明确提到了 timeout。
 
-Given this knowledge, let's do a little refactoring to be sympathetic to both our tests and the users of our code.
+基于这个认知，我们做一点重构，既照顾我们的测试，也照顾我们代码的使用者。
 
 ```go
 var tenSecondTimeout = 10 * time.Second
@@ -391,7 +390,7 @@ func ConfigurableRacer(a, b string, timeout time.Duration) (winner string, error
 }
 ```
 
-Our users and our first test can use `Racer` (which uses `ConfigurableRacer` under the hood) and our sad path test can use `ConfigurableRacer`.
+我们的用户和第一个测试可以使用 `Racer`（底层调用 `ConfigurableRacer`），而我们处理失败路径的测试可以直接使用 `ConfigurableRacer`。
 
 ```go
 func TestRacer(t *testing.T) {
@@ -432,16 +431,16 @@ func TestRacer(t *testing.T) {
 }
 ```
 
-I added one final check on the first test to verify we don't get an `error`.
+我在第一个测试里加了一个最后的检查，验证我们没有收到 `error`。
 
-## Wrapping up
+## 总结
 
 ### `select`
 
-- Helps you wait on multiple channels.
-- Sometimes you'll want to include `time.After` in one of your `cases` to prevent your system blocking forever.
+- 帮你在多个 channel 上等待。
+- 有时候你会想在某一个 `case` 中包含 `time.After`，以防止你的系统永远阻塞。
 
 ### `httptest`
 
-- A convenient way of creating test servers so you can have reliable and controllable tests.
-- Uses the same interfaces as the "real" `net/http` servers which is consistent and less for you to learn.
+- 一种创建测试服务器的便捷方式，让你的测试可靠且可控。
+- 使用与"真正的" `net/http` 服务器相同的接口，保持一致性，你需要学习的东西也更少。

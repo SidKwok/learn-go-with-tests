@@ -8,12 +8,12 @@
 
 [![Go Report Card](https://goreportcard.com/badge/github.com/quii/learn-go-with-tests)](https://goreportcard.com/report/github.com/quii/learn-go-with-tests)
 
-## Formats
+## 格式
 
 - [Gitbook](https://quii.gitbook.io/learn-go-with-tests)
-- [EPUB or PDF](https://github.com/quii/learn-go-with-tests/releases)
+- [EPUB 或 PDF](https://github.com/quii/learn-go-with-tests/releases)
 
-## Translations
+## 翻译版本
 
 - [中文](https://studygolang.gitbook.io/learn-go-with-tests)
 - [Português](https://larien.gitbook.io/aprenda-go-com-testes/)
@@ -25,157 +25,157 @@
 - [Nederlands](https://bobkosse.gitbook.io/leer-go-met-tests/)
 - [Tiếng Việt](https://sons-organization-15.gitbook.io/learn-go-with-tests)
 
-## Support me
+## 支持作者
 
-I am proud to offer this resource for free, but if you wish to give some appreciation:
+我很高兴能免费提供这份资源，但如果你想表达一些谢意：
 
-- [Tweet me @quii](https://twitter.com/quii)
+- [在 Twitter 上 @quii](https://twitter.com/quii)
 - <a rel="me" href="https://mastodon.cloud/@quii">Mastodon</a>
-- [Buy me a coffee :coffee:](https://www.buymeacoffee.com/quii)
-- [Sponsor me on GitHub](https://github.com/sponsors/quii)
+- [请我喝杯咖啡 :coffee:](https://www.buymeacoffee.com/quii)
+- [在 GitHub 上赞助我](https://github.com/sponsors/quii)
 
-## Why
+## 为什么写这本书
 
-* Explore the Go language by writing tests
-* **Get a grounding with TDD**. Go is a good language for learning TDD because it is a simple language to learn and testing is built-in
-* Be confident that you'll be able to start writing robust, well-tested systems in Go
-* [Watch a video, or read about why unit testing and TDD is important](why.md)
+* 通过编写测试来探索 Go 语言
+* **打好 TDD 的基础**。Go 是学习 TDD 的好语言，因为它语法简单易学，而且测试是内置的
+* 让你有信心开始用 Go 编写健壮的、有良好测试覆盖的系统
+* [看一段视频，或阅读为什么单元测试和 TDD 很重要](why.md)
 
-## Table of contents
+## 目录
 
-### Go fundamentals
+### Go 基础
 
-1. [Install Go](install-go.md) - Set up environment for productivity.
-2. [Hello, world](hello-world.md) - Declaring variables, constants, if/else statements, switch, write your first go program and write your first test. Sub-test syntax and closures.
-3. [Integers](integers.md) - Further Explore function declaration syntax and learn new ways to improve the documentation of your code.
-4. [Iteration](iteration.md) - Learn about `for` and benchmarking.
-5. [Arrays and slices](arrays-and-slices.md) - Learn about arrays, slices, `len`, varargs, `range` and test coverage.
-6. [Structs, methods & interfaces](structs-methods-and-interfaces.md) - Learn about `struct`, methods, `interface` and table driven tests.
-7. [Pointers & errors](pointers-and-errors.md) - Learn about pointers and errors.
-8. [Maps](maps.md) - Learn about storing values in the map data structure.
-9. [Dependency Injection](dependency-injection.md) - Learn about dependency injection, how it relates to using interfaces and a primer on io.
-10. [Mocking](mocking.md) - Take some existing untested code and use DI with mocking to test it.
-11. [Concurrency](concurrency.md) - Learn how to write concurrent code to make your software faster.
-12. [Select](select.md) - Learn how to synchronise asynchronous processes elegantly.
-13. [Reflection](reflection.md) - Learn about reflection
-14. [Sync](sync.md) - Learn some functionality from the sync package including `WaitGroup` and `Mutex`
-15. [Context](context.md) - Use the context package to manage and cancel long-running processes
-16. [Intro to property based tests](roman-numerals.md) - Practice some TDD with the Roman Numerals kata and get a brief intro to property based tests
-17. [Maths](math.md) - Use the `math` package to draw an SVG clock
-18. [Reading files](reading-files.md) - Read files and process them
-19. [Templating](html-templates.md) - Use Go's html/template package to render html from data, and also learn about approval testing
-20. [Generics](generics.md) - Learn how to write functions that take generic arguments and make your own generic data-structure
-21. [Revisiting arrays and slices with generics](revisiting-arrays-and-slices-with-generics.md) - Generics are very useful when working with collections. Learn how to write your own `Reduce` function and tidy up some common patterns.
+1. [安装 Go](install-go.md) - 搭建高效率的开发环境。
+2. [Hello, world](hello-world.md) - 声明变量和常量、if/else 语句、switch、写出你的第一个 Go 程序和第一个测试。子测试语法和闭包。
+3. [整数](integers.md) - 进一步探索函数声明语法，学习改善代码文档的新方式。
+4. [迭代](iteration.md) - 学习 `for` 和基准测试。
+5. [数组与切片](arrays-and-slices.md) - 学习数组、切片、`len`、变长参数、`range` 和测试覆盖率。
+6. [结构体、方法与接口](structs-methods-and-interfaces.md) - 学习 `struct`、方法、`interface` 和表驱动测试。
+7. [指针与错误](pointers-and-errors.md) - 学习指针和错误。
+8. [Maps](maps.md) - 学习把值存到 map 数据结构里。
+9. [依赖注入](dependency-injection.md) - 学习依赖注入，它与使用接口的关系，以及对 io 的初步介绍。
+10. [Mocking](mocking.md) - 拿一些已有的、没有测试的代码，使用 DI 配合 mock 来对它进行测试。
+11. [并发](concurrency.md) - 学习如何编写并发代码，让你的软件更快。
+12. [Select](select.md) - 学习如何优雅地同步异步流程。
+13. [反射](reflection.md) - 学习反射
+14. [Sync](sync.md) - 学习 sync 包中的一些功能，包括 `WaitGroup` 和 `Mutex`
+15. [Context](context.md) - 使用 context 包来管理和取消长时间运行的流程
+16. [基于属性的测试入门](roman-numerals.md) - 通过罗马数字 kata 练习一些 TDD，并简要介绍基于属性的测试
+17. [数学](math.md) - 使用 `math` 包绘制一个 SVG 时钟
+18. [读取文件](reading-files.md) - 读取文件并处理它们
+19. [模板](html-templates.md) - 使用 Go 的 html/template 包从数据渲染出 html，并学习审批测试（approval testing）
+20. [泛型](generics.md) - 学习如何编写接收泛型参数的函数，并构建你自己的泛型数据结构
+21. [用泛型重新审视数组与切片](revisiting-arrays-and-slices-with-generics.md) - 泛型在处理集合时非常有用。学习如何编写你自己的 `Reduce` 函数，并整理一些常见的模式。
 
-### Build an application
+### 构建一个应用
 
-Now that you have hopefully digested the _Go Fundamentals_ section you have a solid grounding of a majority of Go's language features and how to do TDD.
+希望你已经消化了 _Go 基础_ 部分，对 Go 大多数语言特性以及如何做 TDD 都有了扎实的基础。
 
-This next section will involve building an application.
+接下来这部分会涉及构建一个应用。
 
-Each chapter will iterate on the previous one, expanding the application's functionality as our product owner dictates.
+每一章都会在前一章的基础上迭代，按照我们产品负责人的要求扩展应用的功能。
 
-New concepts will be introduced to help facilitate writing great code but most of the new material will be learning what can be accomplished from Go's standard library.
+我们会引入新概念来帮助写出优秀的代码，但大部分新内容是学习如何用 Go 标准库去完成任务。
 
-By the end of this, you should have a strong grasp as to how to iteratively write an application in Go, backed by tests.
+到本章结束时，你应该能比较扎实地掌握如何在测试支持下迭代式地用 Go 编写一个应用。
 
-* [HTTP server](http-server.md) - We will create an application which listens to HTTP requests and responds to them.
-* [JSON, routing and embedding](json.md) - We will make our endpoints return JSON and explore how to do routing.
-* [IO and sorting](io.md) - We will persist and read our data from disk and we'll cover sorting data.
-* [Command line & project structure](command-line.md) - Support multiple applications from one code base and read input from command line.
-* [Time](time.md) - using the `time` package to schedule activities.
-* [WebSockets](websockets.md) - learn how to write and test a server that uses WebSockets.
+* [HTTP server](http-server.md) - 我们将创建一个监听 HTTP 请求并响应的应用。
+* [JSON、路由与嵌入](json.md) - 我们将让端点返回 JSON 并探索如何做路由。
+* [IO 与排序](io.md) - 我们将把数据持久化并从磁盘读取，还会涵盖数据排序。
+* [命令行与项目结构](command-line.md) - 在同一份代码库中支持多个应用，并从命令行读取输入。
+* [Time](time.md) - 使用 `time` 包来调度活动。
+* [WebSockets](websockets.md) - 学习如何编写并测试一个使用 WebSockets 的服务器。
 
-### Testing fundamentals
+### 测试基础
 
-Covering other subjects around testing.
+涵盖测试相关的其他主题。
 
-* [Introduction to acceptance tests](intro-to-acceptance-tests.md) - Learn how to write acceptance tests for your code, with a real-world example for gracefully shutting down a HTTP server
-* [Scaling acceptance tests](scaling-acceptance-tests.md) - Learn techniques to manage the complexity of writing acceptance tests for non-trivial systems.
-* [Working without mocks, stubs and spies](working-without-mocks.md) - Learn about how to use fakes and contracts to create more realistic and maintainable tests.
-* [Refactoring Checklist](refactoring-checklist.md) - Some discussion on what refactoring is, and some basic tips on how to do it.
+* [验收测试入门](intro-to-acceptance-tests.md) - 学习如何为你的代码编写验收测试，并通过一个真实例子展示如何优雅地关闭一个 HTTP 服务器
+* [扩展验收测试](scaling-acceptance-tests.md) - 学习一些技巧来管理为复杂系统编写验收测试时的复杂度。
+* [不使用 mock、stub 和 spy 的测试](working-without-mocks.md) - 学习如何使用 fake 与契约（contract）来创建更真实、更易维护的测试。
+* [重构清单](refactoring-checklist.md) - 讨论一下重构是什么，以及一些基本的重构技巧。
 
-### Questions and answers
+### 问与答
 
-I often run in to questions on the internets like
+我经常在网上遇到这样的问题：
 
-> How do I test my amazing function that does x, y and z
+> 我那个做了 x、y、z 的牛逼函数该怎么测？
 
-If you have such a question raise it as an issue on github and I'll try and find time to write a short chapter to tackle the issue. I feel like content like this is valuable as it is tackling people's _real_ questions around testing.
+如果你有这样的问题，可以在 github 上提个 issue，我会尽量抽时间写一篇简短的章节来解决这个问题。我觉得这种内容很有价值，因为它解决的是人们在测试方面的 _真实_ 疑问。
 
-* [OS exec](os-exec.md) - An example of how we can reach out to the OS to execute commands to fetch data and keep our business logic testable/
-* [Error types](error-types.md) - Example of creating your own error types to improve your tests and make your code easier to work with.
-* [Context-aware Reader](context-aware-reader.md) - Learn how to TDD augmenting `io.Reader` with cancellation. Based on [Context-aware io.Reader for Go](https://pace.dev/blog/2020/02/03/context-aware-ioreader-for-golang-by-mat-ryer)
-* [Revisiting HTTP Handlers](http-handlers-revisited.md) - Testing HTTP handlers seems to be the bane of many a developer's existence. This chapter explores the issues around designing handlers correctly.
+* [OS exec](os-exec.md) - 一个例子，展示我们如何借助操作系统执行命令来获取数据，同时保持业务逻辑可测。
+* [错误类型](error-types.md) - 创建你自己的错误类型，以改善你的测试，让你的代码更易使用。
+* [感知 context 的 Reader](context-aware-reader.md) - 学习如何用 TDD 给 `io.Reader` 增加取消能力。基于 [Context-aware io.Reader for Go](https://pace.dev/blog/2020/02/03/context-aware-ioreader-for-golang-by-mat-ryer)
+* [重新审视 HTTP Handlers](http-handlers-revisited.md) - 测试 HTTP handler 似乎让许多开发者倍感痛苦。本章探讨了正确设计 handler 的相关问题。
 
-### Meta / Discussion
+### 杂谈 / 讨论
 
-* [Why unit tests and how to make them work for you](why.md) - Watch a video, or read about why unit testing and TDD is important
-* [Anti-patterns](anti-patterns.md) - A short chapter on TDD and unit testing anti-patterns
+* [为什么要做单元测试，以及如何让它真的为你所用](why.md) - 看一段视频，或阅读为什么单元测试和 TDD 很重要
+* [反模式](anti-patterns.md) - 一篇关于 TDD 和单元测试反模式的简短章节
 
-## Contributing
+## 贡献
 
-* _This project is work in progress_ If you would like to contribute, please do get in touch.
-* Read [contributing.md](contributing.md) for guidelines
-* Any ideas? Create an issue
+* _这是一个进行中的项目_ 如果你想贡献，请联系我。
+* 阅读 [contributing.md](contributing.md) 了解贡献指南
+* 有什么想法？开个 issue
 
-## Background
+## 背景
 
-I have some experience introducing Go to development teams and have tried different approaches as to how to grow a team from some people curious about Go into highly effective writers of Go systems.
+我有一些向开发团队介绍 Go 的经验，也尝试过不同的方式，去把一群对 Go 感到好奇的人培养成高效编写 Go 系统的团队。
 
-### What didn't work
+### 哪些方法没有效果
 
-#### Read _the_ book
+#### 读 _那本_ 书
 
-An approach we tried was to take [the blue book](https://www.amazon.co.uk/Programming-Language-Addison-Wesley-Professional-Computing/dp/0134190440) and every week discuss the next chapter along with the exercises.
+我们尝试过的一种方式是拿起 [蓝皮书](https://www.amazon.co.uk/Programming-Language-Addison-Wesley-Professional-Computing/dp/0134190440)，每周讨论下一章以及相应的练习。
 
-I love this book but it requires a high level of commitment. The book is very detailed in explaining concepts, which is obviously great but it means that the progress is slow and steady - this is not for everyone.
+我很喜欢这本书，但它需要很高的投入度。这本书在解释概念上非常详细，这显然很好，但意味着进度很缓慢——这并不适合所有人。
 
-I found that whilst a small number of people would read chapter X and do the exercises, many people didn't.
+我发现，虽然有一小部分人会读完第 X 章并完成练习，但很多人没有。
 
-#### Solve some problems
+#### 解决一些问题
 
-Katas are fun but they are usually limited in their scope for learning a language; you're unlikely to use goroutines to solve a kata.
+Kata 很有意思，但它们在学习一门语言时通常涉及面有限；你不太可能用 goroutine 去解一个 kata。
 
-Another problem is when you have varying levels of enthusiasm. Some people just learn way more of the language than others and when demonstrating what they have done end up confusing people with features the others are not familiar with.
+另一个问题是，当大家热情程度不一样时，有些人会比其他人学得更深，他们演示自己做的东西时往往会用到别人不熟悉的特性，把人搞糊涂。
 
-This ends up making the learning feel quite _unstructured_ and _ad hoc_.
+这会让整个学习过程感觉很 _无序_、_零散_。
 
-### What did work
+### 哪种方法有效
 
-By far the most effective way was by slowly introducing the fundamentals of the language by reading through [go by example](https://gobyexample.com/), exploring them with examples and discussing them as a group. This was a more interactive approach than "read chapter x for homework".
+到目前为止最有效的方式，是通过阅读 [go by example](https://gobyexample.com/) 慢慢介绍语言的基础，用例子去探索它们，并以小组的形式进行讨论。这比"回家读第 X 章"要更具互动性。
 
-Over time the team gained a solid foundation of the _grammar_ of the language so we could then start to build systems.
+久而久之，团队就在语言的 _语法_ 上打下了坚实的基础，于是我们可以开始构建系统了。
 
-This to me seems analogous to practicing scales when trying to learn guitar.
+这对我来说就好像学吉他时反复练音阶一样。
 
-It doesn't matter how artistic you think you are, you are unlikely to write good music without understanding the fundamentals and practicing the mechanics.
+不管你觉得自己有多艺术，如果不理解基础并多练习基本功，你不太可能写出好作品。
 
-### What works for me
+### 对我而言什么有效
 
-When _I_ learn a new programming language I usually start by messing around in a REPL but eventually, I need more structure.
+当 _我_ 学一门新的编程语言时，通常会先在 REPL 里折腾一下，但最终我需要更多的结构。
 
-What I like to do is explore concepts and then solidify the ideas with tests. Tests verify the code I write is correct and documents the feature I have learned.
+我喜欢的做法是先探索概念，再用测试把这些想法固化下来。测试既能验证我写的代码是否正确，也能记录我学到的特性。
 
-Taking my experience of learning with a group and my own personal way I am going to try and create something that hopefully proves useful to other teams. Learning the fundamentals by writing small tests so that you can then take your existing software design skills and ship some great systems.
+结合我和小组学习的经验，以及我个人的方式，我打算尝试做出一些希望能对其他团队有帮助的东西。通过编写小测试来学习基础，然后你就可以发挥你已有的软件设计技能，交付一些很棒的系统。
 
-## Who this is for
+## 这本书适合谁
 
-* People who are interested in picking up Go.
-* People who already know some Go, but want to explore testing with TDD.
+* 对学 Go 感兴趣的人。
+* 已经了解一些 Go，但想用 TDD 探索测试的人。
 
-## What you'll need
+## 你需要准备什么
 
-* A computer!
-* [Installed Go](https://golang.org/)
-* A text editor
-* Some experience with programming. Understanding of concepts like `if`, variables, functions etc.
-* Comfortable using the terminal
+* 一台电脑！
+* [安装好 Go](https://golang.org/)
+* 一个文本编辑器
+* 一些编程经验。理解 `if`、变量、函数等概念。
+* 能熟练使用终端
 
-## Feedback
+## 反馈
 
-* Add issues/submit PRs [here](https://github.com/quii/learn-go-with-tests) or [tweet me @quii](https://twitter.com/quii)
+* 在 [这里](https://github.com/quii/learn-go-with-tests) 提 issue 或 PR，或者 [在 Twitter 上 @quii](https://twitter.com/quii)
 
-[MIT license](LICENSE.md)
+[MIT 许可证](LICENSE.md)
 
-[Logo is by egonelbre](https://github.com/egonelbre) What a star!
+[Logo 由 egonelbre 制作](https://github.com/egonelbre) 真厉害！

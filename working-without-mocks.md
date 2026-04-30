@@ -1,38 +1,38 @@
-# Working without mocks, stubs and spies
+# 不使用 mock、stub 和 spy 进行工作
 
-This chapter delves into the world of test doubles and explores how they influence the testing and development process. We'll uncover the limitations of traditional mocks, stubs, and spies and introduce a more efficient and adaptable approach using fakes and contracts.
+本章深入探讨测试替身的世界，并探索它们如何影响测试和开发过程。我们将揭示传统 mock、stub 和 spy 的局限性，并介绍一种使用 fake 和契约（contract）的更高效、更具适应性的方法。
 
 ## tl;dr
 
-- Mocks, spies and stubs encourage you to encode assumptions of the behaviour of your dependencies ad-hocly in each test.
-- These assumptions are usually not validated beyond manual checking, so they threaten your test suite's usefulness.
-- Fakes and contracts give us a more sustainable method for creating test doubles with validated assumptions and better reuse than the alternatives.
+- mock、spy 和 stub 鼓励你在每个测试中临时编码你对依赖行为的假设。
+- 这些假设通常除了人工检查之外没有得到验证，因此威胁到测试套件的有用性。
+- fake 和契约给我们提供了一种更可持续的方法来创建测试替身，假设经过验证，比替代方案有更好的复用性。
 
-This is a longer chapter than normal, so as a palette cleanser, you should explore an [example repo first](https://github.com/quii/go-fakes-and-contracts). In particular, check out the [planner test](https://github.com/quii/go-fakes-and-contracts/blob/main/domain/planner/planner_test.go).
+这一章比平常长，所以作为开胃菜，你应该 [先探索一个示例仓库](https://github.com/quii/go-fakes-and-contracts)。特别是，看看 [planner test](https://github.com/quii/go-fakes-and-contracts/blob/main/domain/planner/planner_test.go)。
 
 ---
 
-In [Mocking,](https://quii.gitbook.io/learn-go-with-tests/go-fundamentals/mocking) we learned how mocks, stubs and spies are useful tools for controlling and inspecting the behaviour of units of code in conjunction with [Dependency Injection](https://quii.gitbook.io/learn-go-with-tests/go-fundamentals/dependency-injection).
+在 [Mocking](https://quii.gitbook.io/learn-go-with-tests/go-fundamentals/mocking) 中，我们学到了 mock、stub 和 spy 是结合 [依赖注入](https://quii.gitbook.io/learn-go-with-tests/go-fundamentals/dependency-injection) 使用、用于控制和检查代码单元行为的有用工具。
 
-As a project grows, though, these kinds of test doubles *can* become a maintenance burden, and we should instead look to other design ideas to keep our system easy to reason and test.
+不过随着项目的增长，这类测试替身 *可能* 变成维护负担，我们应该转而寻找其他设计思路，让我们的系统易于推理和测试。
 
-**Fakes** and **contracts** allow developers to test their systems with more realistic scenarios, improve local development experience with faster and more accurate feedback loops, and manage the complexity of evolving dependencies.
+**Fake** 和**契约**让开发者能够用更现实的场景测试他们的系统，通过更快、更准确的反馈循环改善本地开发体验，并管理依赖演进的复杂性。
 
-### A primer on test doubles
+### 测试替身入门
 
-It's easy to roll your eyes when people like me are pedantic about the nomenclature of test doubles, but the distinctive kinds of test doubles help us talk about this topic and the trade-offs we're making with clarity.
+当像我这样的人对测试替身的命名学究气十足时，你很容易翻白眼，但区分不同种类的测试替身有助于我们清晰地讨论这个话题以及我们正在做的权衡。
 
-**Test doubles** is the collective noun for the different ways you can construct dependencies that you can control for a **subject under test** **(SUT)**, the thing you're testing. Test doubles are often a better alternative than using the real dependency as it can avoid issues like
+**测试替身**是各种构建可控依赖的方式的统称，这些依赖供 **被测对象 (SUT)** —— 也就是你正在测试的东西 —— 使用。测试替身通常是比使用真实依赖更好的替代方案，因为它可以避免诸如下列问题：
 
-- Needing the internet to use an API
-- Avoid latency and other performance issues
-- Unable to exercise non-happy path cases
-- Decoupling your build from another team's.
-  - You wouldn't want to prevent deployments if an engineer in another team accidentally shipped a bug
+- 需要互联网才能使用某 API
+- 避免延迟和其他性能问题
+- 无法触发非 happy-path 的情况
+- 把你的构建与另一个团队的构建解耦
+  - 你不希望因为另一个团队的工程师不小心提交了一个 bug 而阻止部署
 
-In Go, you'll typically model a dependency with an interface, then implement your version to control the behaviour in a test. **Here are the kinds of test doubles covered in this post**.
+在 Go 中，你通常用接口建模一个依赖，然后实现你自己的版本来在测试中控制行为。**这里是本文涵盖的几种测试替身**。
 
-Given this interface of a hypothetical recipe API:
+给定一个假设的 recipe API 的接口：
 
 ```go
 type RecipeBook interface {
@@ -41,9 +41,9 @@ type RecipeBook interface {
 }
 ```
 
-We can construct test doubles in various ways, depending on how we're trying to test something that uses a `RecipeBook`.
+我们可以用各种方式构造测试替身，取决于我们如何尝试测试某个使用 `RecipeBook` 的东西。
 
-**Stubs** return the same canned data every time they are called
+**Stub** 每次被调用都返回相同的预设数据
 
 ```go
 type StubRecipeStore struct {
@@ -65,7 +65,7 @@ stubStore := &StubRecipeStore{
 }
 ```
 
-**Spies** are like stubs but also record how they were called so the test can assert that the SUT calls the dependencies in specific ways.
+**Spy** 类似于 stub，但还会记录它们是怎样被调用的，从而让测试可以断言 SUT 以特定方式调用了依赖。
 
 ```go
 type SpyRecipeStore struct {
@@ -90,7 +90,7 @@ sut.DoStuff()
 // now we can check the store had the right recipes added by inspectiong spyStore.AddCalls
 ```
 
-**Mocks** are like a superset of the above, but they only respond with specific data to specific invocations. If the SUT calls the dependencies with the wrong arguments, it'll typically panic.
+**Mock** 是上述的一种超集，但它们只对特定的调用响应特定的数据。如果 SUT 用错误的参数调用依赖，它通常会 panic。
 
 ```go
 // set up the mock with expected calls
@@ -100,7 +100,7 @@ mockStore.WhenCalledWith(someRecipes).Return(someError)
 // when the sut uses the dependency, if it doesn't call it with someRecipes, usually mocks will panic
 ```
 
-**Fakes** are like a genuine version of the dependency but implemented in a way more suited to fast running, reliable tests and local development. Often, your system will have some abstraction around persistence, which will be implemented with a database, but in your tests, you could use an in-memory fake instead.
+**Fake** 是依赖的真实版本，但实现方式更适合快速运行、可靠的测试和本地开发。通常你的系统会有某种围绕持久化的抽象，由数据库实现，但在测试中，你可以使用一个内存 fake 来代替。
 
 ```go
 type FakeRecipeStore struct {
@@ -117,81 +117,81 @@ func (f *FakeRecipeStore) AddRecipes(r ...Recipe) error {
 }
 ```
 
-Fakes are useful because:
+Fake 之所以有用是因为：
 
-- Their statefulness is useful for tests involving multiple subjects and invocations, such as an integration test. Managing state with the other kinds of test doubles is generally discouraged.
-- If they have a sensible API, offer a more natural way of asserting state. Rather than spying on specific calls to a dependency, you can query its final state to see if the real effect you want happened.
-- You can use them to run your application locally without spinning up or depending on real dependencies. This will usually improve developer experience (DX) because the fakes will be faster and more reliable than their real counterparts.
+- 它们的有状态性对涉及多个对象和多次调用的测试很有用，比如集成测试。一般不鼓励用其他类型的测试替身管理状态。
+- 如果它们有合理的 API，能提供更自然的方式断言状态。比起监视对依赖的特定调用，你可以查询其最终状态以查看你想要的真实效果是否发生。
+- 你可以用它们在本地运行你的应用，而无需启动或依赖真实的依赖。这通常会改善开发者体验 (DX)，因为 fake 会比它们的真实对应物更快、更可靠。
 
-Spies, Mocks and Stubs can typically be autogenerated from an interface using a tool or using reflection. However, as Fakes encode the behaviour of the dependency you're trying to make a double for, you'll have to write at least most of the implementation yourself
+Spy、Mock 和 Stub 通常可以使用工具或反射从接口自动生成。然而，由于 Fake 编码了你试图替身的依赖的行为，你必须自己写至少大部分实现
 
-## The problem with stubs and mocks
+## stub 和 mock 的问题
 
-In [Anti-patterns,](https://quii.gitbook.io/learn-go-with-tests/meta/anti-patterns) there are details on how using test doubles must be done carefully. Creating a messy test suite is easy if you don't use them tastefully. As a project grows though, other problems can creep in.
+在 [Anti-patterns](https://quii.gitbook.io/learn-go-with-tests/meta/anti-patterns) 中，有关于使用测试替身必须小心的细节。如果你不能优雅地使用它们，就很容易创建一个混乱的测试套件。但随着项目的成长，其他问题可能会悄悄出现。
 
-When you encode behaviour into test doubles, you are adding your assumptions as to how the real dependency works into the test. If there is a discrepancy between the behaviour of the double and the real dependency, or if one happens over time (e.g. the real dependency changes, which *has* to be expected), **you may have passing tests but failing software**.
+当你把行为编码到测试替身中时，你就把你对真实依赖如何工作的假设加入到测试中。如果 double 的行为和真实依赖的行为之间有差异，或者随着时间推移产生了差异（例如，真实依赖发生变化，这是 _必须_ 预期的），**你可能有通过的测试，但软件却失败**。
 
-Stubs, spies and mocks, in particular, represent other challenges, mainly as a project grows. To illustrate this, I will describe a project I worked on.
+Stub、spy 和 mock 尤其会带来其他挑战，主要是当项目增长时。为了说明这一点，我会描述我曾经工作过的一个项目。
 
-### Example case study
+### 示例案例研究
 
-*Some details are changed compared to what really happened, and it has been simplified greatly for brevity. **Any resemblance to actual persons, living or dead, is purely coincidental.***
+*与实际发生的相比，一些细节有所改变，并为简洁性而大大简化。**如有雷同，纯属巧合。***
 
-I worked on a system that had to call **six** different APIs, written and maintained by other teams across the globe. They were _REST-ish_, and the job of our system was to create and manage resources in them all. When we called all the APIs correctly for each system, _magic_ (business value) would happen.
+我曾参与过一个系统，它必须调用全球各团队编写和维护的**六个**不同 API。它们是 _类 REST_ 的，而我们系统的工作是在所有这些系统中创建和管理资源。当我们正确地为每个系统调用所有 API 时，_魔法_（业务价值）就会发生。
 
-Our application was structured in a hexagonal / ports & adapters architecture. Our domain code was decoupled from the mess of the outside world we had to deal with. Our "adapters" were, in effect, Go clients that encapsulated calling the various APIs.
+我们的应用按六边形 / 端口与适配器架构构建。我们的领域代码与必须处理的外部世界混乱解耦。我们的"适配器"实际上是封装了对各种 API 调用的 Go 客户端。
 
 ![the system architecture](https://i.imgur.com/6bqovl8.png)
 
-#### Troubles
+#### 问题
 
-Naturally, we took a test-driven approach to building the system. We leveraged stubs to simulate the downstream API responses and had a handful of acceptance tests to reassure ourselves everything should work.
+自然地，我们采取了测试驱动的方式构建这个系统。我们利用 stub 模拟下游 API 响应，并有少量验收测试让我们确信一切应该可以工作。
 
-The APIs we had to call for the most part, though, were:
+不过，我们必须调用的 API 在大多数情况下：
 
-- poorly documented
-- run by teams who had lots of other conflicting priorities and pressures, so it wasn't easy to get time with them
-- often lacking test coverage, so would break in fun and unexpected ways, regress, etc
-- were still being built and evolved
+- 文档很差
+- 由有许多其他冲突优先级和压力的团队运营，因此不容易和他们对接时间
+- 经常缺乏测试覆盖率，所以会以有趣和意外的方式坏掉、回归等等
+- 还在被构建和演进
 
-This led to **a lot of flaky tests** and a lot of headaches. A _significant_ amount of our time was spent pinging lots of busy people on Slack trying to get answers as to:
+这导致**大量不稳定测试**和大量头疼。我们 _很大一部分_ 的时间花在 Slack 上联系大量忙碌的人，试图获得以下问题的答案：
 
-- Why has the API started doing `x`?
-- Why is the API doing something different when we do `y`?
+- 为什么 API 开始做 `x`？
+- 为什么我们做 `y` 时 API 在做不同的事情？
 
-Software development is rarely as straightforward as you'd hope; it's a learning exercise. We had to continuously learn how the external APIs worked. As we learned and adapted, we had to update and add to our test suite, in particular, **changing our stubs to match the actual behaviour of the APIs.**
+软件开发很少像你希望的那样直接；它是一个学习的过程。我们必须不断学习外部 API 是如何工作的。当我们学习并适应时，我们必须更新和增加我们的测试套件，特别是**改变 stub 来匹配 API 的实际行为**。
 
-The trouble is, this took up much of our time and led to more mistakes. When your knowledge of a dependency changes, you must find the **right** test to update to change the stub's behaviour, and there's a real risk of neglecting to update it in other stubs representing the same dependency.
+问题是，这占用了我们大量的时间，并导致更多错误。当你对依赖的认知发生变化时，你必须找到 **正确** 的测试去更新以改变 stub 的行为，并且有真正的风险忽略在表示同一依赖的其他 stub 中更新它。
 
-#### Test strategy
+#### 测试策略
 
-On top of this, as the system was growing and requirements were changing, we realised that our test strategy was unsuitable. We had a handful of acceptance tests that would give us confidence the system as a whole worked and then a large number of unit tests for the various packages we wrote.
+除此之外，随着系统的增长和需求的变化，我们意识到我们的测试策略不合适。我们有少量验收测试给我们对系统整体工作的信心，然后是对我们写的各个包的大量单元测试。
 
-<u>We needed something in between</u>; we often wanted to change the behaviour of various system parts together **but not have to spin up the *entire* system for an acceptance test**. Unit tests alone did not give us confidence that the various components worked as a whole; they couldn't tell (and verify) the story of what we were trying to achieve. **We wanted integration tests**.
+<u>我们需要介于两者之间的东西</u>；我们经常想要一起改变系统各部分的行为，**但不必为了一个验收测试而启动 _整个_ 系统**。仅靠单元测试无法给我们组件作为整体工作的信心；它们无法讲述（和验证）我们试图实现的故事。**我们想要集成测试**。
 
-#### Integration tests
+#### 集成测试
 
-Integration tests prove that two or more "units" work correctly when combined (or integrated!). These units can be the code you write or the code you write integrated with someone else's code, such as a database.
+集成测试证明两个或多个"单元"在组合（或集成！）时正确工作。这些单元可以是你写的代码，或你写的代码与别人代码的集成，比如数据库。
 
-As a project grows, you want to write more integration tests to prove large parts of your system "hang together" - or integrates!
+随着项目的增长，你想写更多的集成测试，证明系统的大部分能"挂在一起" —— 或集成！
 
-You may be tempted to write more black-box acceptance tests, but they quickly become costly regarding your build time and maintenance costs. It can be too expensive to spin up an entire system when you only want to check a *subset* of the system (but not just a single unit) behaves how it should. Writing expensive black-box tests for every bit of functionality you do is not sustainable for larger systems.
+你可能想写更多的黑盒验收测试，但它们在构建时间和维护成本方面很快就会变得昂贵。当你只想检查系统的一个 *子集*（但不仅仅是单个单元）按预期行为时，启动整个系统可能太昂贵。为你做的每个功能写昂贵的黑盒测试在更大的系统上不可持续。
 
-#### Enter: Fakes
+#### 引入：Fake
 
-The problem was the way our units were tested was reliant on stubs, which are, for the most part, *stateless*. We wanted to write tests covering multiple, *stateful* API calls, where we may create a resource at the start and then edit it later.
+问题在于我们单元的测试方式依赖于 stub，而 stub 在大多数情况下是 *无状态* 的。我们想写的测试覆盖多个 *有状态* 的 API 调用，我们可能在开始时创建一个资源，然后在后面编辑它。
 
-The following is a cut-down version of a test we want to do.
+下面是我们想做的测试的简化版本。
 
-The SUT is a "service layer" dealing with "use case" requests. We want to prove if a customer is created, when their details change, we successfully update the resources we made in the respective APIs.
+SUT 是处理"用例"请求的"服务层"。我们想证明，如果创建了一个客户，当他们的详情发生变化时，我们成功地更新了我们在相应 API 中创建的资源。
 
-Here are the requirements given to the team as a user story.
+下面是给团队的需求，作为一个用户故事。
 
-> ***Given*** a user is registered with API 1, 2 and 3
+> ***Given*** 一个用户在 API 1、2 和 3 中注册
 >
-> ***When*** the customer's social security number is changed
+> ***When*** 该客户的社会安全号码被更改
 >
-> ***Then**,* the change is propagated into APIs 1, 2 and 3
+> ***Then**,* 该更改传播到 API 1、2 和 3
 
 ```mermaid
 sequenceDiagram
@@ -208,15 +208,15 @@ sequenceDiagram
 	SUT->>API2: Update resource
 ```
 
-Tests that cut across multiple units are usually incompatible with stubs **because they're not suited to maintaining state**. We _could_ write a black-box acceptance test, but the costs of these tests would quickly spiral out of control.
+跨多个单元的测试通常与 stub 不兼容，**因为它们不适合维护状态**。我们 _可以_ 写一个黑盒验收测试，但这些测试的成本很快会失控。
 
-In addition, it is complicated to test edge cases with a black-box test because you cannot control the dependencies. For instance, we wanted to prove that a rollback mechanism would be fired if one API call failed.
+此外，用黑盒测试测试边缘情况很复杂，因为你无法控制依赖。例如，我们想证明如果一个 API 调用失败，回滚机制会被触发。
 
-We needed to use **fakes**. By modelling our dependencies as stateful APIs with in-memory fakes, we were able to write integration tests with a much broader scope, **to allow us to test real use cases worked**, again *without* having to spin up the whole system, and instead have almost the same speed as unit tests.
+我们需要使用 **fake**。通过把我们的依赖建模为有状态 API 并配以内存 fake，我们能够写范围更广的集成测试，**让我们能测试真实的用例是有效的**，再次 _无需_ 启动整个系统，而且速度几乎与单元测试一样快。
 
 ![integration tests with fakes](https://i.imgur.com/9Q6FMpw.png)
 
-Using fakes, **we can make assertions based on the final states of the respective systems rather than relying on complicated spying**. We'd ask each fake what records it held for the customer and assert they were updated. This feels more natural; if we manually checked our system, we would query those APIs to check their state, not inspect our request logs to see if we sent particular JSON payloads.
+使用 fake，**我们可以基于各系统的最终状态做断言，而不是依赖于复杂的 spy**。我们会问每个 fake 它持有的客户记录，并断言它们已经更新。这感觉更自然；如果我们手动检查我们的系统，我们会查询那些 API 来检查它们的状态，而不是检查我们的请求日志看是否发送了特定的 JSON 载荷。
 
 ```go
 // take our lego-bricks and assemble the system for the test
@@ -246,33 +246,33 @@ updatedFakeAPICustomer := fakeAPI1.Get(createdCustomer.FakeAPI1Details.ID)
 assert.Equal(t, updatedFakeAPICustomer.SocialSecurityNumber, updatedCustomerRequest.SocialSecurityNumber)
 ```
 
-This is simpler to write and easier to read than checking various function call arguments made via spies.
+这比通过 spy 检查各种函数调用参数更简单也更易读。
 
-This approach lets us have tests that cut across broad parts of our system, letting us write more **meaningful** tests about the use cases we'd be discussing at stand-up whilst still executing exceptionally quickly.
+这种方法让我们的测试可以横跨我们系统的大部分，让我们能写更多关于我们将在站会上讨论的用例的 **有意义的** 测试，同时仍然异常快速地执行。
 
-#### Fakes bring more of the benefits of encapsulation
+#### Fake 带来更多封装的好处
 
-In the example above, the tests were not concerned with how the dependencies behaved beyond verifying their end state. We created the fake versions of the dependencies and injected them into the part of the system we're testing.
+在上面的例子中，测试除了验证依赖的最终状态外，并不关心它们的行为。我们创建了依赖的 fake 版本，并把它们注入到我们正在测试的系统部分中。
 
-With mocks/stubs, we'd have to set up each dependency to handle certain scenarios, return certain data, etc. This brings behaviour and implementation detail into your tests, weakening the benefits of encapsulation. 
+使用 mock/stub 时，我们必须设置每个依赖来处理某些场景、返回某些数据等。这会把行为和实现细节带入到你的测试中，削弱了封装的好处。
 
-We model dependencies behind interfaces so that, as clients, _we don't have to care how it works_, but with a "mockist" approach, _we do have to care **in every test**_. 
+我们把依赖建模在接口背后，这样作为客户端，_我们不必关心它如何工作_，但使用"mockist"方法时，_我们 **在每个测试中** 都必须关心_。
 
-#### The maintenance costs of fakes
+#### Fake 的维护成本
 
-Fakes are costlier than other test doubles, at least in terms of code written; they must carry state and simulate the behaviour of whatever they're faking. Any discrepancies in behaviour between your fake and the real thing **carry a risk** that your tests aren't in line with reality. This leads to the scenario where you have passing tests but broken software.
+至少在写代码方面，Fake 比其他测试替身昂贵；它们必须携带状态并模拟它们伪装的对象的行为。你的 fake 与真实事物的行为之间的任何差异都**带有风险**，使你的测试与现实不一致。这导致你有通过的测试但软件却坏掉的情况。
 
-Whenever you integrate with another system, be it another team's API or a database, you'll make assumptions based on its behaviour. These could be captured from API docs, in-person conversations, emails, Slack threads, etc.
+每当你与另一个系统集成时，无论是另一个团队的 API 还是数据库，你都会基于其行为做出假设。这些可能从 API 文档、面对面交谈、邮件、Slack 线程等捕获。
 
-Wouldn't it be helpful if we could **codify our assumptions** to run them against both our fake *and* the actual system to see if our knowledge is correct in a repeatable and documented way?
+如果我们能 **编纂我们的假设**，把它们以可重复且有文档的方式针对我们的 fake _和_ 实际系统运行，看看我们的认知是否正确，岂不是很有帮助？
 
-**Contracts** are the means to this end. They helped us manage the assumptions we made on the other team's systems and make them explicit. Way more explicit and useful than email exchanges or endless Slack threads!
+**契约**就是达到这一目的的手段。它们帮助我们管理对其他团队系统的假设，并使之明确。比邮件交流或无尽的 Slack 线程明确得多、有用得多！
 
 ![fakes and contracts illustrated](https://i.imgur.com/l9aTe2x.png)
 
-By having a contract, we can assume that we can use a fake and an actual dependency interchangeably. This is not only useful for constructing tests but also for local development.
+通过有契约，我们可以假设我们能可互换地使用 fake 和实际依赖。这不仅对构造测试有用，对本地开发也有用。
 
-Here is an example of a contract for one of the APIs the system depends on
+下面是系统所依赖的某个 API 的契约示例
 
 ```go
 type API1Customer struct {
@@ -327,14 +327,14 @@ func (c API1Contract) Test(t *testing.T) {
 }
 ```
 
-As discussed in [Scaling Acceptance Tests](https://quii.gitbook.io/learn-go-with-tests/testing-fundamentals/scaling-acceptance-tests), by testing against an interface rather than a concrete type, the test becomes:
+正如在 [Scaling Acceptance Tests](https://quii.gitbook.io/learn-go-with-tests/testing-fundamentals/scaling-acceptance-tests) 中讨论的那样，通过针对接口而不是具体类型测试，测试就变得：
 
-- Decoupled from implementation detail
-- Can be re-used in different contexts.
+- 与实现细节解耦
+- 可以在不同上下文中复用。
 
-Which are the requirements for a contract. It allows us to verify and develop our fake _and_ test it against the actual implementation.
+这正是契约的要求。它让我们能验证和开发我们的 fake _并_ 针对实际实现进行测试。
 
-To create our in-memory fake, we can use the contract in a test.
+要创建我们的内存 fake，我们可以在测试中使用契约。
 
 ```go
 func TestInMemoryAPI1(t *testing.T) {
@@ -344,7 +344,7 @@ func TestInMemoryAPI1(t *testing.T) {
 }
 ```
 
-And here is the fake's code
+下面是 fake 的代码
 
 ```go
 func NewAPI1() *API1 {
@@ -382,44 +382,44 @@ func (a *API1) UpdateCustomer(ctx context.Context, id string, name string) error
 }
 ```
 
-### Evolving software
+### 演进的软件
 
-Most software is not built and "finished" forever, in one release.
+大多数软件不是一次性建好就"完成"的。
 
-It's an incremental learning exercise, adapting to customer demands and other external changes. In the example, the APIs we were calling were also evolving and changing; plus, as we developed _our_ software, we learned more about what system we _really_ needed to make. Assumptions we made in our contracts turned out to be wrong or _became_ wrong.
+它是一个增量的学习练习，适应客户需求和其他外部变化。在示例中，我们调用的 API 也在演进和变化；此外，随着我们开发 _我们_ 的软件，我们更多地了解我们 _真正_ 需要做的系统。我们在契约中做的假设结果是错的，或者 _变成_ 错的。
 
-Thankfully, once the setup for the contracts was made, we had a simple way to deal with change. Once we learned something new, as a result of a bug being fixed or a colleague informing us that the API was changing, we'd:
+值得欣慰的是，一旦契约的搭建完成，我们就有了一种处理变化的简单方式。一旦我们因为修复了一个 bug 或同事告知我们 API 正在变化而学到新东西，我们会：
 
-1. Write a test to exercise the new scenario. A part of this will involve changing the contract to **drive** you to simulate the behaviour in the fake
-2. Running the test should fail, but before anything else, run the contract against the real dependency to ensure the change to the contract is valid.
-3. Update the fake so it conforms to the contract.
-4. Make the test pass.
-5. Refactor.
-6. Run all the tests and ship.
+1. 写一个测试来运行新场景。这其中的一部分将涉及更改契约以**驱使**你在 fake 中模拟该行为
+2. 运行测试应该失败，但在做任何其他事情之前，针对真实依赖运行契约以确保对契约的更改是有效的。
+3. 更新 fake 让它符合契约。
+4. 让测试通过。
+5. 重构。
+6. 运行所有测试并发布。
 
-Running the _full_ test suite before checking in _may_ result in other tests failing due to the fake having a different behaviour. This is a **good thing**!  You can now fix all the other areas of the system depending on the changed system; confident they will also handle this scenario in production. Without this approach, you'd have to *remember* to find all the relevant tests and update the stubs. Error-prone, labourious and boring.
+在签入之前运行 _完整的_ 测试套件 _可能_ 会因为 fake 的行为不同导致其他测试失败。这是**好事**！你现在可以修复系统中所有依赖于已变化系统的其他区域；自信它们也将在生产中处理这种场景。没有这种方法，你必须 _记住_ 找到所有相关的测试并更新 stub。容易出错、费力且无聊。
 
-### Superior developer experience
+### 卓越的开发者体验
 
-Having the suite of fakes with corresponding contracts felt like a superpower. We could finally tame the complexity of the APIs we had to deal with.
+拥有一套带有相应契约的 fake 感觉像超能力。我们终于可以驯服我们必须处理的 API 的复杂性。
 
-Writing tests for various scenarios became much simpler. We no longer had to assemble a series of stubs and spies for every test; we could take our set of units or modules (the fakes, our own "services") and assemble them very easily to exercise the various weird and wonderful scenarios we needed.
+为各种场景写测试变得更简单。我们不再需要为每个测试组装一系列 stub 和 spy；我们可以拿来我们的一组单元或模块（fake、我们自己的"服务"）非常容易地把它们组装起来，运行我们需要的各种奇怪和精彩的场景。
 
-Every test with a stub, spy or mock has to _care_ about how the external system behaves, due to the ad-hoc setup. On the other hand, fakes can be treated like any other well-encapsulated unit of code, where the details are hidden away from you, and you can just use them.
+由于临时设置，每个使用 stub、spy 或 mock 的测试都必须 _关心_ 外部系统是如何行为的。另一方面，fake 可以像任何其他封装良好的代码单元一样对待，细节对你隐藏，你可以直接使用它们。
 
-We could run a very realistic version of the system locally, and as it was all in memory, it would start and run extremely quickly. This meant our test times were extremely fast, which felt very impressive, given how comprehensive the suite was.
+我们可以在本地运行系统的非常真实的版本，并且因为它都在内存中，启动和运行都极快。这意味着我们的测试时间极快，考虑到测试套件多么全面，感觉非常令人印象深刻。
 
-If our acceptance tests failed in our staging environment, our first step was to run our contracts against the APIs we depended on. We often identified issues **before the other systems' developers did**.
+如果我们的验收测试在 staging 环境中失败，我们的第一步是针对我们依赖的 API 运行我们的契约。我们经常在 **其他系统的开发者之前** 识别出问题。
 
-### Off the happy path with decorators
+### 用装饰器走出 happy-path
 
-For error scenarios, stubs are more convenient because you have direct access to *how* it behaves in the test, whereas fakes tend to be fairly black-box. This is a deliberate design choice, as we want the users of them (e.g. tests) not to be concerned with how they work; they should trust they do the right thing due to the backing of the contract.
+对于错误场景，stub 更方便，因为你可以直接控制它在测试中 _如何_ 行为，而 fake 倾向于相当黑盒。这是有意为之的设计选择，因为我们希望它们的使用者（例如测试）不必关心它们的工作方式；他们应该信任它们做的事情是对的，因为有契约的支撑。
 
-How do we make the fakes fail, to exercise non-happy path concerns?
+那么我们如何让 fake 失败，以执行非 happy-path 的关注点？
 
-There are plenty of scenarios where, as a developer, you need to modify the behaviour of some code without changing its source. The **decorator pattern** is often a way to take a unit of code and add things like logging, telemetry, retries and more. We can use it to wrap our fakes to override behaviours when necessary.
+有很多场景，作为开发者，你需要在不改变源代码的情况下修改某些代码的行为。**装饰器模式**通常是一种把一个代码单元加上日志、遥测、重试等的方式。我们可以用它包装我们的 fake，在必要时覆盖行为。
 
-Returning to the `API1` example, we can create a type that implements the needed interface and wraps around the fake.
+回到 `API1` 示例，我们可以创建一个实现所需接口、围绕 fake 的类型。
 
 ```go
 type API1Decorator struct {
@@ -458,7 +458,7 @@ func (a *API1Decorator) UpdateCustomer(ctx context.Context, id string, name stri
 }
 ```
 
-In our tests, we can then use the `XXXFunc` field to modify the behaviour of the test-double, just like you would with stubs, spies or mocks.
+在我们的测试中，我们可以使用 `XXXFunc` 字段来修改测试替身的行为，就像你用 stub、spy 或 mock 一样。
 
 ```go
 failingAPI1 = NewAPI1Decorator(inmemory.NewAPI1())
@@ -467,48 +467,48 @@ failingAPI1.UpdateCustomerFunc = func(ctx context.Context, id string, name strin
 }
 ```
 
-However, this _is_ awkward and requires you to exercise some judgement. With this approach, you are losing the guarantees from your contract as you are introducing ad-hoc behaviour to your fake in tests.
+然而这 _确实_ 别扭，需要你做出一些判断。用这种方法，你正在失去契约带来的保证，因为你在测试中向 fake 引入了临时行为。
 
-It would be best to examine your context, you may conclude it would be simpler to test specific unhappy paths at the unit test level using a stub.
+最好检查你的上下文，你可能会得出结论：用 stub 在单元测试级别测试特定的 unhappy-path 会更简单。
 
-### Isn't this extra code waste?
+### 这不是多余的代码浪费吗？
 
-It is wishful thinking to believe we should only ever write code that serves customers and expect a system we can build on efficiently. People have a very warped opinion of what waste is (see my post: [The ghost of Henry Ford is ruining your development team](https://quii.dev/The_ghost_of_Henry_Ford_is_ruining_your_development_team)).
+认为我们应该只写为客户服务的代码，并期望我们能在其上高效构建一个系统，这是一厢情愿的想法。人们对什么是浪费有非常扭曲的看法（见我的文章：[The ghost of Henry Ford is ruining your development team](https://quii.dev/The_ghost_of_Henry_Ford_is_ruining_your_development_team)）。
 
-Automated tests do not directly benefit customers, but we write them to make ourselves more efficient with our work (you don't write tests to chase coverage scores, right?).
+自动化测试不会直接让客户受益，但我们写它们是为了让自己工作时更高效（你不会为了追求覆盖率分数而写测试，对吧？）。
 
-Engineers must easily simulate scenarios (in a repeatable fashion, not ad-hocly) to debug, test, and fix issues. **In-memory fakes and good modular design allow us to isolate the relevant actors for a scenario to write fast, appropriate tests extremely cheaply**. This flexibility enables developers to iterate on a system far more manageably than a tangled mess, tested via expensive to-write and run black-box tests or, worse, manual testing on a shared environment.
+工程师必须能够轻易地（以可重复的方式，而不是临时的方式）模拟场景以调试、测试和修复问题。**内存中的 fake 和良好的模块化设计让我们能够隔离场景的相关参与者，从而极其廉价地写出快速、合适的测试**。这种灵活性让开发者能以比纠缠不清的混乱更可管理的方式迭代系统，那种混乱要么通过昂贵难写难跑的黑盒测试测试，要么更糟，通过共享环境上的手动测试。
 
-This is an example of [simple vs. easy](https://www.youtube.com/watch?v=SxdOUGdseq4). Of course, fakes and contracts will result in more code being written than stubs and spies in the short term, but the result is a more straightforward and cheaper-to-maintain system in the longer run. Updating spies, stubs and mocks piecemeal is labour-intensive and error-prone, as you won't have corresponding contracts to check your test doubles behave correctly.
+这是 [简单 vs. 容易](https://www.youtube.com/watch?v=SxdOUGdseq4) 的一个例子。当然，短期内 fake 和契约会比 stub 和 spy 写更多代码，但结果是一个更直接、长期维护成本更低的系统。零碎地更新 spy、stub 和 mock 是劳动密集型且容易出错的，因为你没有相应的契约来检查你的测试替身是否正确地行为。
 
-This approach represents a _slightly_ increased upfront cost but with far lower costs once the contracts and fakes are set up. Fakes are more reusable and reliable than ad-hoc test doubles like stubs.
+这种方法代表了 _略微_ 增加的前期成本，但在契约和 fake 设置好之后成本会低得多。Fake 比像 stub 这样的临时测试替身更可重用、更可靠。
 
-It feels *very* liberating and gives you **confidence** when using an existing, battle-tested fake rather than setting up a stub when writing a new test.
+使用一个已存在的、经过实战检验的 fake 时感觉 _非常_ 解放，并给你 **信心**，比起在写新测试时设置 stub 强得多。
 
-### How does this fit into TDD?
+### 这如何融入 TDD？
 
-I wouldn't recommend _starting_ with a contract; that's bottom-up design, which, in general, I find I need to be more clever for, and there's a danger I'll overthink hypothetical requirements.
+我不建议 _从_ 契约 _开始_；那是自下而上的设计，一般我发现这需要更聪明，并且有过度思考假设需求的危险。
 
-This technique is compatible with the "acceptance test driven approach" as discussed in earlier chapters, [The Why of TDD](https://quii.dev/The_Why_of_TDD) and in [GOOS](http://www.growing-object-oriented-software.com)
+这种技术与之前章节 [The Why of TDD](https://quii.dev/The_Why_of_TDD) 和 [GOOS](http://www.growing-object-oriented-software.com) 中讨论的"验收测试驱动方法"兼容
 
-- Write a failing [acceptance test](https://quii.gitbook.io/learn-go-with-tests/testing-fundamentals/scaling-acceptance-tests).
-- Drive out enough code to make it pass, which usually will result in some "service layer" that'll depend on an API, a database, or whatever. Usually, you will have business logic code decoupled from external concerns (such as persistence, calling a database, etc.) via an interface.
-- Implement the interface with an in-memory fake at first to make all the tests pass locally and validate the initial design.
-- To push to production, you can't use in-memory! Encode the assumptions you made against the fake into a contract.
-- Use the contract to create the actual dependency, such as a MySQL version of a store.
-- Ship.
+- 写一个失败的[验收测试](https://quii.gitbook.io/learn-go-with-tests/testing-fundamentals/scaling-acceptance-tests)。
+- 驱动出足够的代码让它通过，这通常会得到某种"服务层"，依赖于一个 API、一个数据库或其他什么。通常你会有通过接口与外部关注点（如持久化、调用数据库等）解耦的业务逻辑代码。
+- 一开始用内存 fake 实现接口，让所有测试在本地通过并验证初始设计。
+- 要推送到生产环境，你不能用内存版本！把你针对 fake 做的假设编码到契约中。
+- 用契约创建实际的依赖，比如 store 的 MySQL 版本。
+- 发布。
 
-##  Where's the chapter on testing databases?
+##  关于测试数据库的章节在哪里？
 
-This has been a common request that I have put off for over five years. The reason is this chapter will always be my answer.
+这是一个我推迟了五年多的常见请求。原因是这一章一直会是我的回答。
 
-<u>Don't mock the database driver and spy on calls</u>. These tests are difficult to write and potentially bring very little value. You shouldn't assert whether a particular `SQL` statement was sent to the database, that is, implementation detail; **your tests should only care about behaviour**. Proving a specific SQL statement was compiled _does not_ prove your code _behaves_ how you need it to.
+<u>不要 mock 数据库驱动并监视调用</u>。这些测试很难写，可能带来的价值很小。你不应该断言是否向数据库发送了特定的 `SQL` 语句，那是实现细节；**你的测试应该只关心行为**。证明特定 SQL 语句被编译 _并不_ 证明你的代码 _按你需要的方式行为_。
 
-**Contracts** force you to decouple your tests from implementation details and focus on behaviour.
+**契约**迫使你把测试与实现细节解耦，并专注于行为。
 
-Follow the TDD approach described above to drive out your persistence needs.
+按照上面描述的 TDD 方法，驱动出你的持久化需求。
 
-[The example repository](https://github.com/quii/go-fakes-and-contracts) has some examples of contracts, and how they're used to test in-memory and SQLite implementations of some persistence needs.
+[示例仓库](https://github.com/quii/go-fakes-and-contracts) 有一些契约的例子，以及它们如何用于测试某些持久化需求的内存和 SQLite 实现。
 
 ```go
 package inmemory_test
@@ -553,47 +553,47 @@ func TestSQLitePantry(t *testing.T) {
 }
 ```
 
-Whilst Docker et al. _do_ make running databases locally easier, they can still carry a significant performance overhead. Fakes with contracts allow you to use restrict the need to use the "heavier" dependency to only when you're validating the contract, and not needed for other kinds of tests.
+虽然 Docker 等让本地运行数据库 _确实_ 更容易，但它们仍然可能带来显著的性能开销。带有契约的 fake 让你能够把使用"重型"依赖的需求限制在仅当你验证契约时，对于其他类型的测试不需要。
 
-Using in-memory fakes for acceptance and integration tests for *the rest* of the system provides a much faster and simpler developer experience.
+为系统的 *其他部分* 的验收和集成测试使用内存 fake，提供更快、更简单的开发者体验。
 
-## Wrapping up
+## 总结
 
-It’s common for software projects to be organised with various teams building systems concurrently to try to reach a common goal.
+软件项目通常被组织成各团队同时构建系统，试图达成共同目标。
 
-This method of work requires a high degree of collaboration and communication. Many feel with an "API first" approach, we can define some API contracts (often on a wiki page!) and then work independently for six months and stick it all together. This rarely works well in practice because as we start writing code, we understand the domain and the problem better, which challenges our assumptions. We have to react to these changes in knowledge, which often require cross-team changes.
+这种工作方式需要高度的协作和沟通。许多人认为通过"API 优先"的方法，我们可以定义一些 API 契约（通常在 wiki 页面上！）然后独立工作六个月再把所有东西拼起来。这在实践中很少奏效，因为我们一旦开始写代码，就会更好地理解领域和问题，这挑战了我们的假设。我们必须对这些知识的变化做出反应，这通常需要跨团队的更改。
 
-So, if you're in this situation, you need to structure and test your system optimally to deal with unpredictable changes, both inside and outside of the system you're working on.
+所以，如果你处于这种情况，你需要以最佳方式构造和测试你的系统，以应对你正在工作的系统内部和外部的不可预测的变化。
 
-> “One of the defining characteristics of high-performing teams in software development is their ability to make progress and to change their minds, without asking for permission from any person or group outside of their small team.”
+> "软件开发中高效团队的一个决定性特征是他们能够取得进展并改变想法，而无需向他们的小团队之外的任何人或团体请求许可。"
 >
 > Modern Software Engineering
 > David Farley
 
-Don't rely on weekly meetings or Slack threads to flesh out changes. **Codify your assumptions in contracts**. Run those contracts against the systems in your build pipelines so you get fast feedback if new information comes to light. These contracts, in conjunction with **fakes,** mean you can work independently and manage external changes sustainably.
+不要依赖每周会议或 Slack 线程来推敲变化。**把你的假设编码到契约中**。在你的构建流水线中针对系统运行那些契约，这样如果有新信息浮现你就能得到快速反馈。这些契约与 **fake** 一起，意味着你可以独立工作并可持续地管理外部变化。
 
-### Your system as a collection of modules
+### 把你的系统当作模块的集合
 
-Referring back to Farley's book, I'm describing the idea of **incrementalism**. Building software is a *constant learning exercise*. Understanding the requirements we must solve for a given system to deliver value up-front is unrealistic. So, we have to optimise our systems and ways of work to **gather feedback quickly and experiment**.
+回到 Farley 的书，我描述的是 **增量主义** 的思想。构建软件是一个 *持续学习的过程*。预先理解我们必须为某个系统解决以传递价值的需求是不现实的。所以，我们必须优化我们的系统和工作方式以 **快速收集反馈并实验**。
 
-You need a **modular system** to take advantage of the ideas discussed in this chapter. If you have modular code with reliable fakes, it allows you to experiment with your system via automated tests cheaply.
+你需要一个**模块化系统**才能利用本章讨论的思想。如果你有带有可靠 fake 的模块化代码，它能让你通过自动化测试便宜地实验你的系统。
 
-We found it extremely easy to translate weird, hypothetical (but possible) scenarios into self-contained tests to help us understand the problem and drive out more robust software by composing our modules together and trying out different data in different order, with some APIs failing, etc.
+我们发现把奇怪的、假设性的（但可能的）场景翻译成自包含的测试以帮助我们理解问题极其容易，并通过把模块组合在一起，尝试不同顺序的不同数据，让一些 API 失败等，驱动出更健壮的软件。
 
-Well-defined, well-tested modules allow you to increment your system without changing and understanding _everything_ at once.
+定义良好、测试良好的模块让你能够增量发展你的系统，而不必一次改变和理解 _所有_ 东西。
 
-### But I'm working on something small with stable APIs
+### 但我在做一个有稳定 API 的小项目
 
-Even with stable APIs, you do not want your developer experience, builds and so on to be tightly coupled to other people’s code. When you get this approach right, you end up with a composable set of modules to piece together your system for production, running locally and writing different kinds of tests with doubles you trust.
+即使有稳定的 API，你也不希望你的开发者体验、构建等与他人的代码紧密耦合。当你把这种方法做对时，你最终会得到一组可组合的模块，可以拼接你的系统用于生产、本地运行以及用你信任的测试替身写不同种类的测试。
 
-It allows you to isolate the parts of your system you're concerned about and write meaningful tests about the real problem you're trying to solve.
+它让你能够隔离你关心的系统部分，并对你试图解决的真正问题写有意义的测试。
 
-### Make your dependencies first-class citizens.
+### 让你的依赖成为一等公民。
 
-Of course, stubs and spies have their place. Simulating different behaviours of your dependencies ad-hocly in tests will always have its use, but be careful not to let the costs go out of control.
+当然，stub 和 spy 有它们的用武之地。在测试中临时模拟依赖的不同行为永远有它的用处，但要小心不要让成本失控。
 
-So many times in my career, I have seen carefully written software written by talented devs fall apart due to integration problems. Integration is challenging for engineers _because_ it's hard to reproduce the exact behaviours of a system written by other engineers, who also change it simultaneously.
+在我的职业生涯中，我看过很多次由有才华的开发者写出的精心制作的软件因集成问题而崩溃。集成对工程师来说很有挑战性，_因为_ 很难重现由其他工程师写的、并且也在同时改变的系统的确切行为。
 
-Some teams rely on everyone deploying to a shared environment and testing there. The problem is this doesn't give you **isolated** feedback, and the **feedback is slow**. You still won't be able to construct different experiments with how your system works with other dependencies, at least not efficiently.
+一些团队依靠每个人都部署到共享环境并在那里测试。问题是这不能给你 **隔离的** 反馈，并且**反馈很慢**。你仍然不能构建你的系统如何与其他依赖一起工作的不同实验，至少不能高效地。
 
-**We have to tame this complexity by adopting more sophisticated ways of modelling our dependencies** to quickly test/experiment on our dev machines before it gets to production. Create realistic and manageable fakes of your dependencies, verified by contracts. Then, you can start writing more meaningful tests and experimenting with your system, making you more likely to succeed.
+**我们必须通过采用更复杂的方式来建模我们的依赖，从而驯服这种复杂性**，以便在它进入生产之前在我们的开发机器上快速测试/实验。创建你依赖的真实的、可管理的 fake，由契约验证。然后，你可以开始写更多有意义的测试并实验你的系统，让你更可能成功。

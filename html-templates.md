@@ -1,26 +1,26 @@
-# HTML Templates
+# HTML 模板
 
-**[You can find all the code here](https://github.com/quii/learn-go-with-tests/tree/main/blogrenderer)**
+**[本章的所有代码可以在这里找到](https://github.com/quii/learn-go-with-tests/tree/main/blogrenderer)**
 
-We live in a world where everyone wants to build web applications with the latest flavour of the month frontend framework built upon gigabytes of transpiled JavaScript, working with a Byzantine build system; [but maybe that's not always necessary](https://quii.dev/The_Web_I_Want).  
+我们生活在这样一个世界：每个人都想用当下最流行的前端框架来构建 web 应用，背后是几十亿字节的转译后 JavaScript，配合一个拜占庭式复杂的构建系统；[但也许这并不总是必要](https://quii.dev/The_Web_I_Want)。
 
-I'd say most Go developers value a simple, stable & fast toolchain but the frontend world frequently fails to deliver on this front.
+我会说大多数 Go 开发者都重视简单、稳定且快速的工具链，而前端世界在这方面经常令人失望。
 
-Many websites do not need to be an [SPA](https://en.wikipedia.org/wiki/Single-page_application). **HTML and CSS are fantastic ways of delivering content** and you can use Go to make a website to deliver HTML. 
+很多网站不需要做成 [SPA](https://en.wikipedia.org/wiki/Single-page_application)。**HTML 和 CSS 是非常棒的内容传输方式**，你可以用 Go 做一个网站来交付 HTML。
 
-If you wish to still have some dynamic elements, you can still sprinkle in some client side JavaScript, or you may even want to try experimenting with [Hotwire](https://hotwired.dev) which allows you to deliver a dynamic experience with a server-side approach. 
+如果你仍然希望有一些动态元素，可以加入一些客户端 JavaScript，或者你也可以试试 [Hotwire](https://hotwired.dev)，它能让你以服务端为主的方式提供动态体验。
 
-You can generate your HTML in Go with elaborate usage of [`fmt.Fprintf`](https://pkg.go.dev/fmt#Fprintf), but in this chapter you'll learn that Go's standard library has some tools to generate HTML in a simpler and more maintainable way. You'll also learn more effective ways of testing this kind of code that you may not have run in to before.
+你可以通过精巧地使用 [`fmt.Fprintf`](https://pkg.go.dev/fmt#Fprintf) 在 Go 中生成 HTML，但本章你将学到 Go 标准库中以更简单、更易维护的方式生成 HTML 的工具。你还会学到一些你之前可能没用过的、对这类代码更有效的测试方式。
 
-## What we're going to build
+## 我们要构建什么
 
-In the [Reading Files](/reading-files.md) chapter we wrote some code that would take an [`fs.FS`](https://pkg.go.dev/io/fs)  (a file-system), and return a slice of `Post` for each markdown file it encountered.
+在 [读取文件](/reading-files.md) 那一章，我们写了一些代码：接受一个 [`fs.FS`](https://pkg.go.dev/io/fs)（一个文件系统），并为遇到的每个 markdown 文件返回一个 `Post` 切片。
 
 ```go
 posts, err := blogposts.NewPostsFromFS(os.DirFS("posts"))
 ```
 
-Here is how we defined `Post`
+下面是我们对 `Post` 的定义
 
 ```go
 type Post struct {
@@ -29,7 +29,7 @@ type Post struct {
 }
 ```
 
-Here's an example of one of the markdown files that can be parsed.
+下面是一个可以被解析的 markdown 文件示例。
 
 ```markdown
 Title: Welcome to my blog
@@ -40,32 +40,32 @@ Tags: cooking, family, live-laugh-love
 Welcome to my **amazing recipe blog**. I am going to write about my family recipes, and make sure I write a long, irrelevant and boring story about my family before you get to the actual instructions.
 ```
 
-If we continue our journey of writing blog software, we'd take this data and generate HTML from it for our web server to return in response to HTTP requests.
+如果我们继续编写博客软件的旅程，我们会拿着这些数据，从中生成 HTML，让我们的 web 服务器作为 HTTP 请求的响应返回。
 
-For our blog, we want to generate two kinds of page:
+对于我们的博客，我们想生成两种页面：
 
-1. **View post**. Renders a specific post. The `Body` field in `Post` is a string containing markdown so that should be converted to HTML. 
-2. **Index**. Lists all of the posts, with hyperlinks to view the specific post.
+1. **查看文章**。渲染特定的一篇文章。`Post` 中的 `Body` 字段是包含 markdown 的字符串，所以应当被转换成 HTML。
+2. **首页**。列出所有文章，每篇都有指向文章详情页的超链接。
 
-We'll also want a consistent look and feel across our site, so for each page we'll have the usual HTML furniture like `<html>` and a `<head>` containing links to CSS stylesheets and whatever else we may want.
+我们也会希望整个站点拥有一致的外观和体验，所以每个页面都会有常见的 HTML 结构，比如 `<html>` 和 `<head>`，`<head>` 中包含 CSS 样式表的链接以及我们想要的其他东西。
 
-When you're building blog software you have a few options in terms of approach of how you build and send HTML to the user's browser. 
+构建博客软件时，在如何构建并把 HTML 发送到用户浏览器方面，你有几种方式可以选。
 
-We'll design our code so it accepts an `io.Writer`. This means the caller of our code has the flexibility to:
+我们设计代码时让它接收一个 `io.Writer`。这意味着我们代码的调用方有以下灵活性：
 
-- Write them to an [os.File](https://pkg.go.dev/os#File) , so they can be statically served
-- Write out the HTML directly to a [`http.ResponseWriter`](https://pkg.go.dev/net/http#ResponseWriter)
-- Or just write them to anything really! So long as it implements `io.Writer` the user can generate some HTML from a `Post`
+- 把它们写到 [os.File](https://pkg.go.dev/os#File)，从而可以静态地提供
+- 直接把 HTML 写到 [`http.ResponseWriter`](https://pkg.go.dev/net/http#ResponseWriter)
+- 或者真的写到任何东西！只要它实现了 `io.Writer`，用户就能从一个 `Post` 生成一些 HTML
 
-## Write the test first
+## 先写测试
 
-As always, it's important to think about requirements before diving in too fast. How can we take this large-ish set of requirements and break it down in to a small, achievable step that we can focus on?
+一如既往，在过早地动手前思考一下需求很重要。我们如何把这个相对庞大的需求集合，拆解成一个小巧、可达成的步骤来聚焦？
 
-In my view, actually viewing content is higher priority than an index page. We could launch this product and share direct links to our wonderful content. An index page which can't link to the actual content isn't useful.
+在我看来，实际查看内容比首页更高优。我们可以先发布这个产品，然后分享指向我们精彩内容的直接链接。一个不能链接到实际内容的首页没什么用。
 
-Still, rendering a post as described earlier still feels big. All the HTML furniture, converting the body markdown into HTML, listing tags, e.t.c. 
+不过，按前文描述渲染一篇文章感觉还是太大。所有 HTML 结构，把 body 里的 markdown 转成 HTML，列出标签，等等。
 
-At this stage I'm not overly concerned with the specific markup, and an easy first step would be just to check we can render the post's title as an `<h1>`. This *feels* like the smallest first step that can move us forward a bit.
+在这个阶段我并不太关心具体的标签结构，最容易上手的第一步就是检查我们能不能把文章的标题渲染成 `<h1>`。这 _感觉_ 像是能让我们前进一小步的最小步骤。
 
 ```go
 package blogrenderer_test
@@ -103,22 +103,22 @@ func TestRender(t *testing.T) {
 }
 ```
 
-Our decision to accept an `io.Writer` also makes testing simple, in this case we're writing to a [`bytes.Buffer`](https://pkg.go.dev/bytes#Buffer) which we can then later inspect the contents.
+我们决定接收 `io.Writer` 也让测试变得简单，本例中我们写到一个 [`bytes.Buffer`](https://pkg.go.dev/bytes#Buffer)，之后可以检查它的内容。
 
-## Try to run the test
+## 尝试运行测试
 
-If you've read the previous chapters of this book you should be well-practiced at this now. You won't be able to run the test because we don't have the package defined or the `Render` function. Try and follow the compiler messages yourself and get to a state where you can run the test and see that it fails with a clear message. 
+如果你已经读过本书前面的章节，对此应该相当熟练了。你不能运行测试，因为我们还没定义这个包，也没有 `Render` 函数。试着自己跟着编译器的提示走，让代码处于一个能跑测试、并看到带清晰错误信息的失败状态。
 
-It's really important that you exercise your tests failing, you'll thank yourself when you accidentally make a test fail 6 months later that you put in the effort *now* to check it fails with a clear message.
+让你的测试真正经历失败这一步非常重要，将来某天你不小心让一个测试失败时，你会感谢自己 _现在_ 花了功夫确认它失败时有清晰的错误信息。
 
-## Write the minimal amount of code for the test to run and check the failing test output
+## 写最少量的代码让测试能跑起来，并查看失败的测试输出
 
-This is the minimal code to get the test running
+下面是让测试能跑起来的最少代码
 
 ```go
 package blogrenderer
 
-// if you're continuing from the read files chapter, you shouldn't redefine this
+// 如果你是从读取文件那一章接着过来的，不应该重复定义这个
 type Post struct {
 	Title, Description, Body string
 	Tags                     []string
@@ -129,9 +129,9 @@ func Render(w io.Writer, p Post) error {
 }
 ```
 
-The test should complain that an empty string doesn't equal what we want.
+测试应该会抱怨空字符串不等于我们想要的内容。
 
-## Write enough code to make it pass
+## 写足够的代码让测试通过
 
 ```go
 func Render(w io.Writer, p Post) error {
@@ -140,17 +140,17 @@ func Render(w io.Writer, p Post) error {
 }
 ```
 
-Remember, software development is primarily a learning activity. In order to discover and learn as we work, we need to work in a way that gives us frequent, high-quality feedback loops, and the easiest way to do that is work in small steps. 
+记住，软件开发主要是一种学习活动。为了在工作中不断发现与学习，我们需要以一种能产生频繁、高质量反馈循环的方式工作，而最简单的方式就是用小步骤工作。
 
-So we're not worrying about using any templating libraries right now. You can make HTML just with "normal" string templating just fine, and by skipping the template part we can validate a small bit of useful behaviour and we've done a small bit of design work for our package's API.
+所以我们现在不去考虑使用任何模板库。仅靠"普通的"字符串拼接其实就能很好地构造 HTML，跳过模板这部分的同时我们能验证一小块有用的行为，并对我们包的 API 做了一点点设计工作。
 
-## Refactor
+## 重构
 
-Not much to refactor yet, so let's move to the next iteration
+目前没什么可重构的，那么进入下一次迭代
 
-## Write the test first
+## 先写测试
 
-Now we have a very basic version working, we can now iterate on the test to expand on the functionality. In this case, rendering more information from the `Post`.
+我们已经有了非常基础的工作版本，可以在测试上迭代来扩展功能。在这个例子中，从 `Post` 渲染更多信息。
 
 ```go
 	t.Run("it converts a single post into HTML", func(t *testing.T) {
@@ -172,17 +172,17 @@ Tags: <ul><li>go</li><li>tdd</li></ul>`
 	})
 ```
 
-Notice that writing this, *feels* awkward. Seeing all that markup in the test feels bad, and we haven't even put the body in, or the actual HTML we'd want with all of the `<head>` content and whatever page furniture we need.
+注意这样写 _感觉_ 很别扭。看到测试里塞了那么多标签让人难受，而且我们甚至还没把 body 加进去，也还没加上我们想要的整个 HTML，比如所有 `<head>` 内容以及所需的页面结构。
 
-Nonetheless, let's put up with the pain *for now*.
+不过我们 _暂时_ 先忍着痛苦。
 
-## Try to run the test
+## 尝试运行测试
 
-It should fail, complaining it doesn't have the string we expect, as we're not rendering the description and tags. 
+它应该会失败，抱怨它没有我们期望的字符串，因为我们没有渲染 description 和 tags。
 
-## Write enough code to make it pass
+## 写足够的代码让测试通过
 
-Try and do this yourself rather than copying the code. What you should find is that making this test pass _is a bit annoying_! When I tried, my first attempt got this error
+试着自己做一下，而不是拷贝代码。你会发现让这个测试通过 _有点烦人_！我尝试时第一次得到的错误是
 
 ```
 === RUN   TestRender
@@ -192,7 +192,7 @@ Try and do this yourself rather than copying the code. What you should find is t
         Tags: <ul><li>go</li><li></li></ul>'
 ```
 
-New lines! Who cares? Well, our test does, because it's matching on an exact string value. Should it? I removed the newlines for now just to get the test passing.
+换行！谁在乎呢？嗯，我们的测试在乎，因为它在做精确字符串匹配。它应该这样吗？我现在先把换行去掉只为让测试通过。
 
 ```go
 func Render(w io.Writer, p Post) error {
@@ -222,33 +222,33 @@ func Render(w io.Writer, p Post) error {
 }
 ```
 
-**Yikes**. Not the nicest code i've written, and we're still only at a very early implementation of our markup. We'll need so much more content and things on our page, we're quickly seeing that this approach is not appropriate. 
+**哎哟**。这不是我写过最漂亮的代码，而且我们的标签实现还非常初级。我们的页面会需要远比这更多的内容和元素，我们很快就看出这种方式不合适。
 
-Crucially though, we have a passing test; we have working software.
+但关键是，我们有了一个通过的测试；我们有了能工作的软件。
 
-## Refactor
+## 重构
 
-With the safety-net of a passing test for working code, we can now think about changing our implementation approach at the refactoring stage. 
+有了通过测试这个安全网，我们可以在重构阶段考虑改变实现方式了。
 
-### Introducing templates
+### 引入模板
 
-Go has two templating packages [text/template](https://pkg.go.dev/text/template) and [html/template](https://pkg.go.dev/html/template) and they share the same interface.  What they both do is allow you to combine a template and some data to produce a string. 
+Go 有两个模板包 [text/template](https://pkg.go.dev/text/template) 和 [html/template](https://pkg.go.dev/html/template)，它们共享同一个接口。它们都做的事是允许你把模板和数据组合起来生成字符串。
 
-What's the difference with the HTML version?
+HTML 版本有什么不同？
 
-> Package template (html/template) implements data-driven templates for generating HTML output safe against code injection. It provides the same interface as package text/template and should be used instead of text/template whenever the output is HTML.
+> 包 template (html/template) 实现了数据驱动的模板，用于生成可安全防御代码注入的 HTML 输出。它提供了与 text/template 相同的接口，无论何时输出是 HTML，都应使用它来代替 text/template。
 
-The templating language is very similar to [Mustache](https://mustache.github.io) and allows you to dynamically generate content in a very clean fashion with a nice separation of concerns. Compared to other templating languages you may have used, it is very constrained or "logic-less" as Mustache likes to say. This is an important, **and deliberate** design decision.
+模板语言和 [Mustache](https://mustache.github.io) 非常相似，能让你以一种很整洁的方式动态生成内容，并很好地分离关注点。相比你可能用过的其他模板语言，它非常受限，或者按 Mustache 的说法是"逻辑无关"的。这是一项重要的、**有意为之**的设计决策。
 
-Whilst we're focusing on generating HTML here, if your project is doing complex string concatenations and incantations, you might want to reach for `text/template` to clean up your code.
+虽然我们这里聚焦的是生成 HTML，但如果你的项目在做复杂的字符串拼接和折腾，你可能会想用 `text/template` 来整理你的代码。
 
-### Back to the code
+### 回到代码
 
-Here is a template for our blog: 
+下面是我们博客的一个模板：
 
 `<h1>{{.Title}}</h1><p>{{.Description}}</p>Tags: <ul>{{range .Tags}}<li>{{.}}</li>{{end}}</ul>`
 
-Where do we define this string? Well, we have a few options, but to keep the steps small, let's just start with a plain old string
+我们在哪里定义这个字符串呢？嗯，有几个选择，但为了保持步骤小，我们就先从一个普普通通的字符串开始
 
 ```go
 package blogrenderer
@@ -276,27 +276,27 @@ func Render(w io.Writer, p Post) error {
 }
 ```
 
-We create a new template with a name, and then parse our template string. We can then use the `Execute` method on it, passing in our data, in this case the `Post`. 
+我们用一个名字创建一个新模板，然后解析模板字符串。然后我们就能在它上面调用 `Execute` 方法，传入数据，本例中是 `Post`。
 
-The template will substitute things like `{{.Description}}` with the content of `p.Description`. Templates also give you some programming primitives like `range` to loop over values, and `if`. You can find more details in the [text/template documentation](https://pkg.go.dev/text/template).
+模板会把 `{{.Description}}` 之类的东西替换成 `p.Description` 的内容。模板还提供了一些编程原语，比如 `range` 用来循环遍历值，以及 `if`。你可以在 [text/template 文档](https://pkg.go.dev/text/template) 中找到更多细节。
 
-*This should be a pure refactor.* We shouldn't need to change our tests and they should continue to pass. Importantly, our code is easier to read and has far less annoying error handling to contend with. 
+_这应该是一次纯重构。_ 我们不需要改测试，它们应该继续通过。重要的是，我们的代码更易读，也少了很多烦人的错误处理。
 
-Frequently people complain about the verbosity of error handling in Go, but you might find you can find better ways to write your code so it's less error-prone in the first place, like here.
+人们经常抱怨 Go 中错误处理的啰嗦，但你或许会发现你能找到更好的方式来写代码，让它从一开始就不那么容易出错，就像这里一样。
 
-### More refactoring
+### 进一步重构
 
-Using the `html/template` has definitely been an improvement, but having it as a string constant in our code isn't great:
+使用 `html/template` 绝对是一种改进，但把它作为字符串常量放在我们的代码里并不理想：
 
-- It's still quite difficult to read.
-- It's not IDE/editor friendly. No syntax highlighting, ability to reformat, refactor, e.t.c.
-- It looks like HTML, but you can't really work with it like you could a "normal" HTML file
+- 它仍然挺难读的。
+- 对 IDE/编辑器不友好。没有语法高亮、没法重新格式化、重构等等。
+- 它看起来像 HTML，但你没法像处理"普通的" HTML 文件那样去处理它
 
-What we'd like to do is have our templates live in separate files so we can better organise them, and work with them as if they're HTML files.
+我们想做的是把模板放到独立的文件里，这样我们可以更好地组织它们，并像处理 HTML 文件一样处理它们。
 
-Create a folder called "templates" and inside it make a file called `blog.gohtml`, paste our template into the file.
+创建一个名为 "templates" 的文件夹，在里面新建一个文件 `blog.gohtml`，把我们的模板粘贴到这个文件里。
 
-Now change our code to embed the file systems using the [embedding functionality included in go 1.16](https://pkg.go.dev/embed).
+现在修改我们的代码，使用 [Go 1.16 引入的 embed 功能](https://pkg.go.dev/embed) 来嵌入文件系统。
 
 ```go
 package blogrenderer
@@ -326,27 +326,27 @@ func Render(w io.Writer, p Post) error {
 }
 ```
 
-By embedding a "file system" into our code, we can load multiple templates and combine them freely. This will become useful when we want to share rendering logic across different templates, such as a header for the top of the HTML page and a footer.
+通过把"文件系统"嵌入到我们的代码中，我们可以加载多个模板并自由组合。当我们想在不同模板之间共享渲染逻辑时（比如 HTML 页面顶部的 header 和 footer），这会变得很有用。
 
-### Embed?
+### Embed？
 
-Embed was lightly touched on in [reading files](reading-files.md). The [documentation from the standard library explains](https://pkg.go.dev/embed)
+Embed 在 [读取文件](reading-files.md) 中有简短地接触过。[标准库的文档解释](https://pkg.go.dev/embed)
 
-> Package embed provides access to files embedded in the running Go program.
+> 包 embed 提供对嵌入到运行中的 Go 程序中的文件的访问。
 >
-> Go source files that import "embed" can use the //go:embed directive to initialize a variable of type string, []byte, or FS with the contents of files read from the package directory or subdirectories at compile time.
+> 导入了 "embed" 的 Go 源文件可以使用 //go:embed 指令，用编译期从包目录或子目录读取的文件内容，初始化类型为 string、[]byte 或 FS 的变量。
 
-Why would we want to use this? Well the alternative is that we _can_ load our templates from a "normal" file system. However this means we'd have to make sure that the templates are in the correct file path wherever we want to use this software. In your job you may have various environments like development, staging and live. For this to work, you'd need to make sure your templates are copied to the correct place. 
+我们为什么要用这个？另一种方式是我们 _可以_ 从"普通的"文件系统加载模板。但这意味着无论我们想在哪里使用这个软件，都得保证模板放在正确的文件路径上。在你的工作中，你可能会有不同的环境，比如开发、预发和生产。要让它工作，你得确保模板被复制到正确的位置。
 
-With embed, the files are included in your Go program when you build it. This means once you've built your program (which you should only do once), the files are always available to you. 
+使用 embed 的话，文件会在你构建程序时被包含进去。这意味着一旦你构建完程序（你只该构建一次），这些文件总是可用的。
 
-What's handy is you can not only embed individual files, but also file systems; and that filesystem implements [io/fs](https://pkg.go.dev/io/fs) which means your code doesn't need to care what kind of file system it is working with.
+更方便的是，你不仅可以嵌入单个文件，还可以嵌入文件系统；并且这个文件系统实现了 [io/fs](https://pkg.go.dev/io/fs)，这意味着你的代码不需要关心它在和哪种文件系统打交道。
 
-If you wish to use different templates depending on configuration though, you may wish to stick to loading templates from disk in the more conventional way.
+不过如果你希望根据配置使用不同的模板，那你可能会希望坚持用更常规的方式从磁盘加载模板。
 
-## Next: Make the template "nice"
+## 接下来：让模板"漂亮"起来
 
-We don't really want our template to be defined as a one line string. We want to be able to space it out to make it easier to read and work with, something like this:
+我们并不希望我们的模板被定义成一行字符串。我们希望把它分行排开，让它更易读、更好维护，类似下面这样：
 
 ```handlebars
 <h1>{{.Title}}</h1>
@@ -356,19 +356,19 @@ We don't really want our template to be defined as a one line string. We want to
 Tags: <ul>{{range .Tags}}<li>{{.}}</li>{{end}}</ul>
 ```
 
-But if we do this, our test fails. This is because our test is expecting a very specific string to be returned. 
+但如果我们这么做，测试就会失败。这是因为我们的测试在期望返回一个非常具体的字符串。
 
-But really, we don't actually care about whitespace. Maintaining this test will become a nightmare if we have to keep painstakingly updating the assertion string every time we make minor changes to the markup. As the template grows, these kind of edits become harder to manage and the costs of work will spiral out of control.
+但说真的，我们其实并不在乎空白字符。如果每次对标签做点小改动都得费力地更新断言字符串，维护这个测试会变成一场噩梦。随着模板增长，这种修改会变得更难管理，工作成本会失控。
 
-## Introducing Approval Tests
+## 引入审批测试（Approval Tests）
 
 [Go Approval Tests](https://github.com/approvals/go-approval-tests)
 
-> ApprovalTests allows for easy testing of larger objects, strings and anything else that can be saved to a file (images, sounds, CSV, etc...)
+> ApprovalTests 让你能轻松测试较大的对象、字符串以及任何能保存到文件的东西（图像、声音、CSV 等等……）
 
-The idea is similar to "golden" files, or snapshot testing. Rather than awkwardly maintaining strings within a test file, the approval tool can compare the output for you with an "approved" file you created. You then simply copy over the new version if you approve it. Re-run the test and you're back to green.
+这个想法和"golden 文件"或快照测试类似。它不是让你在测试文件里费劲地维护字符串，而是让审批工具帮你将输出和你创建的"已批准"文件做比较。然后你只要在批准它后简单地把新版本拷贝过去即可。重新跑测试，你又回到绿色了。
 
-Add a dependency to `"github.com/approvals/go-approval-tests"` to your project and edit the test to the following
+把 `"github.com/approvals/go-approval-tests"` 添加为项目依赖，并把测试改成下面这样
 
 ```go
 func TestRender(t *testing.T) {
@@ -393,7 +393,7 @@ func TestRender(t *testing.T) {
 }
 ```
 
-The first time you run it, it will fail because we haven't approved anything yet
+第一次运行它时会失败，因为我们还没批准任何东西
 
 ```
 === RUN   TestRender
@@ -401,16 +401,16 @@ The first time you run it, it will fail because we haven't approved anything yet
     renderer_test.go:29: Failed Approval: received does not match approved.
 ```
 
-It will have created two files, that look like the following
+它会创建两个文件，类似下面这样
 
 - `renderer_test.TestRender.it_converts_a_single_post_into_HTML.received.txt`
 - `renderer_test.TestRender.it_converts_a_single_post_into_HTML.approved.txt`
 
-The received file has the new, unapproved version of the output. Copy that into the empty approved file and re-run the test.
+received 文件里是新的、未批准的输出。把它的内容复制到空的 approved 文件里，然后重新运行测试。
 
-By copying the new version you have "approved" the change, and the test now passes.
+通过复制新版本，你"批准"了这次更改，测试现在通过了。
 
-To see the workflow in action, edit the template to how we discussed to make it easier to read (but semantically, it's the same).
+为了直观看到这个工作流，把模板改成我们之前讨论的、更易读的样子（在语义上是一样的）。
 
 ```handlebars
 <h1>{{.Title}}</h1>
@@ -420,41 +420,41 @@ To see the workflow in action, edit the template to how we discussed to make it 
 Tags: <ul>{{range .Tags}}<li>{{.}}</li>{{end}}</ul>
 ```
 
-Re-run the test. A new "received" file will be generated because the output of our code differs to the approved version. Give them a look, and if you're happy with the changes, simply copy over the new version and re-run the test. Be sure to commit the approved files to source control.
+重新运行测试。会生成一个新的 "received" 文件，因为我们代码的输出和已批准的版本不同了。看一下，如果你对修改满意，简单地把新版本覆盖过去并重新运行测试。一定要把已批准的文件提交到版本控制中。
 
-This approach makes managing changes to big ugly things like HTML far simpler. You can use a diff tool to view and manage the differences, and it keeps your test code cleaner.
+这种方式让管理 HTML 这种又大又丑的内容的变更简单得多。你可以用 diff 工具来查看和管理差异，并且让你的测试代码保持干净。
 
-![Use diff tool to manage changes](https://i.imgur.com/0MoNdva.png)
+![用 diff 工具管理变更](https://i.imgur.com/0MoNdva.png)
 
-This is actually a fairly minor usage of approval tests, which are an extremely useful tool in your testing arsenal. [Emily Bache](https://twitter.com/emilybache) has an [interesting video where she uses approval tests to add an incredibly extensive set of tests to a complicated codebase that has zero tests](https://www.youtube.com/watch?v=zyM2Ep28ED8). "Combinatorial Testing" is definitely something worth looking into.
+这其实只是审批测试的一种很轻量的用法，它在你的测试军火库里是个非常有用的工具。[Emily Bache](https://twitter.com/emilybache) 有一段 [有趣的视频，她在视频里用审批测试为一个零测试的复杂代码库添加了一套极其全面的测试](https://www.youtube.com/watch?v=zyM2Ep28ED8)。"组合测试"（Combinatorial Testing）绝对值得了解。
 
-Now that we have made this change, we still benefit from having our code well-tested, but the tests won't get in the way too much when we're tinkering with the markup.
+做完这个改动后，我们仍然能从代码良好测试中受益，但当我们在折腾标签时，测试也不会过多妨碍我们了。
 
-### Are we still doing TDD?
+### 我们还在做 TDD 吗？
 
-An interesting side-effect of this approach is it takes us away from TDD. Of course you _could_ manually edit the approved files to the state you want, run your tests and then fix the templates so they output what you defined. 
+这种方法的一个有趣副作用是，它把我们带离了 TDD。当然你 _可以_ 手动把已批准文件改成你想要的状态、运行测试，然后修改模板让它输出你定义的内容。
 
-But that's just silly! TDD is a method for doing work, specifically designing; but that doesn't mean we have to dogmatically use it for **everything**. 
+但这就太蠢了！TDD 是一种工作方式，特别是用于设计；但这并不意味着我们必须教条地把它用于 **所有** 事情。
 
-The important thing is, we've done the right thing and used TDD as a **design tool** to design our package's API. For templates changes our process can be:
+重要的是，我们做了正确的事，把 TDD 当作一种 **设计工具** 来设计我们包的 API。对于模板的修改我们的流程可以是：
 
-- Make a small change to the template
-- Run the approval test
-- Eyeball the output to check it looks correct
-- Make the approval
-- Repeat
+- 对模板做一个小改动
+- 跑审批测试
+- 用眼睛看一眼输出，检查是否正确
+- 做出审批
+- 重复
 
-We still shouldn't give up the value of working in small achievable steps. Try to find ways to make the changes small and keep re-running the tests to get real feedback on what you're doing.
+我们仍然不应该放弃以小而可达成的步骤工作的价值。试着想办法让改动小一点，不断重新跑测试以获得对当前所做事情的真实反馈。
 
-If we start doing things like changing the code _around_ the templates, then of course that may warrant going back to our TDD method of work. 
+如果我们开始改的是模板 _周围_ 的代码，那当然可能值得回到 TDD 的工作方式。
 
-## Expand the markup
+## 扩展标签
 
-Most websites have richer HTML than we have right now. For starters, a `html` element, along with a `head`, perhaps some `nav` too. Usually there's an idea of a footer too.
+大多数网站的 HTML 比我们现在的要丰富得多。首先有 `html` 元素，再加上 `head`，可能还有 `nav`。通常还会有 footer 的概念。
 
-If our site is going to have different pages, we'd want to define these things in one place to keep our site looking consistent. Go templates support us defining sections which we can then import in to other templates.
+如果我们的站点要有不同的页面，我们会希望把这些东西定义在一处，让站点保持一致的外观。Go 模板支持我们定义片段，然后在其他模板中导入。
 
-Edit our existing template to import a top and bottom template
+修改我们已有的模板，导入一个顶部和底部模板
 
 ```handlebars
 {{template "top" .}}
@@ -466,7 +466,7 @@ Tags: <ul>{{range .Tags}}<li>{{.}}</li>{{end}}</ul>
 {{template "bottom" .}}
 ```
 
-Then create `top.gohtml` with the following
+然后用下面的内容创建 `top.gohtml`
 
 ```handlebars
 {{define "top"}}
@@ -492,7 +492,7 @@ Then create `top.gohtml` with the following
 {{end}}
 ```
 
-And `bottom.gohtml`
+以及 `bottom.gohtml`
 
 ```handlebars
 {{define "bottom"}}
@@ -508,9 +508,9 @@ And `bottom.gohtml`
 {{end}}
 ```
 
-(Obviously, feel free to put whatever markup you like!)
+（显然，你想放什么标签都行！）
 
-We now need to specify a specific template to run. In the blog renderer, change the `Execute` command to `ExecuteTemplate`
+我们现在需要指定一个具体的模板来运行。在 blog renderer 中，把 `Execute` 命令改成 `ExecuteTemplate`
 
 ```go
 if err := templ.ExecuteTemplate(w, "blog.gohtml", p); err != nil {
@@ -518,11 +518,11 @@ if err := templ.ExecuteTemplate(w, "blog.gohtml", p); err != nil {
 }
 ```
 
-Re-run your test. A new "received" file should be made and the test will fail. Check it over and if you're happy, approve it by copying it over the old version. Re-run the test again and it should pass.
+重新运行你的测试。会生成一个新的 "received" 文件，测试会失败。看一下，如果你满意，把它覆盖到旧版本上来批准它。再次运行测试，应该通过了。
 
-## An excuse to mess around with Benchmarking
+## 顺便玩一下基准测试
 
-Before pressing on, let's consider what our code does.
+继续之前，我们来思考一下我们的代码做了什么。
 
 ```go
 func Render(w io.Writer, p Post) error {
@@ -539,12 +539,12 @@ func Render(w io.Writer, p Post) error {
 }
 ```
 
-- Parse the templates
-- Use the template to render a post to an `io.Writer`
+- 解析模板
+- 用模板把一篇文章渲染到 `io.Writer`
 
-Whilst the performance impact of re-parsing the templates for each post in most cases will be fairly negligible, the effort to *not* do this is also pretty negligible and should tidy the code up a bit too.
+虽然在大多数情况下，每篇文章都重新解析模板对性能的影响相当微小，但 _不_ 这么做的代价也很小，而且应该能让代码稍微整洁一些。
 
-To see the impact of not doing this parsing over and over, we can use the benchmarking tool to see how fast our function is.
+为了直观地看到不重复解析的影响，我们可以用基准测试工具看看我们的函数有多快。
 
 ```go
 func BenchmarkRender(b *testing.B) {
@@ -563,13 +563,13 @@ func BenchmarkRender(b *testing.B) {
 }
 ```
 
-On my computer, here are the results
+在我的电脑上，结果如下
 
 ```
 BenchmarkRender-8 22124 53812 ns/op
 ```
 
-To stop us having to re-parse the templates over and over, we'll create a type that'll hold the parsed template, and that'll have a method to do the rendering
+为了避免一遍又一遍重新解析模板，我们创建一个类型来持有解析好的模板，并在它上面定义一个方法来做渲染
 
 ```go
 type PostRenderer struct {
@@ -595,7 +595,7 @@ func (r *PostRenderer) Render(w io.Writer, p Post) error {
 }
 ```
 
-This does change the interface of our code, so we'll need to update our test
+这改变了我们代码的接口，所以需要更新测试
 
 ```go
 func TestRender(t *testing.T) {
@@ -626,7 +626,7 @@ func TestRender(t *testing.T) {
 }
 ```
 
-And our benchmark
+以及我们的基准测试
 
 ```go
 func BenchmarkRender(b *testing.B) {
@@ -651,33 +651,33 @@ func BenchmarkRender(b *testing.B) {
 }
 ```
 
-The test should continue to pass. How about our benchmark?
+测试应该继续通过。那基准测试呢？
 
-`BenchmarkRender-8 362124 3131 ns/op`. The old NS per op were `53812 ns/op`, so this is a decent improvement! As we add other methods to render, say an Index page, it should simplify the code as we don't need to duplicate the template parsing.
+`BenchmarkRender-8 362124 3131 ns/op`。之前的 ns/op 是 `53812 ns/op`，所以这是个相当不错的提升！当我们再添加其他渲染方法（比如首页）时，因为不需要重复解析模板，代码也会更简洁。
 
-## Back to the real work
+## 回到正事
 
-In terms of rendering posts, the important part left is actually rendering the `Body`. If you recall, that should be markdown that the author has written, so it'll need converting to HTML. 
+在渲染文章这件事上，剩下重要的部分其实是渲染 `Body`。如果你还记得，那应该是作者写的 markdown，所以需要转换成 HTML。
 
-We'll leave this as an exercise for you, the reader. You should be able to find a Go library to do this for you. Use the approval test to validate what you're doing. 
+我们把这个留作给读者你的练习。你应该能找到一个 Go 库来帮你做这件事。用审批测试来验证你做的事情。
 
-### On testing 3rd-party libraries
+### 关于测试第三方库
 
-**Note**. Be careful not to worry too much about explicitly testing how a 3rd party library behaves in unit tests. 
+**注意**。要小心，不要在单元测试里过度关注于显式测试某个第三方库的行为。
 
-Writing tests against code you don't control is wasteful and adds maintenance overhead. Sometimes you may wish to use [dependency injection](./dependency-injection.md) to control a dependency and mock its behaviour for a test.
+针对你不掌控的代码写测试是一种浪费，并增加维护负担。有时你可能会希望使用 [依赖注入](./dependency-injection.md) 来控制一个依赖，并在测试中 mock 它的行为。
 
-In this case though, I view converting the markdown into HTML as implementation detail of rendering, and our approval tests should give us enough confidence.
+不过在本例中，我把 markdown 转 HTML 视为渲染的实现细节，我们的审批测试应该能给我们足够的信心。
 
-### Render index
+### 渲染首页
 
-The next bit of functionality we're going to do is rendering an Index, listing the posts as a HTML ordered list. 
+我们接下来要做的功能是渲染一个首页，把文章列成一个 HTML 有序列表。
 
-We're expanding upon our API, so we'll put our TDD hat back on. 
+我们在扩展 API，所以重新戴上 TDD 的帽子。
 
-## Write the test first
+## 先写测试
 
-On the face of it an index page seems simple, but writing the test still prompts us to make some design choices
+表面上，首页似乎很简单，但写测试仍然会促使我们做出一些设计选择
 
 ```go
 t.Run("it renders an index of posts", func(t *testing.T) {
@@ -697,18 +697,18 @@ t.Run("it renders an index of posts", func(t *testing.T) {
 })
 ```
 
-1. We're using the `Post`'s title field as a part of the path of the URL, but we don't really want spaces in the URL so we're replacing them with hyphens.
-2. We've added a `RenderIndex` method to our `PostRenderer` that again takes an `io.Writer` and a slice of `Post`.
+1. 我们把 `Post` 的 title 字段作为 URL 路径的一部分，但我们不想 URL 里有空格，所以用连字符替换它们。
+2. 我们给 `PostRenderer` 加了一个 `RenderIndex` 方法，同样接收一个 `io.Writer` 和一个 `Post` 切片。
 
-If we had stuck with a test-after, approval tests approach here we would not be answering these questions in a controlled environment. **Tests give us space to think**. 
+如果我们坚持先写代码后写测试，配合审批测试方式，我们就不会在一个受控环境中回答这些问题。**测试给了我们思考的空间**。
 
-## Try to run the test
+## 尝试运行测试
 
 ```
 ./renderer_test.go:41:13: undefined: blogrenderer.RenderIndex
 ```
 
-## Write the minimal amount of code for the test to run and check the failing test output
+## 写最少量的代码让测试能跑起来，并查看失败的测试输出
 
 ```go
 func (r *PostRenderer) RenderIndex(w io.Writer, posts []Post) error {
@@ -716,7 +716,7 @@ func (r *PostRenderer) RenderIndex(w io.Writer, posts []Post) error {
 }
 ```
 
-The above should get the following test failure
+上面的代码应该让测试出现下面的失败
 
 ```
 === RUN   TestRender
@@ -725,9 +725,9 @@ The above should get the following test failure
 --- FAIL: TestRender (0.00s)
 ```
 
-## Write enough code to make it pass
+## 写足够的代码让测试通过
 
-Even though this _feels_ like it should be easy, it is a bit awkward. I did it in multiple steps
+虽然这件事 _感觉_ 应该容易，但其实有点别扭。我分了好几步来做
 
 ```go
 func (r *PostRenderer) RenderIndex(w io.Writer, posts []Post) error {
@@ -746,9 +746,9 @@ func (r *PostRenderer) RenderIndex(w io.Writer, posts []Post) error {
 }
 ```
 
-I didn't want to bother with separate template files at first, I just wanted to get it working. I view the upfront template parsing and separation as refactoring I can do later. 
+我一开始不想折腾独立的模板文件，只想先让它工作起来。我把"先解析"和"分文件"视为以后可以做的重构。
 
-This doesn't pass, but it's close.
+这没通过，但已经很接近了。
 
 ```
 === RUN   TestRender
@@ -758,11 +758,11 @@ This doesn't pass, but it's close.
     --- FAIL: TestRender/it_renders_an_index_of_posts (0.00s)
 ```
 
-You can see that the templating code is escaping the spaces in the `href` attributes. We need a way to do a string replace of spaces with hyphens. We can't just loop through the `[]Post` and replace them in-memory because we still want the spaces displayed to the user in the anchors. 
+你可以看到模板代码把 `href` 属性中的空格做了转义。我们需要一种方式把空格替换成连字符。我们不能直接遍历 `[]Post` 在内存里替换它们，因为我们仍然希望显示给用户的链接锚文本里有空格。
 
-We have a few options. The first one we'll explore is passing a function in to our template. 
+我们有几个选择。第一个我们要探索的是把一个函数传给模板。
 
-### Passing functions into templates 
+### 把函数传入模板
 
 ```go
 func (r *PostRenderer) RenderIndex(w io.Writer, posts []Post) error {
@@ -785,33 +785,33 @@ func (r *PostRenderer) RenderIndex(w io.Writer, posts []Post) error {
 }
 ```
 
-_Before you parse a template_ you can add a `template.FuncMap` into your template, which allows you to define functions that can be called within your template. In this case we've made a `sanitiseTitle` function which we then call inside our template with `{{sanitiseTitle .Title}}`.
+_在你解析模板之前_，你可以给模板加一个 `template.FuncMap`，它允许你定义可以在模板中调用的函数。本例中我们做了一个 `sanitiseTitle` 函数，然后我们在模板里用 `{{sanitiseTitle .Title}}` 来调用它。
 
-This is a powerful feature, being able to send functions in to your template will allow you to do some very cool things, but, should you? Going back to the principles of Mustache and logic-less templates, why did they advocate for logic-less? **What is wrong with logic in templates?** 
+这是一项强大的特性，把函数送入模板能让你做一些非常酷的事，但是，你应该这样吗？回到 Mustache 和逻辑无关模板的原则，他们为什么主张逻辑无关？**模板里的逻辑有什么问题？**
 
-As we've shown, in order to test our templates, *we've had to introduce a whole different kind of testing*. 
+正如我们已经看到的，为了测试我们的模板，_我们不得不引入了一种完全不同的测试方式_。
 
-Imagine you introduce a function into a template which has a few different permutations of behaviour and edge cases, **how will you test it**? With this current design, your only means of testing this logic is by _rendering HTML and comparing strings_. This is not an easy or sane way of testing logic, and definitely not what you'd want for _important_ business logic. 
+想象一下你往模板里塞了一个有几种不同行为分支和边界情况的函数，**你怎么测它**？以目前的设计，你测这种逻辑的唯一方式就是 _渲染 HTML 并比较字符串_。这并不是一种容易或理智的逻辑测试方式，绝对不是你想给 _重要的_ 业务逻辑用的方式。
 
-Even though the approval tests technique has reduced the cost of maintaining these tests, they're still more expensive to maintain than most unit tests you'll write. They're still sensitive to any minor markup changes you might make, it's just we've made it easier to manage. We should still strive to architect our code so we don't have to write many tests around our templates, and try and separate concerns so any logic that doesn't need to live inside our rendering code is properly separated.
+虽然审批测试技术降低了维护这些测试的成本，但它们仍然比你写的大多数单元测试更难维护。它们对你做出的任何小标签改动仍然敏感，只是我们让管理变得简单了一些。我们仍然应该努力把代码组织好，让我们不必围绕模板写很多测试，并尽量把不需要在渲染代码里的逻辑剥离出去。
 
-What Mustache-influenced templating engines give you is a useful constraint, don't try to circumvent it too often; **don't go against the grain**. Instead, embrace the idea of [view models](https://stackoverflow.com/a/11074506/3193), where you construct specific types that contain the data you need to render, in a way that's convenient for the templating language. 
+受 Mustache 影响的模板引擎给你的是一种有用的约束，不要太频繁地试图绕开它；**不要逆水行舟**。相反，拥抱 [视图模型（view models）](https://stackoverflow.com/a/11074506/3193) 的思路：构造特定类型，让其包含渲染所需的数据，且其形态对模板语言来说很方便。
 
-This way, whatever important business logic you use to generate that bag of data can be unit tested separately, away from the messy world of HTML and templating. 
+这样一来，无论你用怎样重要的业务逻辑生成那一包数据，都可以独立地做单元测试，远离 HTML 和模板这片混乱地带。
 
-### Separating concerns
+### 分离关注点
 
-So what could we do instead?
+那我们可以做些什么呢？
 
-#### Add a method to `Post` and then call that in the template
+#### 给 `Post` 加一个方法，然后在模板中调用
 
-We can call methods in our templating code on the types we send, so we could add a `SanitisedTitle` method to `Post`. This would simplify the template and we could easily unit test this logic separately if we wish. This is probably the easiest solution, although not necessarily the simplest.  
+我们可以在模板代码里调用我们传入类型的方法，因此可以给 `Post` 加一个 `SanitisedTitle` 方法。这样能简化模板，并且我们想的话也很容易单独单元测试这部分逻辑。这大概是最简单的方案，虽然不一定是最简洁的。
 
-A downside to this approach is that this is still _view_ logic. It's not interesting to the rest of the system but it now becomes a part of the API for a core domain object. This kind of approach over time can lead to you creating [God Objects](https://en.wikipedia.org/wiki/God_object).
+这种方式的一个缺点是，这仍然是 _视图_ 逻辑。它对系统的其他部分没什么用，但现在却成了核心领域对象 API 的一部分。这种做法日积月累，可能会让你创造出 [上帝对象](https://en.wikipedia.org/wiki/God_object)。
 
-#### Create a dedicated view model type, such as `PostViewModel` with exactly the data we need
+#### 创建一个专门的视图模型类型，比如 `PostViewModel`，里面只放我们需要的数据
 
-Rather than our rendering code being coupled to the domain object, `Post`, it instead takes a view model.
+我们的渲染代码不再耦合于领域对象 `Post`，而是接收一个视图模型。
 
 ```go
 type PostViewModel struct {
@@ -820,13 +820,13 @@ type PostViewModel struct {
 }
 ```
 
-Callers of our code would have to map from `[]Post` to `[]PostView`, generating the `SanitizedTitle`. A way to keep this clean would be to have a `func NewPostView(p Post) PostView` which would encapsulate the mapping.
+我们代码的调用方需要把 `[]Post` 映射为 `[]PostView`，并生成 `SanitizedTitle`。一个保持整洁的方式是有一个 `func NewPostView(p Post) PostView` 来封装这种映射。
 
-This would keep our rendering code logic-less and is probably the strictest separation of concerns we could do, but the trade-off is a slightly more convoluted process to get our posts rendered.
+这能让我们的渲染代码保持逻辑无关，也是我们能做到的最严格的关注点分离，但代价是渲染文章的过程稍微更曲折一些。
 
-Both options are fine, in this case I am tempted to go with the first. As you evolve the system you should be wary of adding more and more ad-hoc methods just to grease the wheels of rendering; dedicated view models become more useful when the transformation between the domain object and view becomes more involved.
+两种方式都可以，本例中我倾向于选第一种。在系统演化时，你应该警惕仅仅为了让渲染顺畅就不断添加各种零散的方法；当领域对象到视图的转换变得更复杂时，专门的视图模型会更有用。
 
-So we can add our method to `Post`
+那我们就可以给 `Post` 加上方法
 
 ```go
 func (p Post) SanitisedTitle() string {
@@ -834,7 +834,7 @@ func (p Post) SanitisedTitle() string {
 }
 ```
 
-And then we can go back to a simpler world in our rendering code
+然后我们的渲染代码就能回归一个更简单的世界
 
 ```go
 func (r *PostRenderer) RenderIndex(w io.Writer, posts []Post) error {
@@ -853,9 +853,9 @@ func (r *PostRenderer) RenderIndex(w io.Writer, posts []Post) error {
 }
 ```
 
-## Refactor
+## 重构
 
-Finally the test should be passing. We can now move our template into a file (`templates/index.gohtml`) and load it once, when we construct our renderer.
+终于测试应该通过了。我们现在可以把模板挪到一个文件里（`templates/index.gohtml`），并在构造 renderer 时一次性加载。
 
 ```go
 package blogrenderer
@@ -893,11 +893,11 @@ func (r *PostRenderer) RenderIndex(w io.Writer, posts []Post) error {
 }
 ```
 
-By parsing more than one template into `templ` we now have to call `ExecuteTemplate` and specify _which_ template we wish to render as appropriate, but hopefully you'll agree the code we've arrived at looks great.
+由于把多个模板都解析到了 `templ` 里，我们现在必须调用 `ExecuteTemplate` 并指定 _要_ 渲染哪个模板，但希望你也同意，我们最终得到的代码看起来很棒。
 
-There is a _slight_ risk if someone renames one of the template files, it would introduce a bug, but our fast to run unit tests would catch this quickly. 
+如果有人重命名其中一个模板文件，会引入一个 _轻微_ 的 bug 风险，但我们快速运行的单元测试会很快捕捉到它。
 
-Now we're happy with our package's API design and got some basic behaviour driven out with TDD, let's change our test to use approvals.
+现在我们对包的 API 设计满意了，并通过 TDD 推导出了一些基本行为，让我们把测试改成使用审批测试。
 
 ```go
 	t.Run("it renders an index of posts", func(t *testing.T) {
@@ -912,9 +912,9 @@ Now we're happy with our package's API design and got some basic behaviour drive
 	})
 ```
 
-Remember to run the test to see it fail, and then approve the change. 
+记得运行测试看到它失败，然后批准这次更改。
 
-Finally we can add our page furniture to our index page:
+最后我们可以给首页加上页面结构：
 
 ```handlebars
 {{template "top" .}}
@@ -922,11 +922,11 @@ Finally we can add our page furniture to our index page:
 {{template "bottom" .}}
 ```
 
-Re-run the test, approve the change and we're done with the index!
+重新运行测试，批准更改，首页就完成了！
 
-## Rendering the markdown body
+## 渲染 markdown body
 
-I encouraged you to try it yourself, here's the approach I ended up taking.
+我之前鼓励你自己尝试，下面是我最终采用的方式。
 
 ```go
 package blogrenderer
@@ -981,44 +981,44 @@ func newPostVM(p Post, r *PostRenderer) postViewModel {
 }
 ```
 
-I used the excellent [gomarkdown](https://github.com/gomarkdown/markdown) library which worked exactly how I'd hope. 
+我用了出色的 [gomarkdown](https://github.com/gomarkdown/markdown) 库，它的工作方式正如我所希望的。
 
-If you tried to do this yourself you may have found that your body render had the HTML escaped. This is a security feature of Go's html/template package to stop malicious 3rd-party HTML being outputted. 
+如果你自己尝试过，可能会发现你 body 的渲染结果中 HTML 被转义了。这是 Go 的 html/template 包的一个安全特性，用来阻止恶意第三方 HTML 被输出。
 
-To circumvent this, in the type you send to the render, you'll need to wrap your trusted HTML in [template.HTML](https://pkg.go.dev/html/template#HTML)
+要绕开这一点，在你发送到 render 的类型里，需要把你信任的 HTML 包装在 [template.HTML](https://pkg.go.dev/html/template#HTML) 中
 
-> HTML encapsulates a known safe HTML document fragment. It should not be used for HTML from a third-party, or HTML with unclosed tags or comments. The outputs of a sound HTML sanitiser and a template escaped by this package are fine for use with HTML.
+> HTML 封装了一段已知安全的 HTML 文档片段。它不应被用于来自第三方的 HTML，或带有未关闭标签或注释的 HTML。来自健全的 HTML 净化器以及由本包做了转义的模板的输出，可以放心地以这种类型使用。
 >
-> Use of this type presents a security risk: the encapsulated content should come from a trusted source, as it will be included verbatim in the template output.
+> 使用此类型存在安全风险：被封装的内容应来自可信源，因为它会被原封不动地包含在模板输出中。
 
-So I created an **unexported** view model (`postViewModel`), because I still viewed this as internal implementation detail to rendering. I have no need to test this separately and I don't want it polluting my API. 
+所以我创建了一个 **未导出** 的视图模型（`postViewModel`），因为我仍把它视为渲染的内部实现细节。我没必要单独测试它，也不希望它污染我的 API。
 
-I construct one when rendering so I can parse the `Body` into `HTMLBody` and then I use that field in the template to render the HTML.
+我在渲染时构造一个，用来把 `Body` 解析为 `HTMLBody`，然后我在模板里使用这个字段来渲染 HTML。
 
-## Wrapping up
+## 总结
 
-If you combine your learnings of the [reading files](reading-files.md) chapter and this one, you can comfortably make a well-tested, simple, static site generator and spin up a blog of your own. Find some CSS tutorials and you can make it look nice too. 
+如果你结合 [读取文件](reading-files.md) 那章和这一章的所学，你可以舒服地做出一个有良好测试、简单的静态站点生成器，并搭起你自己的博客。再找一些 CSS 教程，你也能让它看起来不错。
 
-This approach extends beyond blogs. Taking data from any source, be it a database, an API or a file-system and converting it into HTML and returning it from a server is a simple technique spanning many decades. People like to bemoan the complexity of modern web development but are you sure you're not just inflicting the complexity on yourself?
+这种方法不止适用于博客。从任意来源——数据库、API 还是文件系统——拿数据，转成 HTML 并从服务器返回，是一种跨越数十年的简单技术。人们喜欢抱怨现代 web 开发的复杂，但你确定你不是只是在自找麻烦吗？
 
-Go is wonderful for web development, especially when you think clearly about what your real requirements are for the website you're making. Generating HTML on the server is often a better, simpler and more performant approach than creating a "web application" with technologies like React.
+Go 非常适合 web 开发，特别是当你能清醒思考你正在做的网站的真实需求时。在服务端生成 HTML，往往是比用 React 这类技术做"web 应用"更好、更简单、性能也更好的方式。
 
-### What we've learned
+### 我们学到了什么
 
-- How to create and render HTML templates.
-- How to compose templates together and [DRY](https://en.wikipedia.org/wiki/Don't_repeat_yourself) up related markup and help us keep a consistent look and feel.
-- How to pass functions into templates, and why you should think twice about it.
-- How to write "Approval Tests", which help us test the big ugly output of things like template renderers. 
+- 如何创建并渲染 HTML 模板。
+- 如何把模板组合在一起，[DRY](https://en.wikipedia.org/wiki/Don't_repeat_yourself) 化相关的标签，帮助我们保持一致的外观体验。
+- 如何把函数传入模板，以及为什么你应该再三考虑这样做。
+- 如何写"审批测试"，它能帮我们测试模板渲染器这种又大又丑的输出。
 
-### On logic-less templates
+### 关于逻辑无关的模板
 
-As always, this is all about **separation of concerns**. It's important we consider what the responsibilities are of the various parts of our system. Too often people leak important business logic into templates, mixing up concerns and making systems difficult to understand, maintain and test.
+像往常一样，这一切都是关于 **关注点分离**。重要的是我们要思考系统各部分的职责是什么。人们经常把重要的业务逻辑漏到模板里，混淆了关注点，让系统难以理解、维护和测试。
 
-### Not just for HTML
+### 不仅是 HTML
 
-Remember that go has `text/template` to generate other kinds of data from a template. If you find yourself needing to transform data into some kind of structured output, the techniques laid out in this chapter can be useful. 
+记住 Go 还有 `text/template` 用来从模板生成其他类型的数据。如果你发现自己需要把数据转换成某种结构化输出，本章介绍的技巧也可以派上用场。
 
-### References and further material 
+### 参考资料和延伸阅读
 
-- [John Calhoun's 'Learn Web Development with Go'](https://www.calhoun.io/intro-to-templates-p1-contextual-encoding/) has a number of excellent articles on templating.
-- [Hotwire](https://hotwired.dev) - You can use these techniques to create Hotwire web applications. It has been built by Basecamp who are primarily a Ruby on Rails shop, but because it is server-side, we can use it with Go. 
+- [John Calhoun 的 'Learn Web Development with Go'](https://www.calhoun.io/intro-to-templates-p1-contextual-encoding/) 有许多关于模板的优秀文章。
+- [Hotwire](https://hotwired.dev) - 你可以用本章的技巧创建 Hotwire web 应用。它由 Basecamp 开发，他们主要是 Ruby on Rails 团队，但因为它是服务端的，我们可以在 Go 中使用它。

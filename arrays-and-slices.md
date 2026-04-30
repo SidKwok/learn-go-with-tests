@@ -1,19 +1,16 @@
-# Arrays and slices
+# 数组和切片
 
-**[You can find all the code for this chapter here](https://github.com/quii/learn-go-with-tests/tree/main/arrays)**
+**[本章的所有代码可以在这里找到](https://github.com/quii/learn-go-with-tests/tree/main/arrays)**
 
-Arrays allow you to store multiple elements of the same type in a variable in
-a particular order.
+数组让你可以以特定的顺序在一个变量里存储多个相同类型的元素。
 
-When you have arrays, it is very common to have to iterate over them. So let's
-use [our new-found knowledge of `for`](iteration.md) to make a `Sum` function. `Sum` will
-take an array of numbers and return the total.
+当你有数组时，常常需要遍历它们。所以让我们用 [我们刚学到的 `for`](iteration.md) 知识来写一个 `Sum` 函数。`Sum` 接收一个数字数组并返回总和。
 
-Let's use our TDD skills
+让我们运用 TDD 技能
 
-## Write the test first
+## 先写测试
 
-Create a new folder to work in. Create a new file called `sum_test.go` and insert the following:
+新建一个文件夹来工作。创建一个新文件叫 `sum_test.go`，并加入下面的内容：
 
 ```go
 package main
@@ -33,33 +30,32 @@ func TestSum(t *testing.T) {
 }
 ```
 
-Arrays have a _fixed capacity_ which you define when you declare the variable.
-We can initialize an array in two ways:
+数组在你声明变量时定义了一个 _固定容量_。
+我们可以用两种方式初始化数组：
 
-* \[N\]type{value1, value2, ..., valueN} e.g. `numbers := [5]int{1, 2, 3, 4, 5}`
-* \[...\]type{value1, value2, ..., valueN} e.g. `numbers := [...]int{1, 2, 3, 4, 5}`
+* \[N\]type{value1, value2, ..., valueN}，例如 `numbers := [5]int{1, 2, 3, 4, 5}`
+* \[...\]type{value1, value2, ..., valueN}，例如 `numbers := [...]int{1, 2, 3, 4, 5}`
 
-It is sometimes useful to also print the inputs to the function in the error message.
-Here, we are using the `%v` placeholder to print the "default" format, which works well for arrays.
+有时候在错误信息里把传给函数的输入也打印出来会很有用。
+这里我们使用 `%v` 占位符来打印"默认"格式，对数组来说效果不错。
 
-[Read more about the format strings](https://golang.org/pkg/fmt/)
+[阅读更多关于格式化字符串的内容](https://golang.org/pkg/fmt/)
 
-## Try to run the test
+## 尝试运行测试
 
-If you had initialized go mod with `go mod init main` you will be presented with an error
-`_testmain.go:13:2: cannot import "main"`. This is because according to common practice,
-package main will only contain integration of other packages and not unit-testable code and
-hence Go will not allow you to import a package with name `main`.
+如果你用 `go mod init main` 初始化了 go mod，你会看到错误
+`_testmain.go:13:2: cannot import "main"`。这是因为按照常见做法，
+package main 只会包含其他包的集成而不包含可单元测试的代码，
+因此 Go 不会让你 import 名为 `main` 的包。
 
-To fix this, you can rename the main module in `go.mod` to any other name.
+要修复这个问题，你可以把 `go.mod` 中的 main 模块名重命名为其他名字。
 
-Once the above error is fixed, if you run `go test` the compiler will fail with the familiar
-`./sum_test.go:10:15: undefined: Sum` error. Now we can proceed with writing the actual method
-to be tested.
+修复上述错误后，如果你运行 `go test`，编译器会失败，给出熟悉的
+`./sum_test.go:10:15: undefined: Sum` 错误。现在我们可以继续写实际要测试的方法了。
 
-## Write the minimal amount of code for the test to run and check the failing test output
+## 写最少的代码让测试可以运行，并查看失败的测试输出
 
-In `sum.go`
+在 `sum.go` 里
 
 ```go
 package main
@@ -69,11 +65,11 @@ func Sum(numbers [5]int) int {
 }
 ```
 
-Your test should now fail with _a clear error message_
+你的测试现在应该会失败，给出 _清晰的错误信息_
 
 `sum_test.go:13: got 0 want 15 given, [1 2 3 4 5]`
 
-## Write enough code to make it pass
+## 写足够的代码让测试通过
 
 ```go
 func Sum(numbers [5]int) int {
@@ -85,13 +81,12 @@ func Sum(numbers [5]int) int {
 }
 ```
 
-To get the value out of an array at a particular index, just use `array[index]`
-syntax. In this case, we are using `for` to iterate 5 times to work through the
-array and add each item onto `sum`.
+要从数组的某个特定索引取值，只需使用 `array[index]`
+语法。这里我们用 `for` 迭代 5 次，遍历数组并把每个元素加到 `sum` 上。
 
-## Refactor
+## 重构
 
-Let's introduce [`range`](https://gobyexample.com/range) to help clean up our code
+让我们引入 [`range`](https://gobyexample.com/range) 来帮助清理代码
 
 ```go
 func Sum(numbers [5]int) int {
@@ -103,31 +98,27 @@ func Sum(numbers [5]int) int {
 }
 ```
 
-`range` lets you iterate over an array. On each iteration, `range` returns two values - the index and the value.
-We are choosing to ignore the index value by using `_` [blank identifier](https://golang.org/doc/effective_go.html#blank).
+`range` 让你可以迭代一个数组。每次迭代，`range` 会返回两个值——索引和值。
+我们选择用 `_` [空白标识符](https://golang.org/doc/effective_go.html#blank) 来忽略索引值。
 
-### Arrays and their type
+### 数组及其类型
 
-An interesting property of arrays is that the size is encoded in its type. If you try
-to pass an `[4]int` into a function that expects `[5]int`, it won't compile.
-They are different types so it's just the same as trying to pass a `string` into
-a function that wants an `int`.
+数组的一个有趣特性是大小被编码在它的类型里。如果你试图把一个 `[4]int`
+传入一个期望 `[5]int` 的函数，它不会编译通过。
+它们是不同的类型，就像试图把 `string` 传入一个想要 `int` 的函数一样。
 
-You may be thinking it's quite cumbersome that arrays have a fixed length, and most
-of the time you probably won't be using them!
+你可能会觉得数组有固定长度有点麻烦，大多数时候你应该不会用到它们！
 
-Go has _slices_ which do not encode the size of the collection and instead can
-have any size.
+Go 有 _切片_，它不在类型里编码集合的大小，而是可以是任意大小。
 
-The next requirement will be to sum collections of varying sizes.
+下一个需求是对不同大小的集合求和。
 
-## Write the test first
+## 先写测试
 
-We will now use the [slice type][slice] which allows us to have collections of
-any size. The syntax is very similar to arrays, you just omit the size when
-declaring them
+我们现在使用 [切片类型][slice]，它让我们可以拥有任意大小的集合。语法和数组非常相似，
+只是声明时省略了大小
 
-`mySlice := []int{1,2,3}` rather than `myArray := [3]int{1,2,3}`
+`mySlice := []int{1,2,3}` 而不是 `myArray := [3]int{1,2,3}`
 
 ```go
 func TestSum(t *testing.T) {
@@ -157,22 +148,21 @@ func TestSum(t *testing.T) {
 }
 ```
 
-## Try and run the test
+## 尝试运行测试
 
-This does not compile
+这编译不通过
 
 `./sum_test.go:22:13: cannot use numbers (type []int) as type [5]int in argument to Sum`
 
-## Write the minimal amount of code for the test to run and check the failing test output
+## 写最少的代码让测试可以运行，并查看失败的测试输出
 
-The problem here is we can either
+这里的问题是我们要么
 
-* Break the existing API by changing the argument to `Sum` to be a slice rather
-  than an array. When we do this, we will potentially ruin
-  someone's day because our _other_ test will no longer compile!
-* Create a new function
+* 通过把 `Sum` 的参数从数组改成切片来打破现有的 API。这样做的话，
+  我们可能会毁了某人的一天，因为我们的 _另一个_ 测试不再能编译！
+* 创建一个新函数
 
-In our case, no one else is using our function, so rather than having two functions to maintain, let's have just one.
+在我们的例子里，没有别人在用我们的函数，所以与其维护两个函数，不如就用一个。
 
 ```go
 func Sum(numbers []int) int {
@@ -184,16 +174,16 @@ func Sum(numbers []int) int {
 }
 ```
 
-If you try to run the tests they will still not compile, you will have to change the first test to pass in a slice rather than an array.
+如果你尝试运行测试，它们仍然不会编译通过，你需要把第一个测试改成传入切片而不是数组。
 
-## Write enough code to make it pass
+## 写足够的代码让测试通过
 
-It turns out that fixing the compiler problems were all we need to do here and the tests pass!
+事实证明，修复编译器问题就是我们这里要做的全部，测试通过了！
 
-## Refactor
+## 重构
 
-We already refactored `Sum` - all we did was replace arrays with slices, so no extra changes are required.
-Remember that we must not neglect our test code in the refactoring stage - we can further improve our `Sum` tests.
+我们已经重构了 `Sum`——我们所做的就是把数组替换成切片，所以不需要更多改动。
+记住，重构阶段我们不能忽视测试代码——我们可以进一步改进 `Sum` 测试。
 
 ```go
 func TestSum(t *testing.T) {
@@ -223,48 +213,45 @@ func TestSum(t *testing.T) {
 }
 ```
 
-It is important to question the value of your tests. It should not be a goal to
-have as many tests as possible, but rather to have as much _confidence_ as
-possible in your code base. Having too many tests can turn in to a real problem
-and it just adds more overhead in maintenance. **Every test has a cost**.
+质疑测试的价值很重要。目标不应是拥有尽可能多的测试，而是对你的代码库有尽可能多的 _信心_。
+测试太多会成为一个真正的问题，会增加更多维护开销。**每个测试都有成本**。
 
-In our case, you can see that having two tests for this function is redundant.
-If it works for a slice of one size it's very likely it'll work for a slice of
-any size \(within reason\).
+在我们的例子里，你可以看到为这个函数有两个测试是冗余的。
+如果它对一个大小的切片有效，那么它对任意大小的切片也很可能有效（在合理范围内）。
 
-Go's built-in testing toolkit features a [coverage tool](https://blog.golang.org/cover).
-Whilst striving for 100% coverage should not be your end goal, the coverage tool can help
-identify areas of your code not covered by tests. If you have been strict with TDD,
-it's quite likely you'll have close to 100% coverage anyway.
+Go 内置的测试工具集有一个 [覆盖率工具](https://blog.golang.org/cover)。
+虽然追求 100% 的覆盖率不应是你的最终目标，但覆盖率工具可以帮助
+找出代码中没有被测试覆盖的区域。如果你严格遵循 TDD，
+你的覆盖率很可能也接近 100%。
 
-Try running
+试着运行
 
 `go test -cover`
 
-You should see
+你应该会看到
 
 ```bash
 PASS
 coverage: 100.0% of statements
 ```
 
-Now delete one of the tests and check the coverage again.
+现在删除其中一个测试，再检查一下覆盖率。
 
-Now that we are happy we have a well-tested function you should commit your
-great work before taking on the next challenge.
+既然我们对一个测试良好的函数感到满意，你应该在迎接下一个挑战之前
+提交你的优秀工作。
 
-We need a new function called `SumAll` which will take a varying number of
-slices, returning a new slice containing the totals for each slice passed in.
+我们需要一个新函数 `SumAll`，它接收变化数量的切片，
+返回一个新切片，其中包含每个传入切片的总和。
 
-For example
+例如
 
-`SumAll([]int{1,2}, []int{0,9})` would return `[]int{3, 9}`
+`SumAll([]int{1,2}, []int{0,9})` 会返回 `[]int{3, 9}`
 
-or
+或者
 
-`SumAll([]int{1,1,1})` would return `[]int{3}`
+`SumAll([]int{1,1,1})` 会返回 `[]int{3}`
 
-## Write the test first
+## 先写测试
 
 ```go
 func TestSumAll(t *testing.T) {
@@ -278,15 +265,15 @@ func TestSumAll(t *testing.T) {
 }
 ```
 
-## Try and run the test
+## 尝试运行测试
 
 `./sum_test.go:23:9: undefined: SumAll`
 
-## Write the minimal amount of code for the test to run and check the failing test output
+## 写最少的代码让测试可以运行，并查看失败的测试输出
 
-We need to define `SumAll` according to what our test wants.
+我们需要按照测试想要的方式定义 `SumAll`。
 
-Go can let you write [_variadic functions_](https://gobyexample.com/variadic-functions) that can take a variable number of arguments.
+Go 让你可以写 [_可变参数函数_](https://gobyexample.com/variadic-functions)，它们可以接收可变数量的参数。
 
 ```go
 func SumAll(numbersToSum ...[]int) []int {
@@ -294,19 +281,18 @@ func SumAll(numbersToSum ...[]int) []int {
 }
 ```
 
-This is valid, but our tests still won't compile!
+这是合法的，但我们的测试还是编译不通过！
 
 `./sum_test.go:26:9: invalid operation: got != want (slice can only be compared to nil)`
 
-Go does not let you use equality operators with slices. You _could_ write
-a function to iterate over each `got` and `want` slice and check their values,
-but what if we had a more convenient way to do this?
+Go 不允许你对切片使用相等运算符。你 _可以_ 写一个函数迭代每个 `got` 和 `want` 切片并检查它们的值，
+但如果有更方便的办法呢？
 
-From Go 1.21, [slices](https://pkg.go.dev/slices#pkg-overview) standard package is available, which has [slices.Equal](https://pkg.go.dev/slices#Equal) function to do a simple shallow compare on slices, where you don't need to worry about the types like the above case.
-Note that this function expects the elements to be [comparable](https://pkg.go.dev/builtin#comparable).
-So, it can't be applied to slices with non-comparable elements like 2D slices.
+从 Go 1.21 开始，[slices](https://pkg.go.dev/slices#pkg-overview) 标准包可用，它有 [slices.Equal](https://pkg.go.dev/slices#Equal) 函数对切片进行简单的浅比较，你不必担心像上面这样的类型问题。
+注意这个函数要求元素是 [comparable](https://pkg.go.dev/builtin#comparable) 的。
+所以它不能用于元素不可比较的切片，比如二维切片。
 
-Let's go ahead and put this into practice!
+让我们把这个付诸实践！
 
 ```go
 func TestSumAll(t *testing.T) {
@@ -320,13 +306,13 @@ func TestSumAll(t *testing.T) {
 }
 ```
 
-You should have test output like the following:
+你应该会得到类似下面这样的测试输出：
 `sum_test.go:30: got [] want [3 9]`
 
-## Write enough code to make it pass
+## 写足够的代码让测试通过
 
-What we need to do is iterate over the varargs, calculate the sum using our
-existing `Sum` function, then add it to the slice we will return
+我们要做的是迭代可变参数，使用现有的 `Sum` 函数计算总和，
+然后把它加到我们将要返回的切片里
 
 ```go
 func SumAll(numbersToSum ...[]int) []int {
@@ -341,23 +327,24 @@ func SumAll(numbersToSum ...[]int) []int {
 }
 ```
 
-Lots of new things to learn!
+要学的新东西很多！
 
-There's a new way to create a slice. `make` allows you to create a slice with
-a starting capacity of the `len` of the `numbersToSum` we need to work through. The length of a slice is the number of elements it holds `len(mySlice)`, while the capacity is the number of elements it can hold in the underlying array `cap(mySlice)`, e.g., `make([]int, 0, 5)` creates a slice with length 0 and capacity 5.
+有了一种创建切片的新方式。`make` 让你可以创建一个起始容量为 `numbersToSum` 长度的切片。
+切片的长度是它持有的元素数量 `len(mySlice)`，而容量是它在底层数组中能持有的元素数量 `cap(mySlice)`，
+例如 `make([]int, 0, 5)` 创建一个长度为 0、容量为 5 的切片。
 
-You can index slices like arrays with `mySlice[N]` to get the value out or
-assign it a new value with `=`
+你可以像数组一样用 `mySlice[N]` 索引切片来取值，
+或者用 `=` 给它赋一个新值
 
-The tests should now pass.
+测试现在应该能通过了。
 
-## Refactor
+## 重构
 
-As mentioned, slices have a capacity. If you have a slice with a capacity of
-2 and try to do `mySlice[10] = 1` you will get a _runtime_ error.
+正如所述，切片有容量。如果你有一个容量为 2 的切片，
+然后尝试 `mySlice[10] = 1`，你会得到一个 _运行时_ 错误。
 
-However, you can use the `append` function which takes a slice and a new value,
-then returns a new slice with all the items in it.
+但是，你可以使用 `append` 函数，它接收一个切片和一个新值，
+然后返回一个包含所有元素的新切片。
 
 ```go
 func SumAll(numbersToSum ...[]int) []int {
@@ -370,14 +357,14 @@ func SumAll(numbersToSum ...[]int) []int {
 }
 ```
 
-In this implementation, we are worrying less about capacity. We start with an
-empty slice `sums` and append to it the result of `Sum` as we work through the varargs.
+在这个实现中，我们对容量的关注更少了。我们从一个空切片 `sums` 开始，
+随着我们处理可变参数，把 `Sum` 的结果追加到它上面。
 
-Our next requirement is to change `SumAll` to `SumAllTails`, where it will
-calculate the totals of the "tails" of each slice. The tail of a collection is
-all items in the collection except the first one \(the "head"\).
+我们的下一个需求是把 `SumAll` 改为 `SumAllTails`，它会
+计算每个切片"尾部"的总和。集合的尾部是
+集合中除第一个元素（"头部"）外的所有元素。
 
-## Write the test first
+## 先写测试
 
 ```go
 func TestSumAllTails(t *testing.T) {
@@ -390,17 +377,17 @@ func TestSumAllTails(t *testing.T) {
 }
 ```
 
-## Try and run the test
+## 尝试运行测试
 
 `./sum_test.go:26:9: undefined: SumAllTails`
 
-## Write the minimal amount of code for the test to run and check the failing test output
+## 写最少的代码让测试可以运行，并查看失败的测试输出
 
-Rename the function to `SumAllTails` and re-run the test
+把函数重命名为 `SumAllTails` 并重新运行测试
 
 `sum_test.go:30: got [3 9] want [2 9]`
 
-## Write enough code to make it pass
+## 写足够的代码让测试通过
 
 ```go
 func SumAllTails(numbersToSum ...[]int) []int {
@@ -414,21 +401,19 @@ func SumAllTails(numbersToSum ...[]int) []int {
 }
 ```
 
-Slices can be sliced! The syntax is `slice[low:high]`. If you omit the value on
-one of the sides of the `:` it captures everything to that side of it. In our
-case, we are saying "take from 1 to the end" with `numbers[1:]`. You may wish to
-spend some time writing other tests around slices and experiment with the
-slice operator to get more familiar with it.
+切片可以被切片！语法是 `slice[low:high]`。如果你省略 `:` 一侧的值，
+它会捕获那一侧的所有内容。在我们的例子里，
+`numbers[1:]` 表示"从 1 取到末尾"。你可能想花一些时间
+针对切片写其他测试，并尝试切片操作符以更熟悉它。
 
-## Refactor
+## 重构
 
-Not a lot to refactor this time.
+这次没什么要重构的。
 
-What do you think would happen if you passed in an empty slice into our
-function? What is the "tail" of an empty slice? What happens when you tell Go to
-capture all elements from `myEmptySlice[1:]`?
+如果你给我们的函数传入一个空切片，会发生什么？空切片的"尾部"是什么？
+当你让 Go 从 `myEmptySlice[1:]` 捕获所有元素时会怎样？
 
-## Write the test first
+## 先写测试
 
 ```go
 func TestSumAllTails(t *testing.T) {
@@ -454,19 +439,19 @@ func TestSumAllTails(t *testing.T) {
 }
 ```
 
-## Try and run the test
+## 尝试运行测试
 
 ```text
 panic: runtime error: slice bounds out of range [recovered]
     panic: runtime error: slice bounds out of range
 ```
 
-Oh no! It's important to note that while the test _has compiled_, it _has a runtime error_.
+哦不！要注意，虽然测试 _编译通过了_，但 _有一个运行时错误_。
 
-Compile time errors are our friend because they help us write software that works,
-runtime errors are our enemies because they affect our users.
+编译时错误是我们的朋友，因为它们帮我们写出能工作的软件，
+而运行时错误是我们的敌人，因为它们影响我们的用户。
 
-## Write enough code to make it pass
+## 写足够的代码让测试通过
 
 ```go
 func SumAllTails(numbersToSum ...[]int) []int {
@@ -484,9 +469,9 @@ func SumAllTails(numbersToSum ...[]int) []int {
 }
 ```
 
-## Refactor
+## 重构
 
-Our tests have some repeated code around the assertions again, so let's extract those into a function.
+我们的测试在断言部分又有重复代码了，让我们把它们抽成一个函数。
 
 ```go
 func TestSumAllTails(t *testing.T) {
@@ -513,51 +498,48 @@ func TestSumAllTails(t *testing.T) {
 }
 ```
 
-We could've created a new function `checkSums` like we normally do, but in this case, we're showing a new technique, assigning a function to a variable. It might look strange but, it's no different to assigning a variable to a `string`, or an `int`, functions in effect are values too.
+我们本可以像往常一样创建一个新函数 `checkSums`，但在这里，我们展示了一种新技术：把一个函数赋给变量。这看起来可能有点奇怪，但和把变量赋给 `string` 或 `int` 没有区别，函数实际上也是值。
 
-It's not shown here, but this technique can be useful when you want to bind a function to other local variables in "scope" (e.g between some `{}`). It also allows you to reduce the surface area of your API.
+这里没有展示，但当你想把一个函数绑定到"作用域"内的其他局部变量时（例如某些 `{}` 之间），这种技术很有用。它还允许你减少 API 的暴露面。
 
-By defining this function inside the test, it cannot be used by other functions in this package. Hiding variables and functions that don't need to be exported is an important design consideration.
+通过把这个函数定义在测试内部，它就不能被这个包内的其他函数使用。把不需要导出的变量和函数隐藏起来是一个重要的设计考量。
 
-A handy side-effect of this is this adds a little type-safety to our code. If
-a developer mistakenly adds a new test with `checkSums(t, got, "dave")` the compiler
-will stop them in their tracks.
+它的一个方便的副作用是给我们的代码增加了一点类型安全。如果一个开发者错误地添加了一个新测试 `checkSums(t, got, "dave")`，编译器会立刻拦住他们。
 
 ```bash
 $ go test
 ./sum_test.go:52:21: cannot use "dave" (type string) as type []int in argument to checkSums
 ```
 
-## Wrapping up
+## 总结
 
-We have covered
+我们已经覆盖了
 
-* Arrays
-* Slices
-  * The various ways to make them
-  * How they have a _fixed_ capacity but you can create new slices from old ones
-    using `append`
-  * How to slice, slices!
-* `len` to get the length of an array or slice
-* Test coverage tool
-* `reflect.DeepEqual` and why it's useful but can reduce the type-safety of your code
+* 数组
+* 切片
+  * 创建它们的多种方式
+  * 它们如何有 _固定_ 容量，但你可以用 `append` 从旧切片创建新切片
+  * 如何切片，切片！
+* `len` 用来获取数组或切片的长度
+* 测试覆盖率工具
+* `reflect.DeepEqual` 以及它为什么有用，但会降低代码的类型安全性
 
-We've used slices and arrays with integers but they work with any other type
-too, including arrays/slices themselves. So you can declare a variable of
-`[][]string` if you need to.
+我们用整数演示了切片和数组，但它们也适用于其他任何类型，
+包括数组/切片本身。所以如果你需要，可以声明一个
+`[][]string` 类型的变量。
 
-[Check out the Go blog post on slices][blog-slice] for an in-depth look into
-slices. Try writing more tests to solidify what you learn from reading it.
+[查看 Go 博客关于切片的文章][blog-slice]，深入了解切片。
+通过写更多测试来巩固你从中学到的知识。
 
-Another handy way to experiment with Go other than writing tests is the Go
-playground. You can try most things out and you can easily share your code if
-you need to ask questions. [I have made a go playground with a slice in it for you to experiment with.](https://play.golang.org/p/ICCWcRGIO68)
+除了写测试，另一种动手尝试 Go 的便利方式是 Go playground。
+你可以试大多数东西，并且如果你需要提问，可以方便地分享代码。
+[我做了一个 Go playground，里面有一个切片供你尝试](https://play.golang.org/p/ICCWcRGIO68)。
 
-[Here is an example](https://play.golang.org/p/bTrRmYfNYCp) of slicing an array
-and how changing the slice affects the original array; but a "copy" of the slice
-will not affect the original array.
-[Another example](https://play.golang.org/p/Poth8JS28sc) of why it's a good idea
-to make a copy of a slice after slicing a very large slice.
+[这是一个例子](https://play.golang.org/p/bTrRmYfNYCp) 演示了对数组的切片操作
+以及修改切片如何影响原数组；但切片的"副本"
+不会影响原数组。
+[另一个例子](https://play.golang.org/p/Poth8JS28sc) 说明了为什么
+对一个非常大的切片进行切片后再做副本是个好主意。
 
 [for]: ../iteration.md#
 [blog-slice]: https://blog.golang.org/go-slices-usage-and-internals

@@ -1,97 +1,97 @@
-# Why unit tests and how to make them work for you
+# 为什么要写单元测试，以及如何让它们为你所用
 
-[Here's a link to a video of me chatting about this topic](https://www.youtube.com/watch?v=Kwtit8ZEK7U)
+[这里有一个我聊这个话题的视频链接](https://www.youtube.com/watch?v=Kwtit8ZEK7U)
 
-If you're not into videos, here's wordy version of it.
+如果你不喜欢看视频，下面是文字版。
 
-## Software 
+## 软件
 
-The promise of software is that it can change. This is why it is called _soft_ ware, it is malleable compared to hardware. A great engineering team should be an amazing asset to a company, writing systems that can evolve with a business to keep delivering value. 
+软件的承诺是：它可以被改变。这就是为什么它被叫做 _soft_ ware（软件），它相比硬件是可塑的。一支优秀的工程团队应该是公司一笔了不起的资产，他们能写出可以随业务一同演进、持续交付价值的系统。
 
-So why are we so bad at it? How many projects do you hear about that outright fail? Or become "legacy" and have to be entirely re-written (and the re-writes often fail too!) 
+那为什么我们做得这么糟？你听说过多少项目彻头彻尾地失败？或者沦为"遗留系统"，不得不被整体重写（而重写本身往往也以失败告终！）
 
-How does a software system "fail" anyway? Can't it just be changed until it's correct? That's what we're promised!
+软件系统到底是怎么"失败"的？难道它不能被持续改动直到正确为止吗？这正是承诺给我们的呀！
 
-A lot of people are choosing Go to build systems because it has made a number of choices which one hopes will make it more legacy-proof. 
+很多人选择用 Go 来构建系统，是因为它做了一些选择，希望让系统更不容易变成遗留代码。
 
-- Compared to my previous life of Scala where [I described how it has enough rope to hang yourself](http://www.quii.dev/Scala_-_Just_enough_rope_to_hang_yourself), Go has only 25 keywords and _a lot_ of systems can be built from the standard library and a few other small libraries. The hope is that with Go you can write code and come back to it in 6 months time and it'll still make sense.
-- The tooling in respect to testing, benchmarking, linting & shipping is first class compared to most alternatives.
-- The standard library is brilliant.
-- Very fast compilation speed for tight feedback loops
-- The Go backward compatibility promise. It looks like Go will get generics and other features in the future but the designers have promised that even Go code you wrote 5 years ago will still build. I literally spent weeks upgrading a project from Scala 2.8 to 2.10. 
+- 相比我之前写 Scala 的那段日子（[我曾经写过它给了你足够的绳子吊死自己](http://www.quii.dev/Scala_-_Just_enough_rope_to_hang_yourself)），Go 只有 25 个关键字，_大量_ 系统都可以仅用标准库和少量其他小型库构建出来。希望你用 Go 写的代码，6 个月后回头再看依然能看懂。
+- 相比大多数替代品，Go 在测试、基准测试、lint 和发布方面的工具都是一流的。
+- 标准库非常出色。
+- 极快的编译速度，提供紧凑的反馈循环。
+- Go 的向后兼容承诺。看起来 Go 未来会引入泛型和其他特性，但设计者承诺即使是你 5 年前写的 Go 代码现在依然能编译。我可是真的花了好几周把一个项目从 Scala 2.8 升级到 2.10。
 
-Even with all these great properties we can still make terrible systems, so we should look to the past and understand lessons in software engineering that apply no matter how shiny (or not) your language is.
+即便有所有这些优秀特性，我们仍然会写出糟糕的系统，所以我们应该回顾过去，理解一些不论你的语言多么光鲜（或不光鲜）都依然适用的软件工程教训。
 
-In 1974 a clever software engineer called [Manny Lehman](https://en.wikipedia.org/wiki/Manny_Lehman_%28computer_scientist%29) wrote [Lehman's laws of software evolution](https://en.wikipedia.org/wiki/Lehman%27s_laws_of_software_evolution).
+1974 年，一位聪明的软件工程师 [Manny Lehman](https://en.wikipedia.org/wiki/Manny_Lehman_%28computer_scientist%29) 写下了 [Lehman 的软件演化定律](https://en.wikipedia.org/wiki/Lehman%27s_laws_of_software_evolution)。
 
-> The laws describe a balance between forces driving new developments on one hand, and forces that slow down progress on the other hand.
+> 这些定律描述了一种平衡：一边是推动新开发的力量，另一边是减缓进展的力量。
 
-These forces seem like important things to understand if we have any hope of not being in an endless cycle of shipping systems that turn into legacy and then get re-written over and over again.
+如果我们希望不陷入"交付系统 → 系统变成遗留代码 → 一遍又一遍重写"的死循环，那么理解这些力量似乎是非常重要的。
 
-## The Law of Continuous Change
+## 持续变化定律
 
-> Any software system used in the real-world must change or become less and less useful in the environment
+> 任何在真实世界中使用的软件系统都必须随之变化，否则在它所处的环境中就会变得越来越不实用
 
-It feels obvious that a system _has_ to change or it becomes less useful but how often is this ignored? 
+一个系统 _必须_ 改变否则就会变得不再有用，这听起来很显然，但这件事被忽视的频率有多高？
 
-Many teams are incentivised to deliver a project on a particular date and then move on to the next project. If the software is "lucky" there is at least some kind of hand-off to another set of individuals to maintain it, but they didn't write it of course. 
+很多团队的激励方式是：在某个特定日期前交付项目，然后转身去做下一个。如果这个软件"运气好"，至少会有某种交接，把它交给另一组人去维护，但当然他们并不是写它的人。
 
-People often concern themselves with trying to pick a framework which will help them "deliver quickly" but not focusing on the longevity of the system in terms of how it needs to evolve.
+人们经常把心思花在挑选一个能帮他们"快速交付"的框架上，却没把注意力放在系统在演进上的长期生命力。
 
-Even if you're an incredible software engineer, you will still fall victim to not knowing the future needs of your system. As the business changes some of the brilliant code you wrote is now no longer relevant.
+哪怕你是一名顶尖的软件工程师，你仍然会因为不知道系统未来的需求而成为受害者。当业务发生变化，你之前写的某些精彩代码就不再相关了。
 
-Lehman was on a roll in the 70s because he gave us another law to chew on.
+70 年代的 Lehman 状态正盛，他还给了我们另一条定律供我们琢磨。
 
-## The Law of Increasing Complexity
+## 复杂度递增定律
 
-> As a system evolves, its complexity increases unless work is done to reduce it
+> 随着系统不断演化，它的复杂度会增加，除非有专门的工作去降低它
 
-What he's saying here is we can't have software teams as blind feature factories, piling more and more features on to software in the hope it will survive in the long run. 
+他在这里说的是：我们不能让软件团队成为盲目的功能工厂，往软件上不停堆功能而期望它能长期存活。
 
-We **have** to keep managing the complexity of the system as the knowledge of our domain changes. 
+随着我们对领域的理解发生变化，我们 **必须** 持续管理系统的复杂度。
 
-## Refactoring
+## 重构
 
-There are _many_ facets of software engineering that keeps software malleable, such as:
+软件工程中有 _许多_ 维度能让软件保持可塑性，例如：
 
-- Developer empowerment
-- Generally "good" code. Sensible separation of concerns, etc etc
-- Communication skills
-- Architecture
-- Observability
-- Deployability
-- Automated tests
-- Feedback loops
+- 给开发者赋能
+- 总体上"好"的代码。合理的关注点分离，等等
+- 沟通能力
+- 架构
+- 可观测性
+- 可部署性
+- 自动化测试
+- 反馈循环
 
-I am going to focus on refactoring. It's a phrase that gets thrown around a lot "we need to refactor this" - said to a developer on their first day of programming without a second thought. 
+我要重点讲重构。"我们需要重构这个"——这句话经常被随口扔出，连刚开始写代码第一天的开发者都会被这么说，毫无顾忌。
 
-Where does the phrase come from? How is refactoring just different from writing code?
+这个词从哪儿来？重构和写代码到底有什么不同？
 
-I know that I and many others have _thought_ we were doing refactoring but we were mistaken
+我知道我自己以及很多人都曾 _以为_ 自己在做重构，其实不然。
 
-[Martin Fowler describes how people are getting it wrong](https://martinfowler.com/bliki/RefactoringMalapropism.html)
+[Martin Fowler 描述过人们是怎么搞错的](https://martinfowler.com/bliki/RefactoringMalapropism.html)
 
-> However the term "refactoring" is often used when it's not appropriate. If somebody talks about a system being broken for a couple of days while they are refactoring, you can be pretty sure they are not refactoring.
+> 然而 "refactoring"（重构）这个词常常被用错。如果有人说一个系统在他们重构期间坏了好几天，那基本可以确定他们做的不是重构。
 
-So what is it?
+那它究竟是什么？
 
-### Factorisation
+### 因式分解（Factorisation）
 
-When learning maths at school you probably learned about factorisation. Here's a very simple example
+学校学数学时你大概学过因式分解。这是一个非常简单的例子。
 
-Calculate `1/2 + 1/4`
+计算 `1/2 + 1/4`
 
-To do this you _factorise_ the denominators, turning the expression into 
+要做这道题，你要 _因式分解_ 分母，把表达式变成
 
-`2/4 + 1/4` which you can then turn into `3/4`. 
+`2/4 + 1/4`，然后你可以把它变成 `3/4`。
 
-We can take some important lessons from this. When we _factorise the expression_ we have **not changed the meaning of the expression**. Both of them equal `3/4` but we have made it easier for us to work with; by changing `1/2` to `2/4` it fits into our "domain" easier. 
+我们可以从这里得到一些重要的启示。当我们 _对表达式做因式分解_ 时，我们 **并没有改变表达式的含义**。两者都等于 `3/4`，但我们让它变得更易于处理；通过把 `1/2` 变成 `2/4`，它更容易"嵌入"到我们的"领域"里。
 
-When you refactor your code, you are trying to find ways of making your code easier to understand and "fit" into your current understanding of what the system needs to do. Crucially **you should not be changing behaviour**. 
+当你重构代码时，你是在试图找到一些方法，让代码更易理解，并"贴合"你当前对系统应当做什么的理解。关键在于 **你不应该改变行为**。
 
-#### An example in Go
+#### Go 中的例子
 
-Here is a function which greets `name` in a particular `language`
+下面这个函数用特定的 `language` 向 `name` 打招呼
 
     func Hello(name, language string) string {
     
@@ -103,12 +103,12 @@ Here is a function which greets `name` in a particular `language`
          return "Bonjour, " + name
       }
       
-      // imagine dozens more languages
+      // 想象有几十种语言
     
       return "Hello, " + name
     }
 
-Having dozens of `if` statements doesn't feel good and we have a duplication of concatenating a language specific greeting with `, ` and the `name.` So I'll refactor the code.
+写一堆 `if` 感觉不太好，而且我们重复了"用特定语言的问候语 + `, ` + `name`"的拼接。所以我会重构这段代码。
 
     func Hello(name, language string) string {
       	return fmt.Sprintf(
@@ -134,29 +134,29 @@ Having dozens of `if` statements doesn't feel good and we have a duplication of 
       return "Hello"
     }
 
-The nature of this refactor isn't actually important, what's important is I haven't changed behaviour. 
+这次重构具体长什么样其实不重要，重要的是我没有改变行为。
 
-When refactoring you can do whatever you like, add interfaces, new types, functions, methods etc. The only rule is you don't change behaviour
+重构时，你想做什么都可以，加接口、加新类型、加函数、加方法等等。唯一的规则是你不能改变行为。
 
-### When refactoring code you must not be changing behaviour
+### 重构代码时你绝不能改变行为
 
-This is very important. If you are changing behaviour at the same time you are doing _two_ things at once. As software engineers we learn to break systems up into different files/packages/functions/etc because we know trying to understand a big blob of stuff is hard. 
+这一点非常重要。如果你在重构的同时改变了行为，你就在 _一次性做两件事_。作为软件工程师，我们之所以学着把系统拆成不同的文件/包/函数/等等，是因为我们知道理解一大坨东西很难。
 
-We don't want to have to be thinking about lots of things at once because that's when we make mistakes. I've witnessed so many refactoring endeavours fail because the developers are biting off more than they can chew.  
+我们不希望同时思考很多事情，因为那种时候最容易出错。我见过太多重构以失败告终，原因就是开发者咬下的比能咽下的多。
 
-When I was doing factorisations in maths classes with pen and paper I would have to manually check that I hadn't changed the meaning of the expressions in my head. How do we know we aren't changing behaviour when refactoring when working with code, especially on a system that is non-trivial?
+我在数学课上用纸笔做因式分解时，我得在脑子里手动检查我没有改变表达式的含义。在写代码时，尤其在一个非简单的系统上，我们怎么知道重构没有改变行为？
 
-Those who choose not to write tests will typically be reliant on manual testing. For anything other than a small project this will be a tremendous time-sink and does not scale in the long run. 
- 
-**In order to safely refactor you need unit tests** because they provide
+那些选择不写测试的人通常会依赖手动测试。除了对小项目以外，这都将是巨大的时间黑洞，长期来看也不可扩展。
 
-- Confidence you can reshape code without worrying about changing behaviour
-- Documentation for humans as to how the system should behave
-- Much faster and more reliable feedback than manual testing
+**为了安全地重构，你需要单元测试**，因为它们提供了：
 
-#### An example in Go
+- 让你可以重塑代码而不必担心改变行为的信心
+- 给人看的文档，说明系统应当如何表现
+- 比手动测试快得多、可靠得多的反馈
 
-A unit test for our `Hello` function could look like this
+#### Go 中的例子
+
+我们 `Hello` 函数的一个单元测试可能长这样
 
     func TestHello(t *testing.T) {
       got := Hello(“Chris”, es)
@@ -167,125 +167,125 @@ A unit test for our `Hello` function could look like this
       }
     }
 
-At the command line I can run `go test` and get immediate feedback as to whether my refactoring efforts have altered behaviour. In practice it's best to learn the magic button to run your tests within your editor/IDE. 
+在命令行我可以运行 `go test`，立即得到反馈，看我的重构有没有改变行为。实践中，最好学会编辑器/IDE 里运行测试的"魔法快捷键"。
 
-You want to get in to a state where you are doing 
+你想达到的状态是
 
-- Small refactor
-- Run tests
-- Repeat
+- 小步重构
+- 跑测试
+- 重复
 
-All within a very tight feedback loop so you don't go down rabbit holes and make mistakes.
+全部在一个非常紧凑的反馈循环里，这样你就不会陷入兔子洞、犯错误。
 
-Having a project where all your key behaviours are unit tested and give you feedback well under a second is a very empowering safety net to do bold refactoring when you need to. This helps us manage the incoming force of complexity that Lehman describes.
+如果一个项目里所有关键行为都有单元测试覆盖，并且能在远低于一秒的时间内给你反馈，那你就拥有了在需要时大胆重构的强大安全网。这能帮助我们应对 Lehman 描述的那股不断涌来的复杂度浪潮。
 
-## If unit tests are so great, why is there sometimes resistance to writing them?
+## 既然单元测试这么好，为什么有时大家会抗拒写它？
 
-On the one hand you have people (like me) saying that unit tests are important for the long term health of your system because they ensure you can keep refactoring with confidence. 
+一方面，有像我这样的人说：单元测试对于系统的长期健康很重要，因为它们让你可以满怀信心地持续重构。
 
-On the other you have people describing experiences of unit tests actually _hindering_ refactoring.
+另一方面，也有人讲述他们的经历，说单元测试反而 _妨碍_ 了重构。
 
-Ask yourself, how often do you have to change your tests when refactoring? Over the years I have been on many projects with very good test coverage and yet the engineers are reluctant to refactor because of the perceived effort of changing tests.
+问问你自己，重构时你需要改测试的频率有多高？这些年我经历过很多测试覆盖率非常高的项目，可工程师们却因为修改测试的预估成本而不愿意重构。
 
-This is the opposite of what we are promised!
+这跟我们承诺过的恰恰相反！
 
-### Why is this happening?
+### 为什么会这样？
 
-Imagine you were asked to develop a square and we thought the best way to accomplish that would be stick two triangles together. 
+想象你被要求开发一个正方形，我们认为最好的实现方式是把两个三角形拼起来。
 
-![Two right-angled triangles to form a square](https://i.imgur.com/ela7SVf.jpg)
+![两个直角三角形拼成正方形](https://i.imgur.com/ela7SVf.jpg)
 
-We write our unit tests around our square to make sure the sides are equal and then we write some tests around our triangles. We want to make sure our triangles render correctly so we assert that the angles sum up to 180 degrees, perhaps check we make 2 of them, etc etc. Test coverage is really important and writing these tests is pretty easy so why not? 
+我们围绕正方形写单元测试，确保各边相等，然后再围绕三角形写一些测试。我们想确保三角形渲染正确，所以断言它们的内角和是 180 度，也许还检查我们造了 2 个，等等。测试覆盖率很重要，写这些测试也挺容易，何乐不为？
 
-A few weeks later The Law of Continuous Change strikes our system and a new developer makes some changes. She now believes it would be better if squares were formed with 2 rectangles instead of 2 triangles. 
+几周后，持续变化定律袭击了我们的系统，一位新开发者做了一些改动。她现在认为用 2 个矩形而不是 2 个三角形来组成正方形会更好。
 
-![Two rectangles to form a square](https://i.imgur.com/1G6rYqD.jpg)
+![两个矩形拼成正方形](https://i.imgur.com/1G6rYqD.jpg)
 
-She tries to do this refactor and gets mixed signals from a number of failing tests. Has she actually broken important behaviours here? She now has to dig through these triangle tests and try and understand what's going on. 
+她试图做这次重构，却从一堆失败的测试中收到了乱七八糟的信号。她真的破坏了某些重要行为吗？她现在不得不去翻这些三角形测试，搞清楚到底发生了什么。
 
-_It's not actually important that the square was formed out of triangles_ but **our tests have falsely elevated the importance of our implementation details**. 
+_正方形是不是由三角形组成的，其实并不重要_，但 **我们的测试错误地放大了实现细节的重要性**。
 
-## Favour testing behaviour rather than implementation detail
+## 倾向于测试行为而非实现细节
 
-When I hear people complaining about unit tests it is often because the tests are at the wrong abstraction level. They're testing implementation details, overly spying on collaborators and mocking too much. 
+当我听到有人抱怨单元测试时，往往是因为这些测试处在错误的抽象层级上。它们在测实现细节，过度监视协作者，mock 太多。
 
-I believe it stems from a misunderstanding of what unit tests are and chasing vanity metrics (test coverage). 
+我相信这源于对单元测试的误解，以及对虚荣指标（测试覆盖率）的追逐。
 
-If I am saying just test behaviour, should we not just only write system/black-box tests? These kind of tests do have lots of value in terms of verifying key user journeys but they are typically expensive to write and slow to run. For that reason they're not too helpful for _refactoring_ because the feedback loop is slow. In addition black box tests don't tend to help you very much with root causes compared to unit tests. 
+如果我说只测试行为，那是不是我们就应该只写系统级 / 黑盒测试？这类测试在验证关键用户旅程方面确实很有价值，但它们通常写起来很贵、跑起来很慢。因此它们对于 _重构_ 帮助不大，因为反馈循环太慢。此外，相比单元测试，黑盒测试在帮助你定位根因方面通常没那么有用。
 
-So what _is_ the right abstraction level?
+那 _合适的_ 抽象层级是什么？
 
-## Writing effective unit tests is a design problem
+## 写出有效的单元测试是一个设计问题
 
-Forgetting about tests for a moment, it is desirable to have within your system self-contained, decoupled "units" centered around key concepts in your domain. 
+先把测试放一边，在你的系统中拥有一些围绕领域中关键概念的、自包含、解耦的"单元"是值得追求的。
 
-I like to imagine these units as simple Lego bricks which have coherent APIs that I can combine with other bricks to make bigger systems. Underneath these APIs there could be dozens of things (types, functions et al) collaborating to make them work how they need to.
+我喜欢把这些单元想成简单的乐高积木，它们有连贯的 API，我可以把它们和其他积木组合起来，构成更大的系统。在这些 API 之下，可能有几十个东西（类型、函数等等）协作来让它们按需要的方式工作。
 
-For instance if you were writing a bank in Go, you might have an "account" package. It will present an API that does not leak implementation detail and is easy to integrate with.
+例如，如果你在用 Go 写一家银行，你可能会有一个"account"包。它会暴露一个不泄露实现细节、易于集成的 API。
 
-If you have these units that follow these properties you can write unit tests against their public APIs. _By definition_ these tests can only be testing useful behaviour. Underneath these units I am free to refactor the implementation as much as I need to and the tests for the most part should not get in the way.
+如果你的这些单元具备这些性质，你就可以针对它们的公共 API 写单元测试。_按定义_ 这些测试只能在测试有用的行为。在这些单元下面，我可以随心所欲地重构实现，大多数情况下测试都不会挡路。
 
-### Are these unit tests?
+### 这些算单元测试吗？
 
-**YES**. Unit tests are against "units" like I described. They were _never_ about only being against a single class/function/whatever.
+**算的**。单元测试就是针对我描述的那种"单元"的测试。它们 _从来_ 都不是说一定要针对单个类/函数/什么的。
 
-## Bringing these concepts together
+## 把这些概念串起来
 
-We've covered
+我们讲了
 
-- Refactoring
-- Unit tests
-- Unit design
+- 重构
+- 单元测试
+- 单元设计
 
-What we can start to see is that these facets of software design reinforce each other. 
+我们可以开始看到这些软件设计的方面是相互强化的。
 
-### Refactoring
+### 重构
 
-- Gives us signals about our unit tests. If we have to do manual checks, we need more tests. If tests are wrongly failing then our tests are at the wrong abstraction level (or have no value and should be deleted).
-- Helps us handle the complexities within and between our units.
+- 给我们关于单元测试的信号。如果我们必须做手动检查，说明我们需要更多测试。如果测试错误地失败了，那我们的测试就处在错误的抽象层级（或没有价值，应该被删除）。
+- 帮助我们处理单元内部和单元之间的复杂度。
 
-### Unit tests
+### 单元测试
 
-- Give a safety net to refactor.
-- Verify and document the behaviour of our units.
+- 给重构提供安全网。
+- 验证并记录我们单元的行为。
 
-### (Well designed) units
+### （设计良好的）单元
 
-- Easy to write _meaningful_ unit tests.
-- Easy to refactor.
+- 易于写出 _有意义的_ 单元测试。
+- 易于重构。
 
-Is there a process to help us arrive at a point where we can constantly refactor our code to manage complexity and keep our systems malleable?
+有没有一种流程能帮我们到达一个状态，可以持续重构代码、管理复杂度、保持系统的可塑性？
 
-## Why Test Driven Development (TDD)
+## 为什么要测试驱动开发（TDD）
 
-Some people might take Lehman's quotes about how software has to change and overthink elaborate designs, wasting lots of time upfront trying to create the "perfect" extensible system and end up getting it wrong and going nowhere. 
+有些人可能会被 Lehman 那段话——软件必须改变——带偏，反而过度设计精巧的方案，在前期浪费大量时间试图打造"完美的"可扩展系统，结果却搞错了方向，一事无成。
 
-This is the bad old days of software where an analyst team would spend 6 months writing a requirements document and an architect team would spend another 6 months coming up with a design and a few years later the whole project fails.
+这就是软件那段糟糕的旧时光：分析师团队花 6 个月写需求文档，架构师团队再花 6 个月做设计，几年后整个项目失败。
 
-I say bad old days but this still happens! 
+我说"糟糕的旧时光"，但这种事到现在还在发生！
 
-Agile teaches us that we need to work iteratively, starting small and evolving the software so that we get fast feedback on the design of our software and how it works with real users;  TDD enforces this approach.
+敏捷教会我们：必须迭代地工作，从小处开始、让软件演化，从而对软件设计以及它如何与真实用户互动获得快速反馈；TDD 强制执行这种方式。
 
-TDD addresses the laws that Lehman talks about and other lessons hard learned through history by encouraging a methodology of constantly refactoring and delivering iteratively.
+TDD 通过鼓励一种"持续重构 + 迭代交付"的方法论，回应了 Lehman 提到的那些定律以及历史上其他艰难得来的教训。
 
-### Small steps
+### 小步前进
 
-- Write a small test for a small amount of desired behaviour
-- Check the test fails with a clear error (red)
-- Write the minimal amount of code to make the test pass (green)
-- Refactor
-- Repeat
+- 为一小段期望的行为写一个小测试
+- 看到测试以清晰的错误信息失败（红）
+- 写最少量的代码让测试通过（绿）
+- 重构
+- 重复
 
-As you become proficient, this way of working will become natural and fast.
+当你逐渐熟练，这种工作方式会变得自然又快速。
 
-You'll come to expect this feedback loop to not take very long and feel uneasy if you're in a state where the system isn't "green" because it indicates you may be down a rabbit hole. 
+你会期望这个反馈循环不需要太长时间，并且当系统不"绿"时你会感到不安，因为这意味着你可能掉进了某个兔子洞。
 
-You'll always be driving small & useful functionality comfortably backed by the feedback from your tests.
+你将一直在小而有用的功能上推进，安心地由测试反馈支撑着。
 
-## Wrapping up 
+## 总结
 
-- The strength of software is that we can change it. _Most_ software will require change over time in unpredictable ways; but don't try and over-engineer because it's too hard to predict the future.
-- Instead we need to make it so we can keep our software malleable. In order to change software we have to refactor it as it evolves or it will turn into a mess
-- A good test suite can help you refactor quicker and in a less stressful manner
-- Writing good unit tests is a design problem so think about structuring your code so you have meaningful units that you can integrate together like Lego bricks.
-- TDD can help and force you to design well factored software iteratively, backed by tests to help future work as it arrives.
+- 软件的力量在于它可以被改变。_大多数_ 软件随着时间会以不可预测的方式需要改变；但不要试图过度设计，因为预测未来太难了。
+- 我们要做的是让软件保持可塑性。要改动软件，我们就必须随着它演化而对它进行重构，否则它就会变成一团糟。
+- 一个好的测试套件能帮助你更快、更不焦虑地重构。
+- 写好的单元测试是一个设计问题，所以请考虑组织好你的代码结构，让你拥有一些有意义的单元，可以像乐高积木一样组合在一起。
+- TDD 可以帮助你、也可以强制你迭代地设计出良好分解的软件，由测试支撑，未来的工作来临时也能从容应对。

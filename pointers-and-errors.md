@@ -1,16 +1,16 @@
-# Pointers & errors
+# 指针 & 错误
 
-[**You can find all the code for this chapter here**](https://github.com/quii/learn-go-with-tests/tree/main/pointers)
+[**本章的所有代码可以在这里找到**](https://github.com/quii/learn-go-with-tests/tree/main/pointers)
 
-We learned about structs in the last section which let us capture a number of values related around a concept.
+我们在上一节里学习了结构体，它让我们可以把围绕一个概念的若干值聚合起来。
 
-At some point you may wish to use structs to manage state, exposing methods to let users change the state in a way that you can control.
+在某个时候，你可能希望使用结构体来管理状态，对外暴露一些方法，让用户能以你可控的方式改变状态。
 
-**Fintech loves Go** and uhhh bitcoins? So let's show what an amazing banking system we can make.
+**金融科技喜爱 Go**，呃还有比特币？所以我们来展示一下，我们能做出多么了不起的银行系统。
 
-Let's make a `Wallet` struct which lets us deposit `Bitcoin`.
+我们做一个 `Wallet` 结构体，让我们能够存入 `Bitcoin`。
 
-## Write the test first
+## 先写测试
 
 ```go
 func TestWallet(t *testing.T) {
@@ -28,30 +28,30 @@ func TestWallet(t *testing.T) {
 }
 ```
 
-In the [previous example](structs-methods-and-interfaces.md) we accessed fields directly with the field name, however in our _very secure wallet_ we don't want to expose our inner state to the rest of the world. We want to control access via methods.
+在 [上一个例子](structs-methods-and-interfaces.md) 中，我们直接用字段名访问字段，但是在我们这个 _非常安全的钱包_ 里，我们不希望把内部状态暴露给外界。我们想通过方法来控制访问。
 
-## Try to run the test
+## 尝试运行测试
 
 `./wallet_test.go:7:12: undefined: Wallet`
 
-## Write the minimal amount of code for the test to run and check the failing test output
+## 写最少的代码让测试能运行，并检查失败的测试输出
 
-The compiler doesn't know what a `Wallet` is so let's tell it.
+编译器不知道 `Wallet` 是什么，那就告诉它。
 
 ```go
 type Wallet struct{}
 ```
 
-Now we've made our wallet, try and run the test again
+现在我们做好了钱包，再尝试运行测试
 
 ```
 ./wallet_test.go:9:8: wallet.Deposit undefined (type Wallet has no field or method Deposit)
 ./wallet_test.go:11:15: wallet.Balance undefined (type Wallet has no field or method Balance)
 ```
 
-We need to define these methods.
+我们需要定义这些方法。
 
-Remember to only do enough to make the tests run. We need to make sure our test fails correctly with a clear error message.
+记住，只做让测试能跑起来所需的事情。我们需要确保我们的测试以清晰的错误消息正确地失败。
 
 ```go
 func (w Wallet) Deposit(amount int) {
@@ -63,15 +63,15 @@ func (w Wallet) Balance() int {
 }
 ```
 
-If this syntax is unfamiliar go back and read the structs section.
+如果这个语法不熟悉，回去读一下结构体那一节。
 
-The tests should now compile and run
+测试现在应该能编译并运行了
 
 `wallet_test.go:15: got 0 want 10`
 
-## Write enough code to make it pass
+## 写足够的代码让测试通过
 
-We will need some kind of _balance_ variable in our struct to store the state
+我们需要在结构体里有某种 _balance_ 变量来存储状态
 
 ```go
 type Wallet struct {
@@ -79,11 +79,11 @@ type Wallet struct {
 }
 ```
 
-In Go if a symbol (variables, types, functions et al) starts with a lowercase symbol then it is private _outside the package it's defined in_.
+在 Go 中，如果一个符号（变量、类型、函数等）以小写字母开头，那么它在 _定义它的包之外_ 是私有的。
 
-In our case we want our methods to be able to manipulate this value, but no one else.
+在我们的例子里，我们希望我们的方法能够操作这个值，但其他人不行。
 
-Remember we can access the internal `balance` field in the struct using the "receiver" variable.
+记得我们可以使用"接收器"变量来访问结构体的内部 `balance` 字段。
 
 ```go
 func (w Wallet) Deposit(amount int) {
@@ -95,21 +95,21 @@ func (w Wallet) Balance() int {
 }
 ```
 
-With our career in fintech secured, run the test suite and bask in the passing test
+我们在金融科技的事业有了保障，运行测试套件，享受测试通过
 
 `wallet_test.go:15: got 0 want 10`
 
-### That's not quite right
+### 这不太对劲
 
-Well this is confusing, our code looks like it should work. We add the new amount onto our balance and then the balance method should return the current state of it.
+嗯这令人困惑，我们的代码看起来应该能工作。我们把新的金额加到 balance 上，然后 balance 方法应该返回它的当前状态。
 
-In Go, **when you call a function or a method the arguments are** _**copied**_.
+在 Go 中，**当你调用一个函数或方法时，参数是被** _**复制**_ **的**。
 
-When calling `func (w Wallet) Deposit(amount int)` the `w` is a copy of whatever we called the method from.
+调用 `func (w Wallet) Deposit(amount int)` 时，`w` 是我们调用方法时所在对象的副本。
 
-Without getting too computer-sciency, when you create a value - like a wallet, it is stored somewhere in memory. You can find out what the _address_ of that bit of memory with `&myVal`.
+不太学究地说，当你创建一个值 —— 比如一个 wallet —— 它会被存储在内存的某个位置。你可以通过 `&myVal` 找到那块内存的 _地址_。
 
-Experiment by adding some prints to your code
+通过往代码里加一些打印来做实验
 
 ```go
 func TestWallet(t *testing.T) {
@@ -137,18 +137,18 @@ func (w Wallet) Deposit(amount int) {
 }
 ```
 
-The `%p` placeholder prints memory addresses in base 16 notation with leading `0x`s and the  escape character prints a new line. Note that we get the pointer (memory address) of something by placing an `&` character at the beginning of the symbol.
+`%p` 占位符以十六进制带 `0x` 前缀的形式打印内存地址，转义字符则打印一个换行。注意，我们通过在符号前面加 `&` 字符来获取它的指针（内存地址）。
 
-Now re-run the test
+现在重新运行测试
 
 ```
 address of balance in Deposit is 0xc420012268
 address of balance in test is 0xc420012260
 ```
 
-You can see that the addresses of the two balances are different. So when we change the value of the balance inside the code, we are working on a copy of what came from the test. Therefore the balance in the test is unchanged.
+你可以看到两个 balance 的地址是不同的。所以当我们在代码里改变 balance 的值时，我们是在操作来自测试的副本。因此测试中的 balance 没有改变。
 
-We can fix this with _pointers_. [Pointers](https://gobyexample.com/pointers) let us _point_ to some values and then let us change them. So rather than taking a copy of the whole Wallet, we instead take a pointer to that wallet so that we can change the original values within it.
+我们可以用 _指针_ 来修复这个问题。[指针](https://gobyexample.com/pointers) 让我们能 _指向_ 某些值，然后让我们能够改变它们。所以我们不取整个 Wallet 的副本，而是取那个 wallet 的指针，这样我们就能改变它内部的原始值。
 
 ```go
 func (w *Wallet) Deposit(amount int) {
@@ -160,11 +160,11 @@ func (w *Wallet) Balance() int {
 }
 ```
 
-The difference is the receiver type is `*Wallet` rather than `Wallet` which you can read as "a pointer to a wallet".
+差别在于接收器的类型是 `*Wallet` 而不是 `Wallet`，你可以读作"指向一个 wallet 的指针"。
 
-Try and re-run the tests and they should pass.
+试着重新运行测试，它们应该可以通过了。
 
-Now you might wonder, why did they pass? We didn't dereference the pointer in the function, like so:
+现在你可能会问，为什么它们能通过？我们没有像下面这样在函数里解引用指针：
 
 ```go
 func (w *Wallet) Balance() int {
@@ -172,19 +172,19 @@ func (w *Wallet) Balance() int {
 }
 ```
 
-and seemingly addressed the object directly. In fact, the code above using `(*w)` is absolutely valid. However, the makers of Go deemed this notation cumbersome, so the language permits us to write `w.balance`, without an explicit dereference. These pointers to structs even have their own name: _struct pointers_ and they are [automatically dereferenced](https://golang.org/ref/spec#Method_values).
+而是看起来直接寻址了对象。事实上，上面用 `(*w)` 的代码是完全有效的。然而 Go 的设计者认为这种记法很麻烦，所以语言允许我们写 `w.balance`，不需要显式的解引用。这些指向结构体的指针甚至有自己的名字：_结构体指针_，并且它们是 [自动解引用的](https://golang.org/ref/spec#Method_values)。
 
-Technically you do not need to change `Balance` to use a pointer receiver as taking a copy of the balance is fine. However, by convention you should keep your method receiver types the same for consistency.
+技术上你不需要改 `Balance` 用指针接收器，因为取 balance 的副本也没问题。然而按照惯例，为了一致性，你应该让方法的接收器类型保持一致。
 
-## Refactor
+## 重构
 
-We said we were making a Bitcoin wallet but we have not mentioned them so far. We've been using `int` because they're a good type for counting things!
+我们说我们要做一个比特币钱包，但目前为止还没提到它。我们一直在用 `int`，因为它是一个适合计数的好类型！
 
-It seems a bit overkill to create a `struct` for this. `int` is fine in terms of the way it works but it's not descriptive.
+为此创建一个 `struct` 似乎有点过头。`int` 在工作方式上没问题，但它没有描述性。
 
-Go lets you create new types from existing ones.
+Go 让你可以从已有的类型创建新类型。
 
-The syntax is `type MyName OriginalType`
+语法是 `type MyName OriginalType`
 
 ```go
 type Bitcoin int
@@ -219,11 +219,11 @@ func TestWallet(t *testing.T) {
 }
 ```
 
-To make `Bitcoin` you just use the syntax `Bitcoin(999)`.
+要创建 `Bitcoin`，你只需用语法 `Bitcoin(999)`。
 
-By doing this we're making a new type and we can declare _methods_ on them. This can be very useful when you want to add some domain specific functionality on top of existing types.
+通过这样做，我们创建了一个新类型，并可以在它们上声明 _方法_。当你想在已有类型之上添加一些领域特定的功能时，这会非常有用。
 
-Let's implement [Stringer](https://golang.org/pkg/fmt/#Stringer) on Bitcoin
+让我们在 Bitcoin 上实现 [Stringer](https://golang.org/pkg/fmt/#Stringer)
 
 ```go
 type Stringer interface {
@@ -231,7 +231,7 @@ type Stringer interface {
 }
 ```
 
-This interface is defined in the `fmt` package and lets you define how your type is printed when used with the `%s` format string in prints.
+这个接口定义在 `fmt` 包中，让你可以定义当你的类型在打印时与 `%s` 格式化字符串一起使用时如何被打印。
 
 ```go
 func (b Bitcoin) String() string {
@@ -239,9 +239,9 @@ func (b Bitcoin) String() string {
 }
 ```
 
-As you can see, the syntax for creating a method on a type declaration is the same as it is on a struct.
+如你所见，在类型声明上创建方法的语法和在结构体上的语法是一样的。
 
-Next we need to update our test format strings so they will use `String()` instead.
+接下来我们需要更新测试中的格式化字符串，让它们使用 `String()`。
 
 ```go
 if got != want {
@@ -249,17 +249,17 @@ if got != want {
 }
 ```
 
-To see this in action, deliberately break the test so we can see it
+为了看到这个效果，故意把测试弄坏，这样我们就能看到它
 
 `wallet_test.go:18: got 10 BTC want 20 BTC`
 
-This makes it clearer what's going on in our test.
+这让我们的测试中发生了什么变得更清晰。
 
-The next requirement is for a `Withdraw` function.
+下一个需求是 `Withdraw` 函数。
 
-## Write the test first
+## 先写测试
 
-Pretty much the opposite of `Deposit()`
+基本上是 `Deposit()` 的反向
 
 ```go
 func TestWallet(t *testing.T) {
@@ -294,11 +294,11 @@ func TestWallet(t *testing.T) {
 }
 ```
 
-## Try to run the test
+## 尝试运行测试
 
 `./wallet_test.go:26:9: wallet.Withdraw undefined (type Wallet has no field or method Withdraw)`
 
-## Write the minimal amount of code for the test to run and check the failing test output
+## 写最少的代码让测试能运行，并检查失败的测试输出
 
 ```go
 func (w *Wallet) Withdraw(amount Bitcoin) {
@@ -308,7 +308,7 @@ func (w *Wallet) Withdraw(amount Bitcoin) {
 
 `wallet_test.go:33: got 20 BTC want 10 BTC`
 
-## Write enough code to make it pass
+## 写足够的代码让测试通过
 
 ```go
 func (w *Wallet) Withdraw(amount Bitcoin) {
@@ -316,9 +316,9 @@ func (w *Wallet) Withdraw(amount Bitcoin) {
 }
 ```
 
-## Refactor
+## 重构
 
-There's some duplication in our tests, lets refactor that out.
+我们的测试里有一些重复，把它重构出来。
 
 ```go
 func TestWallet(t *testing.T) {
@@ -347,15 +347,15 @@ func TestWallet(t *testing.T) {
 }
 ```
 
-What should happen if you try to `Withdraw` more than is left in the account? For now, our requirement is to assume there is not an overdraft facility.
+如果你试图 `Withdraw` 比账户里剩下的更多金额，应该发生什么？目前我们的需求是假设没有透支机制。
 
-How do we signal a problem when using `Withdraw`?
+我们如何在使用 `Withdraw` 时表示出现问题？
 
-In Go, if you want to indicate an error it is idiomatic for your function to return an `err` for the caller to check and act on.
+在 Go 中，如果你想表示一个错误，惯用的做法是让你的函数返回一个 `err`，让调用者去检查并采取行动。
 
-Let's try this out in a test.
+我们在测试里试一下这个。
 
-## Write the test first
+## 先写测试
 
 ```go
 t.Run("withdraw insufficient funds", func(t *testing.T) {
@@ -371,21 +371,21 @@ t.Run("withdraw insufficient funds", func(t *testing.T) {
 })
 ```
 
-We want `Withdraw` to return an error _if_ you try to take out more than you have and the balance should stay the same.
+我们希望 `Withdraw` 在你尝试取出比你拥有的更多金额时返回一个错误，而 balance 应保持不变。
 
-We then check an error has returned by failing the test if it is `nil`.
+然后我们检查是否返回了错误，如果它是 `nil` 则让测试失败。
 
-`nil` is synonymous with `null` from other programming languages. Errors can be `nil` because the return type of `Withdraw` will be `error`, which is an interface. If you see a function that takes arguments or returns values that are interfaces, they can be nillable.
+`nil` 等同于其他编程语言的 `null`。错误可以是 `nil`，因为 `Withdraw` 的返回类型是 `error`，它是一个接口。如果你看到一个函数接受参数或返回的值是接口，它们就可以是 nil。
 
-Like `null` if you try to access a value that is `nil` it will throw a **runtime panic**. This is bad! You should make sure that you check for nils.
+像 `null` 一样，如果你尝试访问一个 `nil` 的值，它会抛出一个**运行时 panic**。这很糟！你应该确保检查 nil。
 
-## Try and run the test
+## 尝试运行测试
 
 `./wallet_test.go:31:25: wallet.Withdraw(Bitcoin(100)) used as value`
 
-The wording is perhaps a little unclear, but our previous intent with `Withdraw` was just to call it, it will never return a value. To make this compile we will need to change it so it has a return type.
+措辞可能有点不清楚，但我们之前对 `Withdraw` 的意图只是调用它，它永远不会返回值。要让它编译，我们需要把它改成有返回类型。
 
-## Write the minimal amount of code for the test to run and check the failing test output
+## 写最少的代码让测试能运行，并检查失败的测试输出
 
 ```go
 func (w *Wallet) Withdraw(amount Bitcoin) error {
@@ -394,9 +394,9 @@ func (w *Wallet) Withdraw(amount Bitcoin) error {
 }
 ```
 
-Again, it is very important to just write enough code to satisfy the compiler. We correct our `Withdraw` method to return `error` and for now we have to return _something_ so let's just return `nil`.
+再次强调，只写满足编译器所需的代码非常重要。我们更正了 `Withdraw` 方法返回 `error`，目前我们必须返回 _某个东西_，所以就返回 `nil`。
 
-## Write enough code to make it pass
+## 写足够的代码让测试通过
 
 ```go
 func (w *Wallet) Withdraw(amount Bitcoin) error {
@@ -410,13 +410,13 @@ func (w *Wallet) Withdraw(amount Bitcoin) error {
 }
 ```
 
-Remember to import `errors` into your code.
+记得把 `errors` 导入到你的代码里。
 
-`errors.New` creates a new `error` with a message of your choosing.
+`errors.New` 创建一个带有你选择的消息的新 `error`。
 
-## Refactor
+## 重构
 
-Let's make a quick test helper for our error check to improve the test's readability
+让我们快速做一个测试辅助函数来检查错误，提升测试的可读性
 
 ```go
 assertError := func(t testing.TB, err error) {
@@ -427,7 +427,7 @@ assertError := func(t testing.TB, err error) {
 }
 ```
 
-And in our test
+然后在我们的测试里
 
 ```go
 t.Run("withdraw insufficient funds", func(t *testing.T) {
@@ -440,13 +440,13 @@ t.Run("withdraw insufficient funds", func(t *testing.T) {
 })
 ```
 
-Hopefully when returning an error of "oh no" you were thinking that we _might_ iterate on that because it doesn't seem that useful to return.
+希望当返回 "oh no" 这个错误时你在想我们 _可能_ 会迭代它，因为它看起来不太有用。
 
-Assuming that the error ultimately gets returned to the user, let's update our test to assert on some kind of error message rather than just the existence of an error.
+假设错误最终会返回给用户，让我们更新测试，断言某种错误消息，而不只是断言错误存在。
 
-## Write the test first
+## 先写测试
 
-Update our helper for a `string` to compare against.
+更新辅助函数让它接受一个 `string` 用于比较。
 
 ```go
 assertError := func(t testing.TB, got error, want string) {
@@ -462,9 +462,9 @@ assertError := func(t testing.TB, got error, want string) {
 }
 ```
 
-As you can see `Error`s can be converted to a string with the `.Error()` method, which we do in order to compare it with the string we want. We are also making sure that the error is not `nil` to ensure we don't call `.Error()` on `nil`.
+如你所见，`Error` 可以通过 `.Error()` 方法转换为字符串，我们这样做是为了把它和我们想要的字符串进行比较。我们还确保错误不是 `nil`，以确保我们不会在 `nil` 上调用 `.Error()`。
 
-And then update the caller
+然后更新调用方
 
 ```go
 t.Run("withdraw insufficient funds", func(t *testing.T) {
@@ -477,13 +477,13 @@ t.Run("withdraw insufficient funds", func(t *testing.T) {
 })
 ```
 
-We've introduced `t.Fatal` which will stop the test if it is called. This is because we don't want to make any more assertions on the error returned if there isn't one around. Without this the test would carry on to the next step and panic because of a nil pointer.
+我们引入了 `t.Fatal`，它在被调用时会停止测试。这是因为如果没有错误，我们不想再对返回的错误做任何更多的断言。否则的话，测试会继续走到下一步并因为空指针而 panic。
 
-## Try to run the test
+## 尝试运行测试
 
 `wallet_test.go:61: got err 'oh no' want 'cannot withdraw, insufficient funds'`
 
-## Write enough code to make it pass
+## 写足够的代码让测试通过
 
 ```go
 func (w *Wallet) Withdraw(amount Bitcoin) error {
@@ -497,13 +497,13 @@ func (w *Wallet) Withdraw(amount Bitcoin) error {
 }
 ```
 
-## Refactor
+## 重构
 
-We have duplication of the error message in both the test code and the `Withdraw` code.
+我们在测试代码和 `Withdraw` 代码中都重复了错误消息。
 
-It would be really annoying for the test to fail if someone wanted to re-word the error and it's just too much detail for our test. We don't _really_ care what the exact wording is, just that some kind of meaningful error around withdrawing is returned given a certain condition.
+如果有人想重新措辞这个错误，导致测试失败，那会很烦人，而且这对我们的测试来说细节太多了。我们 _并不真的_ 关心确切的措辞，只关心在某种条件下会返回某种关于取款的有意义的错误。
 
-In Go, errors are values, so we can refactor it out into a variable and have a single source of truth for it.
+在 Go 中，错误是值，所以我们可以把它重构成一个变量，作为它的单一事实来源。
 
 ```go
 var ErrInsufficientFunds = errors.New("cannot withdraw, insufficient funds")
@@ -519,11 +519,11 @@ func (w *Wallet) Withdraw(amount Bitcoin) error {
 }
 ```
 
-The `var` keyword allows us to define values global to the package.
+`var` 关键字让我们可以定义对包来说是全局的值。
 
-This is a positive change in itself because now our `Withdraw` function looks very clear.
+这本身就是一个积极的改变，因为现在我们的 `Withdraw` 函数看起来非常清晰。
 
-Next we can refactor our test code to use this value instead of specific strings.
+接下来我们可以重构测试代码，使用这个值代替具体的字符串。
 
 ```go
 func TestWallet(t *testing.T) {
@@ -570,29 +570,29 @@ func assertError(t testing.TB, got, want error) {
 }
 ```
 
-And now the test is easier to follow too.
+现在测试也更易跟随了。
 
-I have moved the helpers out of the main test function just so when someone opens up a file they can start reading our assertions first, rather than some helpers.
+我把辅助函数移到主测试函数之外，这样当有人打开文件时，他们可以先开始读我们的断言，而不是一些辅助函数。
 
-Another useful property of tests is that they help us understand the _real_ usage of our code so we can make sympathetic code. We can see here that a developer can simply call our code and do an equals check to `ErrInsufficientFunds` and act accordingly.
+测试的另一个有用的属性是它们帮我们理解我们代码的 _实际_ 用法，这样我们就能写出体贴的代码。我们这里可以看到，开发者可以简单地调用我们的代码，对 `ErrInsufficientFunds` 做相等检查并相应行动。
 
-### Unchecked errors
+### 未检查的错误
 
-Whilst the Go compiler helps you a lot, sometimes there are things you can still miss and error handling can sometimes be tricky.
+虽然 Go 编译器在很多方面帮了你大忙，但有时还是有一些你可能漏掉的事情，错误处理有时会很棘手。
 
-There is one scenario we have not tested. To find it, run the following in a terminal to install `errcheck`, one of many linters available for Go.
+有一个场景我们没有测试。要找到它，在终端里运行下面的命令安装 `errcheck`，它是 Go 中诸多 linter 之一。
 
 `go install github.com/kisielk/errcheck@latest`
 
-Then, inside the directory with your code run `errcheck .`
+然后，在你代码所在的目录里运行 `errcheck .`
 
-You should get something like
+你应该会得到类似这样的输出
 
 `wallet_test.go:17:18: wallet.Withdraw(Bitcoin(10))`
 
-What this is telling us is that we have not checked the error being returned on that line of code. That line of code on my computer corresponds to our normal withdraw scenario because we have not checked that if the `Withdraw` is successful that an error is _not_ returned.
+它告诉我们的是，我们没有检查那一行代码上返回的错误。在我电脑上那一行代码对应我们正常的取款场景，因为我们没有检查 `Withdraw` 成功时是否 _没有_ 返回错误。
 
-Here is the final test code that accounts for this.
+这是考虑到这一点的最终测试代码。
 
 ```go
 func TestWallet(t *testing.T) {
@@ -649,29 +649,29 @@ func assertError(t testing.TB, got error, want error) {
 }
 ```
 
-## Wrapping up
+## 总结
 
-### Pointers
+### 指针
 
-* Go copies values when you pass them to functions/methods, so if you're writing a function that needs to mutate state you'll need it to take a pointer to the thing you want to change.
-* The fact that Go takes a copy of values is useful a lot of the time but sometimes you won't want your system to make a copy of something, in which case you need to pass a reference. Examples include referencing very large data structures or things where only one instance is necessary (like database connection pools).
+* Go 在你把值传给函数/方法时会复制它们，所以如果你写一个需要改变状态的函数，你需要它接受一个指向你想改变的东西的指针。
+* Go 复制值这一事实在很多时候是有用的，但有时你不希望系统复制某样东西，这种情况下你需要传引用。例子包括引用非常大的数据结构或仅需要一个实例的东西（比如数据库连接池）。
 
 ### nil
 
-* Pointers can be nil
-* When a function returns a pointer to something, you need to make sure you check if it's nil or you might raise a runtime exception - the compiler won't help you here.
-* Useful for when you want to describe a value that could be missing
+* 指针可以是 nil
+* 当一个函数返回某样东西的指针时，你需要确保检查它是不是 nil，否则可能引发运行时异常 —— 编译器在这里帮不了你。
+* 适合用来描述可能缺失的值
 
-### Errors
+### 错误
 
-* Errors are the way to signify failure when calling a function/method.
-* By listening to our tests we concluded that checking for a string in an error would result in a flaky test. So we refactored our implementation to use a meaningful value instead and this resulted in easier to test code and concluded this would be easier for users of our API too.
-* This is not the end of the story with error handling, you can do more sophisticated things but this is just an intro. Later sections will cover more strategies.
-* [Don’t just check errors, handle them gracefully](https://dave.cheney.net/2016/04/27/dont-just-check-errors-handle-them-gracefully)
+* 错误是调用函数/方法时表示失败的方式。
+* 通过倾听我们的测试，我们得出在错误中检查字符串会导致不稳定测试的结论。所以我们重构了实现，改用一个有意义的值，这导致代码更易测试，也得出这对我们 API 的用户来说也会更容易的结论。
+* 这并不是错误处理的全部故事，你可以做更复杂的事情，但这只是一个介绍。后面的章节将涵盖更多策略。
+* [不要只是检查错误，要优雅地处理它们](https://dave.cheney.net/2016/04/27/dont-just-check-errors-handle-them-gracefully)
 
-### Create new types from existing ones
+### 从已有类型创建新类型
 
-* Useful for adding more domain specific meaning to values
-* Can let you implement interfaces
+* 适合给值添加更多领域特定的含义
+* 可以让你实现接口
 
-Pointers and errors are a big part of writing Go that you need to get comfortable with. Thankfully the compiler will _usually_ help you out if you do something wrong, just take your time and read the error.
+指针和错误是写 Go 时一个重要的部分，你需要熟悉它们。值得欣慰的是，如果你做错了什么，编译器 _通常_ 会帮你，你只需要花点时间读读错误信息。

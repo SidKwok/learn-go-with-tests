@@ -1,34 +1,34 @@
-# Contributing
+# 贡献
 
-Contributions are very welcome. I hope for this to become a great home for guides of how to learn Go by writing tests. Consider submitting a PR or creating an issue which you can do [here](https://github.com/quii/learn-go-with-tests/issues).
+非常欢迎贡献。我希望这本书能成为一个通过写测试学习 Go 的优秀指南集合。可以考虑提交 PR 或者创建 issue，地点在[这里](https://github.com/quii/learn-go-with-tests/issues)。
 
-## What we're looking for
+## 我们在寻找什么
 
-* Teaching Go features \(e.g things like `if`, `select`, structs, methods, etc\).
-* Showcase interesting functionality within the standard library. Show off how easy it is to TDD a HTTP server for instance.
-* Show how Go's tooling, like benchmarking, race detectors, etc can help you arrive at great software.
+* 教 Go 语言特性的内容（例如 `if`、`select`、结构体、方法等）。
+* 展示标准库中有意思的功能。比如展示 TDD 一个 HTTP 服务器有多容易。
+* 展示 Go 的工具链，比如基准测试、竞态检测器等，如何帮你写出优秀的软件。
 
-If you don't feel confident to submit your own guide, submitting an issue for something you want to learn is still a valuable contribution.
+如果你不太自信能提交自己的指南，提交一个你想学习内容的 issue 也是有价值的贡献。
 
-### ⚠️ Get feedback quickly for new content ⚠️
+### ⚠️ 为新内容快速获得反馈 ⚠️
 
-- TDD teaches us to work iteratively and get feedback and I strongly suggest you do the same if you wish to contribute
-    - Open a PR with your first test and implementation, discuss your approach so I can offer feedback and course correct
-- This is of course open-source but I do have strong opinions on the content. The sooner you talk to me the better.
+- TDD 教我们要迭代式地工作并获取反馈，如果你想贡献，我强烈建议你也这样做
+    - 用你的第一个测试和实现开一个 PR，讨论你的思路，这样我可以给反馈并帮你校正方向
+- 这当然是开源项目，但我对内容有比较强的看法。越早和我聊越好。
 
-## Style guide
+## 风格指南
 
-* Always be reinforcing the TDD cycle. Take a look at the [Chapter Template](template.md).
-* Emphasis on iterating over functionality driven by tests. The Hello, world example works well because we gradually make it more sophisticated and learning new techniques _driven_ by the tests. For example:
-  * `Hello()` &lt;- how to write functions, return types.
-  * `Hello(name string)` &lt;- arguments, constants.
-  * `Hello(name string)` &lt;- default to "world" using `if`.
-  * `Hello(name, language string)` &lt;- `switch`.
-* Try and minimise the surface area of required knowledge.
-  * Thinking of examples that showcase what you're trying to teach without confusing the reader with other features is important.
-  * For example you can learn about `struct`s without understanding pointers.
-  * Brevity is king.
-* Follow the [Code Review Comments style guide](https://go.dev/wiki/CodeReviewComments). It's important for a consistent style across all the sections.
-* Your section should have a runnable application at the end \(e.g `package main` with a `main` func\) so users can see it in action and play with it.
-* All tests should pass.
-* Run `./build.sh` before raising PR.
+* 始终强化 TDD 循环。可以看一下[章节模板](template.md)。
+* 强调由测试驱动的功能迭代。Hello, world 例子之所以有效，是因为我们逐步让它变得更复杂，并且 _由测试驱动_ 学习新技巧。例如：
+  * `Hello()` &lt;- 如何写函数、返回类型。
+  * `Hello(name string)` &lt;- 参数、常量。
+  * `Hello(name string)` &lt;- 用 `if` 让 "world" 作为默认值。
+  * `Hello(name, language string)` &lt;- `switch`。
+* 尽量减少必须先掌握的知识范围。
+  * 思考能展示你想教的内容、又不会用其他特性把读者搞晕的例子，这一点很重要。
+  * 例如你可以在不理解指针的情况下学习 `struct`。
+  * 简洁为王。
+* 遵循 [Code Review Comments style guide](https://go.dev/wiki/CodeReviewComments)。各章节风格一致很重要。
+* 你的章节在最后应该有一个可运行的应用（例如带 `main` 函数的 `package main`），这样用户可以看到效果并把玩它。
+* 所有测试都应通过。
+* 提 PR 之前运行 `./build.sh`。
