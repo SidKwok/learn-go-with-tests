@@ -142,7 +142,7 @@ t.Run("it runs safely concurrently", func(t *testing.T) {
 
 我们使用了 [`sync.WaitGroup`](https://golang.org/pkg/sync/#WaitGroup)，它是同步并发流程的一种便利方式。
 
-> A WaitGroup waits for a collection of goroutines to finish. The main goroutine calls Add to set the number of goroutines to wait for. Then each of the goroutines runs and calls Done when finished. At the same time, Wait can be used to block until all goroutines have finished.
+> WaitGroup 等待一组 goroutine 完成。主 goroutine 调用 Add 来设置要等待的 goroutine 数量。然后每个 goroutine 运行，完成时调用 Done。与此同时，可以用 Wait 来阻塞，直到所有 goroutine 都完成。
 
 通过先等 `wg.Wait()` 完成再做断言，我们可以确保所有 goroutine 都尝试过 `Inc` 这个 `Counter`。
 
@@ -162,7 +162,7 @@ FAIL
 
 一个简单的方案是给 `Counter` 加一把锁，保证一次只有一个 goroutine 能递增计数器。Go 的 [`Mutex`](https://golang.org/pkg/sync/#Mutex) 提供了这种锁：
 
->A Mutex is a mutual exclusion lock. The zero value for a Mutex is an unlocked mutex.
+> Mutex 是一把互斥锁。Mutex 的零值是未上锁状态。
 
 ```go
 type Counter struct {
@@ -257,7 +257,7 @@ func NewCounter() *Counter {
 [我们之前在第一篇并发章节里讲过 goroutine](concurrency.md)，它让我们能写出安全的并发代码，那为什么还要用锁呢？
 [Go wiki 有一个专门讨论这个话题的页面：Mutex Or Channel](https://go.dev/wiki/MutexOrChannel)
 
-> A common Go newbie mistake is to over-use channels and goroutines just because it's possible, and/or because it's fun. Don't be afraid to use a sync.Mutex if that fits your problem best. Go is pragmatic in letting you use the tools that solve your problem best and not forcing you into one style of code.
+> Go 新手常犯的一个错误是仅仅因为"可以"或者"好玩"就过度使用 channel 和 goroutine。如果 sync.Mutex 最适合你的问题，别怕用它。Go 在工具选择上很务实，让你用最能解决问题的工具，而不强迫你写成某一种风格。
 
 简单概括一下：
 

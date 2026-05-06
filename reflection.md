@@ -4,11 +4,11 @@
 
 [来自 Twitter](https://twitter.com/peterbourgon/status/1011403901419937792?s=09)
 
-> golang challenge: write a function `walk(x interface{}, fn func(string))` which takes a struct `x` and calls `fn` for all strings fields found inside. difficulty level: recursively.
+> golang 挑战：写一个函数 `walk(x interface{}, fn func(string))`，它接受一个结构体 `x`，对其中所有的 string 字段调用 `fn`。难度等级：递归实现。
 
 要做到这一点，我们需要使用_反射_。
 
-> Reflection in computing is the ability of a program to examine its own structure, particularly through types; it's a form of metaprogramming. It's also a great source of confusion.
+> 计算机中的反射，指的是程序检查自身结构（尤其是通过类型）的能力，它是元编程的一种形式。它也是巨大的困惑之源。
 
 来自 [The Go Blog: Reflection](https://blog.golang.org/laws-of-reflection)
 

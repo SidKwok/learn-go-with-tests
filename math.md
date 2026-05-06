@@ -1893,7 +1893,7 @@ const (
 
 事实上，把库和程序一起提供 _是个非常好的主意_。它对我们没什么成本，同时能增加程序的实用性，并帮助记录它的工作方式。
 
-> APIs should come with programs, and vice versa. An API that you must write C code to use, which cannot be invoked easily from the command line, is harder to learn and use. And contrariwise, it's a royal pain to have interfaces whose only open, documented form is a program, so you cannot invoke them easily from a C program. -- Henry Spencer, in _The Art of Unix Programming_
+> API 应当和程序一起提供，反之亦然。一个必须写 C 代码才能使用、不能轻易从命令行调用的 API，更难学也更难用。反过来，如果一个接口唯一公开和有文档的形式就是一个程序，以致你不能从 C 程序里轻易调用它，那也实在让人头大。—— Henry Spencer，《Unix 编程艺术》
 
 在[我对这个程序的最终版本](https://github.com/quii/learn-go-with-tests/tree/main/math/vFinal/clockface)中，我把 `clockface` 中未导出的函数变成了库的公开 API，提供了为每根时钟指针计算角度和单位向量的函数。我也把 SVG 生成部分拆分到了它自己的包 `svg`，然后由 `clockface` 程序直接使用。当然，每个函数和包我都写了文档。
 

@@ -40,7 +40,7 @@
 
 幸运的是，Go 已经有一个让服务器优雅关闭的机制：[net/http/Server.Shutdown](https://pkg.go.dev/net/http#Server.Shutdown)。
 
-> Shutdown gracefully shuts down the server without interrupting any active connections. Shutdown works by first closing all open listeners, then closing all idle connections, and then waiting indefinitely for connections to return to idle and then shut down. If the provided context expires before the shutdown is complete, Shutdown returns the context's error, otherwise it returns any error returned from closing the Server's underlying Listener(s).
+> Shutdown 在不中断任何活跃连接的前提下优雅关闭服务器。它先关闭所有打开的 listener，再关闭所有空闲连接，然后无限期等待连接回到空闲状态再关停。如果提供的 context 在关闭完成前到期，Shutdown 返回 context 的错误，否则返回关闭 Server 底层 Listener 时返回的任何错误。
 
 要处理 `SIGTERM`，我们可以使用 [os/signal.Notify](https://pkg.go.dev/os/signal#Notify)，它会把任何到来的信号发送到我们提供的 channel。
 

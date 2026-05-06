@@ -57,11 +57,11 @@ func (cli *CLI) readLine() string {
 
 像往常一样，标准库已经为我们准备好了：[`func AfterFunc(d Duration, f func()) *Timer`](https://golang.org/pkg/time/#AfterFunc)
 
-> `AfterFunc` waits for the duration to elapse and then calls f in its own goroutine. It returns a `Timer` that can be used to cancel the call using its Stop method.
+> `AfterFunc` 等待 duration 时间过去，然后在它自己的 goroutine 中调用 f。它返回一个 `Timer`，可以通过其 Stop 方法取消这次调用。
 
 ### [`time.Duration`](https://golang.org/pkg/time/#Duration)
 
-> A Duration represents the elapsed time between two instants as an int64 nanosecond count.
+> Duration 用一个 int64 类型的纳秒数来表示两个时间点之间经过的时间。
 
 time 库提供了一些常量，让你把那些纳秒乘起来，对于我们将要做的场景来说更具可读性
 

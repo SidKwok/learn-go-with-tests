@@ -211,7 +211,7 @@ func ConvertToRoman(arabic int) string {
 你可能记得 [`strings.Builder`](https://golang.org/pkg/strings/#Builder)，我们在
 [基准测试](iteration.md#benchmarking) 时讨论过
 
-> A Builder is used to efficiently build a string using Write methods. It minimizes memory copying.
+> Builder 用于通过 Write 方法高效地构建字符串，它能最小化内存拷贝。
 
 通常我不会在没有实际性能问题之前就做这种优化，但代码量并不比"手动"拼接字符串多多少，那就用更快的方案吧。
 

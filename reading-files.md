@@ -74,11 +74,11 @@ posts = blogposts.NewPostsFromFS("some-folder")
 
 Go 1.16 为文件系统引入了一个抽象：[io/fs](https://golang.org/pkg/io/fs/) 包。
 
-> Package fs defines basic interfaces to a file system. A file system can be provided by the host operating system but also by other packages.
+> fs 包定义了文件系统的基本接口。文件系统可以由宿主操作系统提供，也可以由其他包提供。
 
 这让我们可以放松对具体文件系统的耦合，让我们可以根据需要注入不同的实现。
 
-> [On the producer side of the interface, the new embed.FS type implements fs.FS, as does zip.Reader. The new os.DirFS function provides an implementation of fs.FS backed by a tree of operating system files.](https://golang.org/doc/go1.16#fs)
+> [在接口的生产者一侧，新的 embed.FS 类型实现了 fs.FS，zip.Reader 也是。新的 os.DirFS 函数则提供了一个由操作系统文件树支撑的 fs.FS 实现。](https://golang.org/doc/go1.16#fs)
 
 如果我们使用这个接口，我们包的使用者就有一些标准库内置的选项可以选用。学会利用 Go 标准库中定义的接口（例如 `io.fs`、[`io.Reader`](https://golang.org/pkg/io/#Reader)、[`io.Writer`](https://golang.org/pkg/io/#Writer)），对编写松耦合的包至关重要。这些包能在你最初想象之外的不同上下文中被复用，使用者也几乎不需要任何额外操作。
 
@@ -130,7 +130,7 @@ func TestNewBlogPosts(t *testing.T) {
 
 我们引入了 [`testing/fstest`](https://golang.org/pkg/testing/fstest/)，它让我们可以使用 [`fstest.MapFS`](https://golang.org/pkg/testing/fstest/#MapFS) 类型。我们的假文件系统会把 `fstest.MapFS` 传递给我们的包。
 
-> A MapFS is a simple in-memory file system for use in tests, represented as a map from path names (arguments to Open) to information about the files or directories they represent.
+> MapFS 是一个用于测试的简单内存文件系统，它表示为一个 map：从路径名（传给 Open 的参数）映射到该路径所代表的文件或目录的信息。
 
 这感觉比维护一个测试文件夹简单，也会执行得更快。
 
@@ -194,7 +194,7 @@ func NewPostsFromFS(fileSystem fstest.MapFS) []Post {
 
 但正如 Denise Yu 所写：
 
-> Sliming is useful for giving a "skeleton" to your object. Designing an interface and executing logic are two concerns, and sliming tests strategically lets you focus on one at a time.
+> Sliming（糊弄实现）有助于先给对象搭出一个"骨架"。设计接口和实现逻辑是两件事，策略性地把测试糊弄过去，能让你一次只专注于其中一件。
 
 我们已经有了结构。那么我们应该怎么做呢？
 
@@ -545,7 +545,7 @@ type Post struct {
 
 标准库有一个很方便的库，可以帮你按行扫描数据：[`bufio.Scanner`](https://golang.org/pkg/bufio/#Scanner)
 
-> Scanner provides a convenient interface for reading data such as a file of newline-delimited lines of text.
+> Scanner 提供了一个便捷的接口，用来读取诸如以换行分隔的文本文件这样的数据。
 
 ```go
 func newPost(postFile io.Reader) (Post, error) {
