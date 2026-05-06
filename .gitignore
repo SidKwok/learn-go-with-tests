@@ -14,3 +14,6 @@ meta.tex
 
 game.db.json
 .DS_Store
+
+# Claude Code local settings (per-user permission allowlists, etc.)
+.claude/
